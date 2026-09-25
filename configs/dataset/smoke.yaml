@@ -1,0 +1,12 @@
+name: smoke
+seed: 7
+n: 512
+world:
+  resolution: 64
+  extent_m: 4096.0
+  max_height_m: 1200.0
+  sea_level: 0.2
+generator:
+  supersample: 2
+  blend_probability: 0.25
+splits: {train: 0.8, val: 0.1, test: 0.1}

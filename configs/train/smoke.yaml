@@ -1,0 +1,21 @@
+name: smoke
+seed: 0
+dataset: smoke
+model:
+  base_channels: 32
+  channel_mults: [1, 2, 2]
+  num_res_blocks: 1
+  attention_resolutions: [16]
+  dropout: 0.0
+train:
+  batch_size: 32
+  max_steps: 200
+  warmup_steps: 20
+  log_every: 20
+  val_every: 100
+  val_size: 32
+  sample_every: 200
+  eval_every: 200
+  eval_samples: 16
+  eval_steps: 10
+  checkpoint_every: 200

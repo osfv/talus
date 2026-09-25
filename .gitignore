@@ -1,0 +1,11 @@
+/data/
+/runs/
+/exports/
+/outputs/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.venv/
+.venvs/
+reports/**/*.npy

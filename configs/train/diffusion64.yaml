@@ -1,0 +1,32 @@
+name: diffusion64
+seed: 0
+dataset: base64
+model:
+  base_channels: 64
+  channel_mults: [1, 2, 3, 4]
+  num_res_blocks: 2
+  attention_resolutions: [16, 8]
+  dropout: 0.1
+diffusion:
+  timesteps: 1000
+  min_snr_gamma: 5.0
+  p_drop_property: 0.15
+  p_drop_label: 0.15
+  p_drop_all: 0.10
+train:
+  # batch 48 keeps peak VRAM ~5.3 GB incl. the GPU-resident dataset (8 GB card; see README)
+  batch_size: 48
+  lr: 2.0e-4
+  warmup_steps: 1000
+  max_steps: 30000
+  grad_clip: 1.0
+  ema_decay: 0.9995
+  bf16: true
+  log_every: 100
+  val_every: 1000
+  sample_every: 2500
+  eval_every: 5000
+  eval_samples: 256
+  eval_steps: 50
+  eval_guidance: 1.5
+  checkpoint_every: 5000
