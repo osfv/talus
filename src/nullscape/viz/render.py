@@ -209,5 +209,35 @@ def save_rapsd(sets: Mapping[str, np.ndarray], path: str | Path) -> Path:
     return _save(fig, path)
 
 
+def save_condition_scatter(requested: np.ndarray, measured: np.ndarray, keys: Sequence[str], path: str | Path,
+                           adherence: Mapping[str, Mapping[str, float]] | None = None,
+                           baseline: Mapping[str, Mapping[str, float]] | None = None,
+                           title: str | None = None) -> Path:
+    """Requested vs measured value per conditioning property (y = x is perfect control)."""
+    fig, axes = plt.subplots(1, len(keys), figsize=(3.1 * len(keys), 3.2), squeeze=False)
+    for j, (ax, key) in enumerate(zip(axes[0], keys)):
+        x, y = np.asarray(requested)[:, j], np.asarray(measured)[:, j]
+        lo, hi = np.percentile(np.concatenate([x, y]), [0.5, 99.5])
+        pad = 0.05 * (hi - lo + 1e-9)
+        ax.scatter(x, y, s=5, alpha=0.5)
+        ax.plot([lo - pad, hi + pad], [lo - pad, hi + pad], "k--", lw=0.8)
+        ax.set_xlim(lo - pad, hi + pad)
+        ax.set_ylim(lo - pad, hi + pad)
+        sub = key
+        if adherence and key in adherence:
+            a = adherence[key]
+            sub += f"\nr={a['pearson_r']:.3f} nMAE={a.get('nmae', float('nan')):.3f}"
+            if baseline and key in baseline:
+                sub += f" (random {baseline[key].get('nmae', float('nan')):.2f})"
+        ax.set_title(sub, fontsize=8)
+        ax.set_xlabel("requested", fontsize=7)
+        ax.set_ylabel("measured on learned map", fontsize=7)
+        ax.tick_params(labelsize=6)
+    if title:
+        fig.suptitle(title, fontsize=10)
+    fig.tight_layout()
+    return _save(fig, path)
+
+
 def to_uint8_image(h: np.ndarray, world: WorldSpec) -> np.ndarray:
     return (shaded_rgb(h, world) * 255).astype(np.uint8)

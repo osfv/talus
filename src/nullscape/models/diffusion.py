@@ -108,11 +108,12 @@ class GaussianDiffusion(nn.Module):
         eta: float = 0.0,
         clip_x0: bool = True,
         autocast_dtype: torch.dtype | None = None,
+        spacing: str = "uniform",
     ) -> torch.Tensor:
         """DDIM sampling. ``noise_fn(k)`` returns the k-th standard-normal tensor [B, C, H, W]
         (k = 0 is the initial noise; k >= 1 are per-step noises used when eta > 0)."""
         device = cond.device
-        ts = torch.linspace(self.cfg.timesteps - 1, 0, steps, device=device).round().long()
+        ts = timestep_schedule(self.cfg.timesteps, steps, spacing).to(device)
         x = noise_fn(0).to(device)
         for i, t_cur in enumerate(ts):
             t = t_cur.repeat(x.shape[0])
@@ -129,6 +130,25 @@ class GaussianDiffusion(nn.Module):
             if eta > 0 and i + 1 < len(ts):
                 x = x + sigma * noise_fn(i + 1).to(device)
         return x
+
+
+SPACINGS = ("uniform", "quadratic")
+
+
+def timestep_schedule(timesteps: int, steps: int, spacing: str = "uniform") -> torch.Tensor:
+    """Descending, de-duplicated sampling timesteps ending at 0.
+
+    "quadratic" (Song et al. 2021) places more steps at low noise, where the fine
+    detail of smooth terrain is resolved; with uniform spacing the final DDIM jump
+    starts from a noise level larger than that detail.
+    """
+    if spacing == "uniform":
+        ts = torch.linspace(timesteps - 1, 0, steps, dtype=torch.float64)
+    elif spacing == "quadratic":
+        ts = torch.linspace(math.sqrt(timesteps - 1), 0, steps, dtype=torch.float64) ** 2
+    else:
+        raise ValueError(f"spacing must be one of {SPACINGS}, got {spacing!r}")
+    return torch.unique_consecutive(ts.round().long())
 
 
 def per_sample_noise(seeds: Sequence[int], shape: tuple[int, ...]) -> Callable[[int], torch.Tensor]:

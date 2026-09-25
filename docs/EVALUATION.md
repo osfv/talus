@@ -72,6 +72,41 @@ Also reported:
   `frac_gen_below_heldout_p01`, means the model is copying training maps.
 - **Artifacts:** mean checkerboard / high-frequency energy / sink density, generated vs reference.
 
+## Per-checkpoint artifacts (`eval/artifacts.py`)
+
+Scalar metrics hide failure modes that are obvious by eye, so every major checkpoint also
+gets a visual suite:
+
+```
+artifacts/<run>/
+  spec.json                 frozen seeds, conditions and sampler settings (shared by all steps)
+  index.md                  headline ratios, adherence, memorization and traversability per step
+  progression.png           the same fixed-seed samples at every checkpoint (row 1 = procedural)
+  progression_metrics.png   distance/noise-floor ratios and adherence vs step
+  step_0025000/
+    procedural_vs_learned.png   same conditions + noise: procedural row above learned row
+    compare_3d.png              3D surfaces, procedural vs learned
+    rapsd.png                   power spectra: procedural B, procedural A (noise floor), learned
+    metric_histograms.png       per-map metric distributions
+    condition_adherence.png     requested vs measured property scatter, with random-pair baseline
+    nearest_neighbors.png       learned maps next to their nearest training maps (8 rotations/flips)
+    traversability.png          walkable / water / largest-component overlays with a long route
+    report.json, summary.md     full numeric report for this checkpoint
+    fixed_seed.npy              frozen samples used to build progression.png
+```
+
+All checkpoints in a lineage use one `ArtifactSpec`. A mismatched spec is rejected, so
+differences between step directories come only from the weights. Cross-checkpoint figures
+are rebuilt from the saved per-step arrays and reports, not by re-sampling.
+
+- New runs: set `train.artifacts_every` (and `keep_checkpoints: true` to keep
+  `checkpoints/step_XXXXXXX.pt`). When resuming, point `train.artifacts_dir` at the
+  original lineage directory.
+- Existing runs: `nullscape artifacts --run runs/<run>` renders every `step_*.pt` snapshot.
+  `--watch` follows a live run and snapshots `last.pt` as it changes. Rendering on the same
+  GPU as a training job slows the training by about 60% while it runs, so prefer rendering
+  after training or with `--device cpu`.
+
 ## Caveats
 
 - Metrics are computed on procedural data, so they measure how well we learn the

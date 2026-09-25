@@ -99,6 +99,7 @@ class TerrainSampler:
         eta: float = 0.0,
         batch_size: int = 256,
         seeds: Sequence[int] | None = None,
+        spacing: str = "uniform",
     ) -> np.ndarray:
         """Return float32 heightmaps [n, R, R] in [0, 1].
 
@@ -122,7 +123,7 @@ class TerrainSampler:
                 torch.from_numpy(kn[sl]).to(self.device),
                 torch.from_numpy(lab[sl]).to(self.device),
                 per_sample_noise(seeds[sl], (1, r, r)),
-                steps=steps, guidance=guidance, eta=eta,
+                steps=steps, guidance=guidance, eta=eta, spacing=spacing,
                 autocast_dtype=torch.bfloat16 if use_bf16 else None,
             )
             out.append(((x[:, 0].float().clamp(-1, 1) + 1) / 2).cpu().numpy())

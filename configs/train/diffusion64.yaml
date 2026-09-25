@@ -30,3 +30,5 @@ train:
   eval_steps: 50
   eval_guidance: 1.5
   checkpoint_every: 5000
+  keep_checkpoints: true
+  artifacts_every: 5000

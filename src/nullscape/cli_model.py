@@ -36,7 +36,7 @@ def _cmd_sample(args: argparse.Namespace) -> None:
     sampler = TerrainSampler.from_checkpoint(args.checkpoint, use_ema=not args.raw_weights)
     props = _parse_props(args.prop)
     maps = sampler.sample(n=args.n, seed=args.seed, properties=props, archetype=args.archetype,
-                          guidance=args.guidance, steps=args.steps, eta=args.eta)
+                          guidance=args.guidance, steps=args.steps, eta=args.eta, spacing=args.spacing)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     formats = [f for f in args.formats.split(",") if f]
@@ -46,7 +46,7 @@ def _cmd_sample(args: argparse.Namespace) -> None:
         m = compute_metrics(h, sampler.world)
         meta = {"checkpoint": sampler.checkpoint_info, "seed": args.seed, "sample_index": i,
                 "archetype": args.archetype, "properties": props, "guidance": args.guidance, "steps": args.steps,
-                "eta": args.eta, "measured": {k: m[k] for k in sampler.condition_keys}}
+                "eta": args.eta, "spacing": args.spacing, "measured": {k: m[k] for k in sampler.condition_keys}}
         if formats:
             export_heightmap(h, sampler.world, out, f"sample_{args.seed}_{i:03d}", formats, meta, size)
         summary.append(meta)
@@ -73,6 +73,7 @@ def add_model_commands(sub) -> None:
     s.add_argument("--guidance", type=float, default=1.5)
     s.add_argument("--steps", type=int, default=50)
     s.add_argument("--eta", type=float, default=0.0)
+    s.add_argument("--spacing", default="uniform", choices=["uniform", "quadratic"])
     s.add_argument("--formats", default="png16,npy")
     s.add_argument("--unity", action="store_true")
     s.add_argument("--raw-weights", action="store_true", help="use raw instead of EMA weights")

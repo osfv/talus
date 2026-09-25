@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+import shutil
 import time
 from pathlib import Path
 from typing import Any
@@ -12,6 +13,7 @@ import numpy as np
 import torch
 
 from nullscape.data.storage import TerrainStore
+from nullscape.eval.artifacts import ARTIFACTS_ROOT, ArtifactSpec, generate_checkpoint_artifacts
 from nullscape.eval.core import HEADLINE_KEYS, evaluate_generated, split_halves
 from nullscape.inference.sampler import TerrainSampler
 from nullscape.models.diffusion import DiffusionConfig, GaussianDiffusion
@@ -26,7 +28,15 @@ DEFAULT_TRAIN: dict[str, Any] = {
     "max_steps": 60000, "grad_clip": 1.0, "ema_decay": 0.9995, "bf16": True, "log_every": 100,
     "val_every": 2000, "val_size": 1024, "sample_every": 5000, "eval_every": 10000, "eval_samples": 256,
     "eval_steps": 50, "eval_guidance": 1.5, "checkpoint_every": 5000, "data_on_gpu": True,
-    "sample_batch_size": 128,
+    "sample_batch_size": 64,
+    # Cap PyTorch's share of VRAM so the caching allocator frees cached blocks instead of
+    # growing past physical memory (on Windows/WDDM that spills to system RAM, ~10x slower).
+    # 0.72 of 8 GB leaves room for the desktop/browser; 0.8 spilled once other apps grew.
+    "cuda_memory_fraction": 0.72,
+    "keep_checkpoints": True,     # also save checkpoints/step_XXXXXXX.pt at every checkpoint_every
+    "artifacts_every": 0,         # >0: render eval/artifacts.py suite at these steps
+    "artifacts_dir": None,        # default artifacts/<run dir name>; set to continue a lineage when resuming
+    "artifacts_spec": {},         # ArtifactSpec overrides (must stay fixed within a lineage)
 }
 
 
@@ -91,6 +101,8 @@ def train(cfg: dict[str, Any], resume: str | None = None) -> Path:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.backends.cuda.matmul.allow_tf32 = True
     torch.backends.cudnn.allow_tf32 = True
+    if device.type == "cuda" and tcfg["cuda_memory_fraction"]:
+        torch.cuda.set_per_process_memory_fraction(float(tcfg["cuda_memory_fraction"]))
 
     store = TerrainStore.open(cfg["dataset"])
     model, diffusion = build_model(cfg, store)
@@ -103,12 +115,15 @@ def train(cfg: dict[str, Any], resume: str | None = None) -> Path:
     sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: min(1.0, (s + 1) / max(1, tcfg["warmup_steps"])))
     step = 0
     if resume:
-        ck = torch.load(resume, map_location=device, weights_only=False)
+        # load on CPU and drop the dict afterwards: a device-mapped checkpoint would pin ~370 MB of
+        # duplicate tensors on the GPU for the whole run
+        ck = torch.load(resume, map_location="cpu", weights_only=False)
         model.load_state_dict(ck["model"])
         ema.load_state_dict(ck["ema"])
-        opt.load_state_dict(ck["optimizer"])
+        opt.load_state_dict(ck["optimizer"])  # moves optimizer state to the params' device
         step = ck["step"]
         sched.last_epoch = step
+        del ck
 
     run = RunDir(cfg.get("name", "run"), cfg)
     meta = dataset_meta(store)
@@ -139,6 +154,8 @@ def train(cfg: dict[str, Any], resume: str | None = None) -> Path:
     eval_a, eval_b = store.heights(ea), store.heights(eb)
 
     amp = dict(device_type=device.type, dtype=torch.bfloat16, enabled=tcfg["bf16"] and device.type == "cuda")
+    artifacts_root = Path(tcfg["artifacts_dir"]) if tcfg["artifacts_dir"] else ARTIFACTS_ROOT / run.path.name
+    train_bank = None
     best = math.inf
     t0 = time.time()
     losses: list[torch.Tensor] = []
@@ -180,6 +197,7 @@ def train(cfg: dict[str, Any], resume: str | None = None) -> Path:
             run.log_image("samples/first", to_uint8_image(imgs[0], store.world), step)
             print(f"samples -> {path}")
             model.train()
+            _release_cache(device)
 
         if step % tcfg["eval_every"] == 0 or step == tcfg["max_steps"]:
             sampler = TerrainSampler(ema.shadow, diffusion, meta, device)
@@ -202,12 +220,33 @@ def train(cfg: dict[str, Any], resume: str | None = None) -> Path:
                 save_checkpoint(run.path / "checkpoints" / "best.pt", model, ema, opt, step, cfg, meta,
                                 {"best_score": score})
             model.train()
+            _release_cache(device)
 
         if step % tcfg["checkpoint_every"] == 0 or step == tcfg["max_steps"]:
-            save_checkpoint(run.path / "checkpoints" / "last.pt", model, ema, opt, step, cfg, meta)
+            last = run.path / "checkpoints" / "last.pt"
+            save_checkpoint(last, model, ema, opt, step, cfg, meta)
+            if tcfg["keep_checkpoints"]:
+                shutil.copy2(last, last.with_name(f"step_{step:07d}.pt"))
+
+        if tcfg["artifacts_every"] and (step % tcfg["artifacts_every"] == 0 or step == tcfg["max_steps"]):
+            if train_bank is None:
+                train_bank = store.heights(train_idx)
+            sampler = TerrainSampler(ema.shadow, diffusion, meta, device)
+            sampler.checkpoint_info = {"path": str(run.path / "checkpoints" / f"step_{step:07d}.pt"), "step": step,
+                                       "use_ema": True}
+            d = generate_checkpoint_artifacts(sampler, store, artifacts_root, step,
+                                              ArtifactSpec(**tcfg["artifacts_spec"]), train_bank=train_bank)
+            print(f"artifacts -> {d}")
+            model.train()
+            _release_cache(device)
 
     run.close()
     return run.path
+
+
+def _release_cache(device: torch.device) -> None:
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
 
 
 @torch.no_grad()

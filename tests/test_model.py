@@ -4,7 +4,8 @@ import torch
 
 from nullscape.inference.sampler import TerrainSampler
 from nullscape.metrics.quality import CONDITION_KEYS
-from nullscape.models.diffusion import DiffusionConfig, GaussianDiffusion, cosine_alphas_cumprod
+from nullscape.models.diffusion import (DiffusionConfig, GaussianDiffusion, cosine_alphas_cumprod,
+                                        timestep_schedule)
 from nullscape.models.ema import EMA
 from nullscape.models.unet import ConditionEmbedding, UNet, UNetConfig, count_parameters
 from nullscape.terrain.archetypes import ARCHETYPES
@@ -78,6 +79,24 @@ def test_cosine_schedule_decreasing():
     ab = cosine_alphas_cumprod(1000)
     assert (ab[1:] < ab[:-1]).all()
     assert (ab > 0).all() and (ab <= 1.0).all()
+
+
+def test_timestep_schedule_uniform_backwards_compatible():
+    ts = timestep_schedule(1000, 50, "uniform")
+    assert torch.equal(ts, torch.linspace(999, 0, 50).round().long())
+
+
+def test_timestep_schedule_quadratic():
+    ts = timestep_schedule(1000, 50, "quadratic")
+    assert (ts[1:] < ts[:-1]).all()          # strictly decreasing
+    assert ts[0].item() == 999 and ts[-1].item() == 0
+    assert len(ts) <= 50                      # de-duplicated
+    assert (ts[-5:] <= 10).all()              # fine detail resolved at low noise
+
+
+def test_timestep_schedule_invalid():
+    with pytest.raises(ValueError):
+        timestep_schedule(1000, 50, "cubic")
 
 
 def test_v_prediction_reconstruction():
@@ -181,6 +200,14 @@ def test_sampler_batch_size_invariance(sampler):
     c = sampler.sample(n=4, seed=3, steps=4, batch_size=4, eta=0.5)
     d = sampler.sample(n=4, seed=3, steps=4, batch_size=1, eta=0.5)
     assert np.allclose(c, d, atol=1e-5)
+
+
+def test_sampler_quadratic_spacing(sampler):
+    a = sampler.sample(n=4, seed=3, steps=4, batch_size=4, spacing="quadratic")
+    b = sampler.sample(n=4, seed=3, steps=4, batch_size=1, spacing="quadratic")
+    assert np.allclose(a, b, atol=1e-5)
+    u = sampler.sample(n=4, seed=3, steps=4, batch_size=4, spacing="uniform")
+    assert not np.allclose(a, u)
 
 
 def test_sampler_output_contract_and_seed(sampler):

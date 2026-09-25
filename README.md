@@ -55,7 +55,13 @@ nullscape evaluate --checkpoint ... --n 1000 \
     --modes conditional,label_only,unconditional \
     --guidance-sweep 1,1.5,2,3 --out reports/eval
 
-# 6. Side-by-side figures and engine exports
+# 6. Per-checkpoint visual artifacts (grids, 3D, spectra, histograms, adherence,
+#    memorization, fixed-seed progression) -> artifacts/<run>/index.md
+nullscape artifacts --run runs/<run>                 # render all step_*.pt snapshots
+nullscape artifacts --run runs/<run> --watch         # follow a live run
+nullscape sampler-sweep --checkpoint ... --out reports/sweep   # choose steps/spacing/eta/guidance
+
+# 7. Side-by-side figures and engine exports
 nullscape compare --checkpoint ... --n 6 --seeds 3 --out reports/compare
 nullscape export --dataset base64 --index 123 --unity --out exports/
 ```

@@ -10,6 +10,7 @@ from nullscape.utils.config import apply_overrides, load_config
 from nullscape.utils.seed import derive_seed
 from nullscape.utils.tracking import RunDir
 from nullscape.viz.render import (
+    save_condition_scatter,
     save_grid,
     save_inspection,
     save_metric_histograms,
@@ -101,6 +102,18 @@ def test_save_metric_histograms(tmp_path):
 
 def test_save_rapsd(maps, tmp_path):
     _assert_png(save_rapsd({"a": maps[:2], "b": maps[2:]}, tmp_path / "rapsd.png"))
+
+
+def test_save_condition_scatter(tmp_path):
+    rng = np.random.default_rng(0)
+    keys = ["relief", "mean_slope_deg", "water_fraction"]
+    requested = rng.random((16, 3))
+    measured = requested + rng.normal(0, 0.05, (16, 3))
+    adherence = {k: {"pearson_r": 0.9, "nmae": 0.1} for k in keys}
+    baseline = {k: {"pearson_r": 0.0, "nmae": 0.5} for k in keys}
+    _assert_png(save_condition_scatter(requested, measured, keys, tmp_path / "scatter.png",
+                                       adherence, baseline, title="t"))
+    _assert_png(save_condition_scatter(requested, measured, keys, tmp_path / "scatter_plain.png"))
 
 
 def test_cli_export_smoke(tmp_path):
