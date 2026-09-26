@@ -337,6 +337,7 @@ def _sampler_eval(split: str, configs: list[dict], name: str, fixed_visual: bool
 N_SWEEP = 8 if DRY else 500  # VAL sampler grid only ranks configs against each other; TEST confirmation uses N_HALF
 PERF_BATCHES = (1, 4) if DRY else (1, 32, 128, 256)
 COST_BATCH = 4 if DRY else 128
+PERF_VRAM_FRACTION = 0.6  # ~4.9 GB of 8 GB for PyTorch; the rest is CUDA context + desktop
 
 
 def stage_sampler_val(args) -> None:
@@ -357,7 +358,11 @@ def _peak_rss_mb() -> float | None:
 
         c = PMC()
         c.cb = ctypes.sizeof(PMC)
-        ctypes.windll.psapi.GetProcessMemoryInfo(ctypes.windll.kernel32.GetCurrentProcess(), ctypes.byref(c), c.cb)
+        k32, psapi = ctypes.windll.kernel32, ctypes.windll.psapi
+        k32.GetCurrentProcess.restype = wintypes.HANDLE  # without this the 64-bit pseudo-handle is truncated
+        psapi.GetProcessMemoryInfo.argtypes = [wintypes.HANDLE, ctypes.POINTER(PMC), wintypes.DWORD]
+        if not psapi.GetProcessMemoryInfo(k32.GetCurrentProcess(), ctypes.byref(c), c.cb):
+            return None
         return c.PeakWorkingSetSize / 2**20
     except (AttributeError, OSError):
         return None
@@ -381,28 +386,42 @@ def stage_perf(args) -> None:
     st = store()
     step = load_json("selection")["checkpoint"]
     idle_mb = _nvsmi_used_mb()
+    gpu = DEVICE == "cuda"
+    if gpu:
+        # A first attempt without a cap spilled into system RAM at batch 256 + guidance (peak 5.0 GB allocated
+        # plus desktop use) and slowed every later measurement ~20x. With a cap, over-budget configs raise OOM
+        # and are recorded as such instead of silently spilling.
+        torch.cuda.set_per_process_memory_fraction(PERF_VRAM_FRACTION)
     t0 = time.time()
     s = sampler_for(step)
     load_s = time.time() - t0
     fx = st.split("test")[:256]
     rows = []
-    gpu = DEVICE == "cuda"
     for steps, guidance in itertools.product((25, 50, 100, 200), (1.0, 1.5)):
         for bs in PERF_BATCHES:
             n = 4 if bs == 1 else bs
             cfg = {"steps": steps, "spacing": "uniform", "eta": 0.0, "guidance": guidance}
-            conditional_gen(s, st, fx[:bs], {**cfg, "steps": 2}, seed=1, batch=bs)  # warm-up this exact shape
-            if gpu:
-                torch.cuda.reset_peak_memory_stats()
-            _, secs = conditional_gen(s, st, fx[:n], cfg, seed=7, batch=bs)
-            rows.append({"steps": steps, "guidance": guidance, "cfg_doubles_batch": guidance != 1.0, "batch": bs,
-                         "maps": n, "seconds": secs, "seconds_per_map": secs / n, "maps_per_second": n / secs,
+            row = {"steps": steps, "guidance": guidance, "cfg_doubles_batch": guidance != 1.0, "batch": bs, "maps": n}
+            try:
+                _empty_cache()
+                conditional_gen(s, st, fx[:bs], {**cfg, "steps": 2}, seed=1, batch=bs)  # warm-up this exact shape
+                if gpu:
+                    torch.cuda.reset_peak_memory_stats()
+                _, secs = conditional_gen(s, st, fx[:n], cfg, seed=7, batch=bs)
+            except torch.OutOfMemoryError:
+                _empty_cache()
+                rows.append({**row, "oom": True})
+                print(f"[perf] steps {steps} g {guidance} bs {bs}: OOM under the {PERF_VRAM_FRACTION:.2f} VRAM cap", flush=True)
+                continue
+            used = _nvsmi_used_mb()
+            rows.append({**row, "oom": False, "seconds": secs, "seconds_per_map": secs / n, "maps_per_second": n / secs,
                          "latency_seconds_per_batch": secs / max(1, n // bs),
                          "peak_alloc_mb": torch.cuda.max_memory_allocated() / 2**20 if gpu else 0.0,
                          "peak_reserved_mb": torch.cuda.max_memory_reserved() / 2**20 if gpu else 0.0,
-                         "nvidia_smi_used_mb": _nvsmi_used_mb()})
+                         "nvidia_smi_used_mb": used,
+                         "spill_suspect": bool(used is not None and used > 0.93 * 8151)})
             print(f"[perf] steps {steps} g {guidance} bs {bs}: {n / secs:.2f} maps/s "
-                  f"peak {rows[-1]['peak_alloc_mb']:.0f} MB", flush=True)
+                  f"peak {rows[-1]['peak_alloc_mb']:.0f} MB, smi {used} MB", flush=True)
     # GPU determinism: same seed twice, and batch-size invariance
     cfg = dict(DEFAULT_SAMPLER)
     x1, _ = conditional_gen(s, st, fx[:16], cfg, seed=11, batch=16)
@@ -424,6 +443,7 @@ def stage_perf(args) -> None:
         analyze(h, st.world)
     t_trav = (time.time() - t0) / len(maps)
     save_json("perf", {"checkpoint": step, "checkpoint_load_seconds": load_s, "gpu_idle_used_mb": idle_mb,
+                       "vram_fraction_cap": PERF_VRAM_FRACTION if gpu else None,
                        "rows": rows, "determinism": det, "peak_process_rss_mb": _peak_rss_mb(),
                        "cpu_seconds_per_map": {"compute_metrics": t_metrics, "traversability": t_trav},
                        "note": "cost is independent of spacing and eta; measured with uniform spacing, eta 0"})
@@ -432,7 +452,7 @@ def stage_perf(args) -> None:
 def iso_cost(perf: dict, cfg: dict, batch: int = COST_BATCH) -> float:
     g = 1.0 if cfg["guidance"] == 1.0 else 1.5
     for r in perf["rows"]:
-        if r["steps"] == cfg["steps"] and r["guidance"] == g and r["batch"] == batch:
+        if r["steps"] == cfg["steps"] and r["guidance"] == g and r["batch"] == batch and not r.get("oom"):
             return r["seconds_per_map"]
     raise KeyError(cfg)
 
@@ -984,6 +1004,86 @@ def stage_figures(args) -> None:
         _save(fig, FIG / "archetype_failure_heatmap.png")
 
 
+OFFICIAL_ART = OUT / "artifacts_official"
+
+
+def stage_official(args) -> None:
+    """Full artifact suite on TEST for the official v1 configuration (selected checkpoint + recommended sampler)."""
+    from nullscape.eval.artifacts import ArtifactSpec, generate_checkpoint_artifacts
+
+    st = store()
+    step = load_json("selection")["checkpoint"]
+    cfg = load_json("pareto")["recommended_config"]
+    spec = ArtifactSpec(split="test", n_eval=N_HALF, batch_size=BATCH, steps=3 if DRY else cfg["steps"],
+                        spacing=cfg["spacing"], eta=cfg["eta"], guidance=cfg["guidance"])
+    s = sampler_for(step)
+    t0 = time.time()
+    d = generate_checkpoint_artifacts(s, st, OFFICIAL_ART, step, spec, train_bank=st.heights(st.split("train")),
+                                      memorization_device=DEVICE, save_generated=True)
+    rep = json.loads((d / "report.json").read_text())["modes"]["conditional"]
+    save_json("official", {"checkpoint": step, "sampler": cfg, "spec": asdict(spec), "wall_seconds": time.time() - t0,
+                           "artifacts_dir": str(d.relative_to(ROOT)), "compact": compact(rep)})
+
+
+def _spectral_noise(beta: float, mean: float, std: float, n: int, rng: np.random.Generator) -> np.ndarray:
+    f = np.sqrt(np.fft.fftfreq(n)[:, None] ** 2 + np.fft.fftfreq(n)[None, :] ** 2) * n
+    amp = np.where(f > 0, np.maximum(f, 1e-9) ** (-beta / 2), 0.0)
+    field = np.real(np.fft.ifft2(amp * np.exp(2j * np.pi * rng.random((n, n)))))
+    field = (field - field.mean()) / (field.std() + 1e-12)
+    return np.clip(mean + std * field, 0.0, 1.0)
+
+
+def stage_baselines(args) -> None:
+    """Non-learned reference generators scored with the same TEST protocol (CPU only).
+
+    blur            each A map Gaussian-blurred (sigma 1.5 cells): right layout, missing detail
+    spectral_noise  random-phase noise with A's spectral_beta, mean and std: right roughness, no structure
+    retrieval       the training map (same archetype) whose conditions are closest to A's: a perfect
+                    memorizer (real terrain, good control, zero originality)
+    """
+    from scipy.ndimage import gaussian_filter
+
+    from nullscape.eval.core import evaluate_generated
+    from nullscape.metrics.distribution import metric_table, nearest_neighbor_rmse
+
+    st = store()
+    a, b = halves(st, "test")
+    ref_a, ref_b = st.heights(a), st.heights(b)
+    tables = {"a": metric_table(ref_a, st.world), "b": metric_table(ref_b, st.world)}
+    req = st.conditions[a]
+    keys = st.condition_keys
+    rng = np.random.default_rng(99)
+    tr = st.split("train")
+    z = (st.conditions - st.condition_mean) / st.condition_std
+    gens = {"blur": np.stack([gaussian_filter(h, 1.5, mode="nearest") for h in ref_a])}
+    j_beta = keys.index("spectral_beta")
+    gens["spectral_noise"] = np.stack([_spectral_noise(float(req[i, j_beta]), float(h.mean()), float(h.std()),
+                                                       st.world.resolution, rng) for i, h in enumerate(ref_a)])
+    pick = []
+    for i in a:
+        cand = tr[st.labels[tr] == st.labels[i]]
+        pick.append(cand[np.argmin(((z[cand] - z[i]) ** 2).sum(1))])
+    gens["retrieval"] = st.heights(np.array(pick))
+    bank = st.heights(tr)
+    n_nn = 200  # NN search on CPU; a subsample is enough to separate copying from generating
+    held_nn, _ = nearest_neighbor_rmse(ref_a[:n_nn], bank, device="cpu")
+    out = {}
+    for name, g in gens.items():
+        rep = evaluate_generated(g, ref_a, ref_b, st.world, requested_conds=req, gen_labels=st.labels[a],
+                                 ref_a_labels=st.labels[a], ref_b_labels=st.labels[b], archetype_names=st.archetypes,
+                                 tables={**tables, "gen": metric_table(g, st.world)})
+        gnn, _ = nearest_neighbor_rmse(g[:n_nn], bank, device="cpu")
+        rep["memorization"] = {"gen_nn_rmse_median": float(np.median(gnn)),
+                               "heldout_nn_rmse_median": float(np.median(held_nn)),
+                               "nn_median_ratio": float(np.median(gnn) / np.median(held_nn)),
+                               "frac_gen_below_heldout_p01": float((gnn < np.percentile(held_nn, 1)).mean()),
+                               "n": n_nn}
+        out[name] = {"compact": compact(rep)}
+        print(f"[baselines] {name}: ratio {rep['ratio_to_floor']}", flush=True)
+    save_json("baselines", {"n_per_half": len(a), "split": "test", "results": out,
+                            "definitions": stage_baselines.__doc__})
+
+
 def stage_training(args) -> None:
     out = {}
     for name, run in (("main_0_30k", MAIN.parent), ("cont_30k_40k", CONT.parent)):
@@ -1006,7 +1106,8 @@ def stage_training(args) -> None:
 def stage_aggregate(args) -> None:
     res = {"benchmark": "NULLSCAPE v1", "version": 1}
     for name in ("provenance", "checkpoints_test", "checkpoints_val", "selection", "sampler_val", "perf", "pareto",
-                 "sampler_test", "stress", "analysis", "training", "engineering"):
+                 "sampler_test", "stress", "analysis", "training", "engineering", "baselines", "quantization",
+                 "official", "ram"):
         if (RAW / f"{name}.json").exists():
             d = load_json(name)
             if name == "checkpoints_val":  # rebuild with the current compact() from the stored full reports
@@ -1026,7 +1127,8 @@ STAGES = {
     "provenance": stage_provenance, "checkpoints_test": stage_checkpoints_test, "checkpoints_val": stage_checkpoints_val,
     "select": stage_select, "sampler_val": stage_sampler_val, "perf": stage_perf, "pareto": stage_pareto,
     "sampler_test": stage_sampler_test, "stress": stage_stress, "analysis": stage_analysis, "figures": stage_figures,
-    "training": stage_training, "aggregate": stage_aggregate,
+    "training": stage_training, "aggregate": stage_aggregate, "baselines": stage_baselines,
+    "official": stage_official,
 }
 OUTPUTS = {"select": "selection"}
 

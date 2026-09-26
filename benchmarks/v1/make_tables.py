@@ -111,9 +111,12 @@ def main() -> None:
     if "perf" in R:
         pf = R["perf"]
         parts.append("\n### Inference performance (isolated, RTX 5060, bf16)\n")
-        parts.append(table(["steps", "guidance", "batch", "maps/s", "s/map", "latency/batch (s)", "peak alloc MB"],
-                           [[r["steps"], r["guidance"], r["batch"], f(r["maps_per_second"], 2), f(r["seconds_per_map"], 4),
-                             f(r["latency_seconds_per_batch"], 2), f(r["peak_alloc_mb"], 0)] for r in pf["rows"]]))
+        parts.append(table(["steps", "guidance", "batch", "maps/s", "s/map", "latency/batch (s)", "peak alloc MB",
+                            "nvidia-smi MB"],
+                           [[r["steps"], r["guidance"], r["batch"], "OOM under cap", "", "", "", ""] if r.get("oom") else
+                            [r["steps"], r["guidance"], r["batch"], f(r["maps_per_second"], 2), f(r["seconds_per_map"], 4),
+                             f(r["latency_seconds_per_batch"], 2), f(r["peak_alloc_mb"], 0), f(r["nvidia_smi_used_mb"], 0)]
+                            for r in pf["rows"]]))
         d = pf["determinism"]
         parts.append(f"GPU determinism: same seed + batch max |diff| {d['same_seed_same_batch_max_abs_diff']:.2e}; "
                      f"batch 16 vs 1 max |diff| {d['batch16_vs_batch1_max_abs_diff']:.2e} "
