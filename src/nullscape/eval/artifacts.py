@@ -252,7 +252,9 @@ def refresh_run_figures(root: str | Path, store: TerrainStore) -> None:
     ax1.set_xlabel("step")
     ax1.legend(fontsize=7)
     for key in CONDITION_KEYS:
-        ax2.plot(xs, [r["condition_adherence"][key]["nmae"] for _, r in reports], marker="o", label=key)
+        # a property can be missing from the adherence report when fewer than 2 samples requested it
+        ax2.plot(xs, [r["condition_adherence"].get(key, {}).get("nmae", np.nan) for _, r in reports],
+                 marker="o", label=key)
     ax2.set_title("condition adherence: MAE / reference std (lower is better)", fontsize=9)
     ax2.set_xlabel("step")
     ax2.legend(fontsize=7)
@@ -266,7 +268,8 @@ def refresh_run_figures(root: str | Path, store: TerrainStore) -> None:
              "| step | " + " | ".join(f"ratio {k}" for k in HEADLINE_KEYS) + " | mean nMAE | NN ratio | trav pass (gen/ref) | dir |",
              "|---" * (len(HEADLINE_KEYS) + 5) + "|"]
     for s, r in reports:
-        nmae = np.mean([v["nmae"] for v in r["condition_adherence"].values()])
+        vals = [v["nmae"] for v in r["condition_adherence"].values()]
+        nmae = float(np.mean(vals)) if vals else float("nan")
         nn = r.get("memorization", {}).get("nn_median_ratio", float("nan"))
         mv = r["model_vs_ref"]
         lines.append(f"| {s} | " + " | ".join(f"{r['ratio_to_floor'][k]:.2f}" for k in HEADLINE_KEYS)

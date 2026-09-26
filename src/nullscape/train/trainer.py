@@ -37,7 +37,24 @@ DEFAULT_TRAIN: dict[str, Any] = {
     "artifacts_every": 0,         # >0: render eval/artifacts.py suite at these steps
     "artifacts_dir": None,        # default artifacts/<run dir name>; set to continue a lineage when resuming
     "artifacts_spec": {},         # ArtifactSpec overrides (must stay fixed within a lineage)
+    "lr_schedule": "constant",    # "constant" or "cosine" (decays to min_lr_ratio * lr after warmup)
+    "min_lr_ratio": 0.1,
+    "init_from": None,            # checkpoint to start from (weights + EMA only; fresh optimizer, step 0)
 }
+
+
+def lr_lambda(tcfg: dict[str, Any]):
+    warm, total, floor = max(1, tcfg["warmup_steps"]), max(1, tcfg["max_steps"]), tcfg["min_lr_ratio"]
+
+    def f(s: int) -> float:
+        if s < warm:
+            return (s + 1) / warm
+        if tcfg["lr_schedule"] == "cosine":
+            p = min(1.0, (s - warm) / max(1, total - warm))
+            return floor + (1 - floor) * 0.5 * (1 + math.cos(math.pi * p))
+        return 1.0
+
+    return f
 
 
 class TensorBatcher:
@@ -112,8 +129,16 @@ def train(cfg: dict[str, Any], resume: str | None = None) -> Path:
     ema = EMA(model, decay=tcfg["ema_decay"])
     opt = torch.optim.AdamW(model.parameters(), lr=tcfg["lr"], betas=tuple(tcfg["betas"]),
                             weight_decay=tcfg["weight_decay"])
-    sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: min(1.0, (s + 1) / max(1, tcfg["warmup_steps"])))
+    sched = torch.optim.lr_scheduler.LambdaLR(opt, lr_lambda(tcfg))
     step = 0
+    if tcfg["init_from"] and not resume:
+        ck = torch.load(tcfg["init_from"], map_location="cpu", weights_only=False)
+        if ck["unet_config"] != model.cfg.to_dict():
+            raise ValueError("init_from checkpoint has a different UNet config")
+        model.load_state_dict(ck["model"])
+        ema.load_state_dict(ck["ema"])
+        print(f"initialized from {tcfg['init_from']} (step {ck['step']})")
+        del ck
     if resume:
         # load on CPU and drop the dict afterwards: a device-mapped checkpoint would pin ~370 MB of
         # duplicate tensors on the GPU for the whole run

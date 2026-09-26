@@ -42,8 +42,10 @@ def test_r16_roundtrip(h, tmp_path):
     assert np.abs(read_r16(p, 32) - h).max() <= 1.0 / 65535
 
 
-@pytest.mark.parametrize("res,size", [(64, 65), (128, 129), (33, 65), (65, 129), (513, 1025)])
+@pytest.mark.parametrize("res,size", [(16, 33), (33, 33), (64, 65), (65, 65), (128, 129), (129, 129),
+                                      (257, 257), (513, 513), (1025, 1025)])
 def test_unity_size(res, size):
+    # valid Unity sizes (2^n + 1) are kept; others round up to the next valid size (bug B1 in v1)
     assert unity_size(res) == size
 
 
@@ -71,7 +73,27 @@ def test_export_heightmap_writes_sidecar(h, tmp_path):
         assert written[fmt].exists()
     sidecar = json.loads(written["json"].read_text(encoding="utf-8"))
     assert sidecar["cell_size_m"] == pytest.approx(W.extent_m / 32)
+    assert sidecar["footprint_m"] == pytest.approx(W.extent_m / 32 * 31)  # first to last sample (cell centers)
     assert sidecar["max_height_m"] == W.max_height_m
     assert sidecar["sea_level"] == W.sea_level
     npy = np.load(written["npy"])
     assert np.array_equal(npy, np.clip(h.astype(np.float32), 0.0, 1.0))
+
+
+def test_resampled_sidecar_keeps_footprint(h, tmp_path):
+    # bug B4 in v1: after corner-aligned resampling the sidecar claimed the full extent
+    written = export_heightmap(h, W, tmp_path, "u", formats=("r16",), size=unity_size(32))
+    sidecar = json.loads(written["json"].read_text(encoding="utf-8"))
+    assert sidecar["resolution"] == 33
+    assert sidecar["footprint_m"] == pytest.approx(W.extent_m / 32 * 31)
+    assert sidecar["cell_size_m"] == pytest.approx(W.extent_m / 32 * 31 / 32)
+
+
+def test_git_info_without_commits(tmp_path):
+    # bug B2 in v1: an empty repository recorded the literal "HEAD" as the commit
+    import subprocess
+
+    from nullscape.utils.tracking import git_info
+
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    assert git_info(tmp_path)["commit"] is None

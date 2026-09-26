@@ -3,6 +3,14 @@
 None of these were fixed during the benchmark (behaviour frozen). Evidence lives in
 `benchmarks/v1/raw/engineering.json` unless noted.
 
+**Status (after the benchmark):** B1-B4 are fixed, with regression tests in
+`tests/test_export.py`. The v1 benchmark numbers are unaffected, because these bugs only
+touch export metadata, provenance and figure rendering.
+- B1: `unity_size` keeps valid sizes.
+- B2: `git_info` records no commit for repositories without commits.
+- B3: artifact figures tolerate missing adherence keys.
+- B4: sidecars report `footprint_m`, and `cell_size_m` is the true sample spacing.
+
 ## B1: `unity_size` upsamples inputs that are already valid Unity sizes (medium)
 
 `src/nullscape/export/engine.py:35` computes the smallest `2^n + 1 >= resolution + 1`, i.e. the

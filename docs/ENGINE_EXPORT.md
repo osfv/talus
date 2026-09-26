@@ -18,29 +18,35 @@ nullscape export --dataset base64 --index 123 --unity        # resample to next 
 | `npy` | `stem.npy` | float32 in `[0, 1]` | Python tooling |
 | `obj` | `stem.obj` | triangle mesh, meters, `f v//n` faces with vertex normals | quick preview in any DCC tool |
 
-Heights map linearly: `height_m = h * max_height_m` (minimum is 0, not sea
-level — water is a rendering concept). The sidecar `stem.json` records
-`resolution`, `extent_m`, `cell_size_m`, `max_height_m`, `sea_level`,
-`sea_level_m`, the encoding and byte order, the files written, and the
-`metadata` dict (dataset, index, generator version, archetype) for provenance.
+Heights map linearly: `height_m = h * max_height_m`. The minimum is 0, not sea
+level; water is a rendering concept. The sidecar `stem.json` records:
+- `resolution`
+- `extent_m`: the world tile the map was generated for
+- `footprint_m`: distance from the first to the last sample. Samples are cell
+  centers, so this is one cell less than `extent_m`. Give this size to an engine.
+- `cell_size_m`: sample spacing, `footprint_m / (resolution - 1)`
+- `max_height_m`, `sea_level`, `sea_level_m`
+- the encoding and byte order, and the files written
+- the `metadata` dict (dataset, index, generator version, archetype) for provenance
 
-`size=` resamples with bicubic interpolation before writing;
-`unity_size(res)` gives the smallest `2^n + 1 >= res + 1` (64 -> 65,
-128 -> 129, 513 -> 1025). Resampling is corner-aligned, so the world footprint
-is preserved.
+`size=` resamples with bicubic interpolation before writing. Resampling is
+corner-aligned, so `footprint_m` is preserved and only the spacing changes.
+`unity_size(res)` gives the smallest valid Unity size (`2^n + 1`, at least 33)
+that holds `res` samples: 64 -> 65, 128 -> 129. Sizes that are already valid
+stay unchanged (65 -> 65, 513 -> 513).
 
 ## Unity
 
-1. Export `r16` (optionally with `--unity` for a `2^n + 1` heightmap —
-   Unity terrain requires 33, 65, 129, 257, 513, 1025, 2049, or 4097).
+1. Export `r16`, optionally with `--unity` for a `2^n + 1` heightmap. Unity
+   terrain requires 33, 65, 129, 257, 513, 1025, 2049 or 4097.
 2. Select the Terrain asset → **Terrain Settings → Import Raw** (or right-click
    the terrain heightmap). Choose the `.r16` file.
 3. In the import dialog: **Depth = 16 bit**, **Byte order = Windows**
    (little-endian), resolution = the sidecar's `resolution`.
-4. Set the terrain size separately: **Width/Length = `extent_m` m**,
+4. Set the terrain size separately: **Width/Length = `footprint_m` m**,
    **Height = `max_height_m` m**. Heightmap value 0 sits at the terrain's
-   base plane and 65535 at `height` — the mapping is already linear, no
-   offset needed.
+   base plane and 65535 at `height`. The mapping is already linear, so no
+   offset is needed.
 
 ## Unreal Engine
 
@@ -64,10 +70,10 @@ the midpoint (32768) at the actor's Z.
 Both common terrain plugins read 16-bit data:
 
 - **Terrain3D**: import `stem.png` as a heightmap (Assets → Import → Heightmap).
-  Set the terrain's world size to `extent_m` and the height range to
+  Set the terrain's world size to `footprint_m` and the height range to
   `0 .. max_height_m`.
-- **HTerrain (hterrain)**: use the 16-bit PNG (or RAW) as the heightmap source;
-  map dimensions = `extent_m`, height = `max_height_m`.
+- **HTerrain (hterrain)**: use the 16-bit PNG (or RAW) as the heightmap source.
+  Set map dimensions to `footprint_m` and height to `max_height_m`.
 
 In both cases heights are absolute meters from 0, matching the sidecar
 encoding; place water/sea level visuals at `sea_level_m`.

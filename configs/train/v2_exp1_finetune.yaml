@@ -1,0 +1,37 @@
+# v2 experiment 1 (hypothesis 2 in docs/V1_BENCHMARK.md): does removing the Min-SNR-5 loss cap and adding
+# learning-rate decay restore fine-scale detail? Fine-tune from the frozen official v1 checkpoint.
+name: v2_exp1_nominsnr_cosine
+seed: 1
+dataset: base64
+model:
+  base_channels: 64
+  channel_mults: [1, 2, 3, 4]
+  num_res_blocks: 2
+  attention_resolutions: [16, 8]
+  dropout: 0.1
+diffusion:
+  timesteps: 1000
+  min_snr_gamma: null        # v1 used 5.0, which down-weights the low-noise steps that form fine detail
+  p_drop_property: 0.15
+  p_drop_label: 0.15
+  p_drop_all: 0.10
+train:
+  init_from: runs/20260925-164759_diffusion64/checkpoints/step_0030000.pt
+  batch_size: 48
+  lr: 1.0e-4
+  lr_schedule: cosine
+  min_lr_ratio: 0.1
+  warmup_steps: 200
+  max_steps: 8000
+  grad_clip: 1.0
+  ema_decay: 0.9995
+  bf16: true
+  log_every: 100
+  val_every: 1000
+  sample_every: 4000
+  eval_every: 4000
+  eval_samples: 256
+  eval_steps: 50
+  eval_guidance: 1.5
+  checkpoint_every: 2000
+  keep_checkpoints: true

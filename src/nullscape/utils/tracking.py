@@ -25,12 +25,14 @@ from nullscape.utils.paths import REPO_ROOT, runs_root
 
 
 def git_info(repo: Path = REPO_ROOT) -> dict[str, Any]:
-    def run(*args: str) -> str:
-        return subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True, timeout=10).stdout.strip()
+    def run(*args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True, timeout=10)
 
     try:
-        commit = run("rev-parse", "HEAD")
-        dirty = bool(run("status", "--porcelain", "--untracked-files=no"))
+        head = run("rev-parse", "--verify", "HEAD")
+        # a repository without commits prints the literal "HEAD" and fails: record no commit
+        commit = head.stdout.strip() if head.returncode == 0 else ""
+        dirty = bool(run("status", "--porcelain", "--untracked-files=no").stdout.strip())
     except (OSError, subprocess.SubprocessError):
         commit, dirty = "", False
     return {"commit": commit or None, "dirty": dirty}

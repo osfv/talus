@@ -33,9 +33,12 @@ def resample(h: np.ndarray, size: int) -> np.ndarray:
 
 
 def unity_size(resolution: int) -> int:
-    """Smallest 2^n + 1 >= resolution + 1 (Unity terrain heightmap sizes)."""
-    n = 1
-    while n + 1 < resolution + 1:
+    """Smallest Unity terrain heightmap size (2^n + 1, at least 33) that holds ``resolution`` samples.
+
+    Sizes that are already valid are returned unchanged (65 -> 65, 513 -> 513); 64 -> 65, 128 -> 129.
+    """
+    n = 32
+    while n + 1 < resolution:
         n *= 2
     return n + 1
 
@@ -95,7 +98,11 @@ def export_heightmap(
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     h = np.clip(np.asarray(h, dtype=np.float32), 0.0, 1.0)
-    if size is not None and size != h.shape[0]:
+    # Samples sit at cell centers, so the first-to-last-sample span is one cell less than the extent.
+    # Corner-aligned resampling keeps that span, so it is the footprint to give an engine.
+    native = h.shape[0]
+    footprint = world.extent_m / native * (native - 1)
+    if size is not None and size != native:
         h = resample(h, size)
     res = h.shape[0]
     written: dict[str, Path] = {}
@@ -115,7 +122,8 @@ def export_heightmap(
     sidecar = {
         "resolution": res,
         "extent_m": world.extent_m,
-        "cell_size_m": world.extent_m / res,
+        "footprint_m": footprint,
+        "cell_size_m": footprint / (res - 1),
         "max_height_m": world.max_height_m,
         "min_height_m": 0.0,
         "sea_level": world.sea_level,
