@@ -138,7 +138,12 @@ v1 (64x64, frozen) was benchmarked on the held-out test split:
 - [docs/BENCHMARK_SCORECARD.md](docs/BENCHMARK_SCORECARD.md): 0-100 scorecard with baselines
 - [benchmarks/v1/results.json](benchmarks/v1/results.json): machine-readable results
 
-Official v1 = checkpoint 30k + 50-step quadratic DDIM at guidance 2.0.
+The model is called **Talus** ([docs/TALUS.md](docs/TALUS.md)).
+- **Talus-1** is the official v1: checkpoint 30k plus 50-step quadratic DDIM at guidance 2.0.
+- **Talus-1.1** is an 8k-step fine-tune without the Min-SNR cap. It raises the scorecard average from
+  67.0 to 70.4 ([docs/V2_EXP1.md](docs/V2_EXP1.md)).
+
+Talus-1 headline numbers:
 - Realism: 2.9x the real-vs-real noise floor.
 - Conditioning error: 2-11% of range for elevation, relief, slope and water.
 - No memorization.

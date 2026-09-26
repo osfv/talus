@@ -1,8 +1,8 @@
 {
-  "headline": "exp1 official",
-  "compared_to": "v1 official",
+  "headline": "Talus-1.1 official",
+  "compared_to": "Talus-1 official",
   "scores": {
-    "v1 20k": {
+    "Talus-1 20k": {
       "Realism": 31.365281588182587,
       "Spectrum": 4.349453447381398,
       "Heights": 88.57075047293235,
@@ -15,7 +15,7 @@
       "Average": 67.36535916282054,
       "gated": false
     },
-    "v1 25k": {
+    "Talus-1 25k": {
       "Realism": 29.25874510587984,
       "Spectrum": 3.7067336195806213,
       "Heights": 99.494669834099,
@@ -28,7 +28,7 @@
       "Average": 66.76627575892324,
       "gated": false
     },
-    "v1 30k": {
+    "Talus-1 30k": {
       "Realism": 33.28441652378075,
       "Spectrum": 4.1658996089099,
       "Heights": 92.02629150640713,
@@ -41,7 +41,7 @@
       "Average": 67.4209349899738,
       "gated": false
     },
-    "v1 35k": {
+    "Talus-1 35k": {
       "Realism": 31.143064274274284,
       "Spectrum": 4.491459007471069,
       "Heights": 92.58694077236788,
@@ -54,7 +54,7 @@
       "Average": 67.38231478740072,
       "gated": false
     },
-    "v1 40k": {
+    "Talus-1 40k": {
       "Realism": 33.16818029972815,
       "Spectrum": 4.0637611500766395,
       "Heights": 100.0,
@@ -67,7 +67,7 @@
       "Average": 67.2012718560191,
       "gated": false
     },
-    "v1 official": {
+    "Talus-1 official": {
       "Realism": 34.439085695377265,
       "Spectrum": 3.566216072460173,
       "Heights": 88.54918176601794,
@@ -80,7 +80,7 @@
       "Average": 67.02417428381251,
       "gated": false
     },
-    "exp1 official": {
+    "Talus-1.1 official": {
       "Realism": 35.79533768054324,
       "Spectrum": 2.8966208883805673,
       "Heights": 96.70176815628214,
@@ -134,13 +134,13 @@
     }
   },
   "speed_maps_per_s": {
-    "v1 20k": 1.38392026275731,
-    "v1 25k": 1.38392026275731,
-    "v1 30k": 1.38392026275731,
-    "v1 35k": 1.38392026275731,
-    "v1 40k": 1.38392026275731,
-    "v1 official": 5.478868398584299,
-    "exp1 official": 5.478868398584299
+    "Talus-1 20k": 1.38392026275731,
+    "Talus-1 25k": 1.38392026275731,
+    "Talus-1 30k": 1.38392026275731,
+    "Talus-1 35k": 1.38392026275731,
+    "Talus-1 40k": 1.38392026275731,
+    "Talus-1 official": 5.478868398584299,
+    "Talus-1.1 official": 5.478868398584299
   },
   "definitions": {
     "Realism": "all 25 terrain metrics vs real (normalized W1)",

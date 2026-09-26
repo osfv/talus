@@ -1,4 +1,6 @@
-# NULLSCAPE v1 benchmark
+# NULLSCAPE v1 benchmark (Talus-1)
+
+The official v1 configuration is named **Talus-1**; see [`TALUS.md`](TALUS.md) for versions.
 
 Frozen benchmark of the v1 terrain model: a 23.2M-parameter conditional pixel-space diffusion
 U-Net trained on 64x64 procedural heightmaps. Nothing was retrained, fine-tuned or regenerated

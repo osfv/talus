@@ -19,6 +19,8 @@
   1.4 maps/s (200 steps + guidance). Guidance at batch 256 does not fit.
 
 ## State (2026-09-26)
+- The model is named **Talus**: Talus-1 = official v1 (30k + 50-step quadratic g2.0), Talus-1.1 = v2 exp1 (8k fine-tune).
+  Model card: `docs/TALUS.md`. Scorecard tags use these names (`Talus-1=benchmarks/v1/results.json`).
 - v1 is FROZEN: checkpoints under `runs/*/checkpoints/*.pt` and `data/base64/*` are read-only. Don't modify them.
 - Official v1 = checkpoint 30k (`runs/20260925-164759_diffusion64/checkpoints/step_0030000.pt`) +
   50-step DDIM, quadratic spacing, guidance 2.0, eta 0.
@@ -30,7 +32,8 @@
   scored in `docs/V2_EXP1.md` (TEST average 67.0 -> 70.4; slopes +46%; plains grain unchanged).
 - Score an experiment: `python benchmarks/v2/compare_exp.py --name X --ckpt label=path` (VAL), then
   `python benchmarks/v2/score_test.py --name X --ckpt path` and
-  `python benchmarks/scorecard.py v1=benchmarks/v1/results.json X=benchmarks/v2/X/results.json --out=docs/X_SCORECARD.md --json=benchmarks/v2/X/scorecard.json --fig=docs/figures/X_scorecard.png`
+  `python benchmarks/scorecard.py Talus-1=benchmarks/v1/results.json Talus-X=benchmarks/v2/X/results.json --out=docs/X_SCORECARD.md --json=benchmarks/v2/X/scorecard.json --fig=docs/figures/X_scorecard.png`
+  (the blog reads the `Talus-1 ...` keys from `benchmarks/scorecard.json`)
   (always pass --out/--json/--fig so the v1 scorecard is not overwritten).
 - Playable demo: `demo/nullscape-demo.html` (build: `python demo/build_demo.py`). Blog: `docs/blog/nullscape-v1.html`.
 - Next planned: v2 exp2 = relative-height parameterization (fixes plains grain), started from exp1;

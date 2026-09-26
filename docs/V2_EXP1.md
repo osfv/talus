@@ -1,4 +1,7 @@
-# v2 experiment 1: no Min-SNR cap, cosine learning-rate decay
+# v2 experiment 1 (Talus-1.1): no Min-SNR cap, cosine learning-rate decay
+
+This experiment produced **Talus-1.1**; the v1 baseline is **Talus-1** (see [`TALUS.md`](TALUS.md)).
+Tables below say "v1" and "exp1" for Talus-1 and Talus-1.1.
 
 Hypothesis 2 from [`V1_BENCHMARK.md`](V1_BENCHMARK.md): v1's Min-SNR-5 loss weighting down-weights
 the low-noise steps that form fine detail, and the constant learning rate never let the model

@@ -1,4 +1,7 @@
-# NULLSCAPE v1: summary
+# NULLSCAPE v1 (Talus-1): summary
+
+The model is now called **Talus**. The official v1 configuration below is **Talus-1**, and its
+first improvement is **Talus-1.1** (see [`TALUS.md`](TALUS.md)).
 
 Plain-English findings from the frozen v1 benchmark. Details and every number:
 [`V1_BENCHMARK.md`](V1_BENCHMARK.md). Scorecard: [`BENCHMARK_SCORECARD.md`](BENCHMARK_SCORECARD.md).

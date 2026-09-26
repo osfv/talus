@@ -1,13 +1,14 @@
-"""Build demo/nullscape-demo.html: a self-contained, playable first-person run through v1-generated maps.
+"""Build demo/nullscape-demo.html: a self-contained, playable first-person run through Talus-generated maps.
 
-usage: python demo/build_demo.py
-Maps come from the official v1 configuration's benchmark output
-(benchmarks/v1/artifacts_official/step_0030000/generated_eval.npy, 50-step quadratic DDIM, guidance 2.0).
+usage: python demo/build_demo.py [--model Talus-1.1|Talus-1]
+Maps come from a model's official benchmark output (generated_eval.npy, 50-step quadratic DDIM, guidance 2.0,
+TEST-split conditions): Talus-1.1 = benchmarks/v2/exp1, Talus-1 = benchmarks/v1.
 Routes come from nullscape.metrics.traversability (longest walkable route in the largest component).
 """
 
 from __future__ import annotations
 
+import argparse
 import base64
 import json
 from pathlib import Path
@@ -20,16 +21,23 @@ from nullscape.metrics.traversability import analyze, longest_route
 
 ROOT = Path(__file__).resolve().parents[1]
 HERE = Path(__file__).resolve().parent
-OFFICIAL = ROOT / "benchmarks" / "v1" / "artifacts_official" / "step_0030000"
+MODELS = {
+    "Talus-1": ROOT / "benchmarks" / "v1" / "artifacts_official",
+    "Talus-1.1": ROOT / "benchmarks" / "v2" / "exp1" / "artifacts_official",
+}
 PER_ARCHETYPE = 5
 MIN_ROUTE_CELLS = 24
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--model", default="Talus-1.1", choices=list(MODELS))
+    args = ap.parse_args()
+    src = MODELS[args.model]
     st = TerrainStore.open("base64")
-    spec = ArtifactSpec(**json.loads((ROOT / "benchmarks" / "v1" / "artifacts_official" / "spec.json").read_text()))
+    spec = ArtifactSpec(**json.loads((src / "spec.json").read_text()))
     a, _ = eval_halves(st, spec)
-    gens = np.load(OFFICIAL / "generated_eval.npy")
+    gens = np.load(next(src.glob("step_*/generated_eval.npy")))
     labels = st.labels[a]
     world = st.world
     maps = []
@@ -52,9 +60,10 @@ def main() -> None:
             taken += 1
     order = np.random.default_rng(26).permutation(len(maps))  # mix archetypes for next/prev browsing
     data = {"size": world.resolution, "cell_size_m": world.cell_size_m, "max_height_m": world.max_height_m,
-            "sea_level": world.sea_level, "source": "NULLSCAPE v1 official (checkpoint 30k, 50-step quadratic, g2.0)",
+            "sea_level": world.sea_level, "source": f"{args.model} (50-step quadratic DDIM, guidance 2.0)",
             "maps": [maps[k] for k in order]}
     html = (HERE / "template.html").read_text(encoding="utf-8").replace("{{DATA}}", json.dumps(data, separators=(",", ":")))
+    html = html.replace("{{MODEL}}", args.model)
     if "\u2014" in html or "\u2013" in html:
         raise SystemExit("em/en dash in output")
     out = HERE / "nullscape-demo.html"

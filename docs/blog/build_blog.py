@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
 OFFICIAL = ROOT / "benchmarks" / "v1" / "artifacts_official" / "step_0030000"
 HERO_ARCHETYPES = ["mountains", "islands", "ridges", "mesas", "hills"]
+MODEL = "Talus-1"  # scorecard tag used for the v1 results (benchmarks/scorecard.json)
 
 SCORE_ROWS = [
     ("Realism", "25 terrain metrics vs real"),
@@ -57,10 +58,10 @@ def terrain_data() -> str:
 def score_rows() -> str:
     sc = json.loads((ROOT / "benchmarks" / "scorecard.json").read_text())
     s = sc["scores"]
-    cols = ["v1 30k", "baseline: blur", "baseline: spectral_noise", "baseline: retrieval"]
+    cols = [f"{MODEL} 30k", "baseline: blur", "baseline: spectral_noise", "baseline: retrieval"]
     rows = []
     for name, desc in SCORE_ROWS:
-        v = s["v1 official"][name]
+        v = s[f"{MODEL} official"][name]
         cells = "".join(f'<span class="score-cell{" dim" if c.startswith("baseline") else ""}" role="cell">'
                         f'{s[c][name]:.0f}</span>' for c in cols)
         rows.append(f'<div class="score-row" role="row"><span class="score-name" role="rowheader"><b>{name}</b>'
@@ -69,7 +70,7 @@ def score_rows() -> str:
     sp = sc["speed_maps_per_s"]
     rows.append(f'<div class="score-row" role="row"><span class="score-name" role="rowheader"><b>Speed</b>'
                 f'<span>maps per second, batch 128</span></span><span class="meter" role="cell"><em>'
-                f'{sp["v1 official"]:.1f}</em></span><span class="score-cell" role="cell">{sp["v1 30k"]:.1f}</span>'
+                f'{sp[f"{MODEL} official"]:.1f}</em></span><span class="score-cell" role="cell">{sp[f"{MODEL} 30k"]:.1f}</span>'
                 + '<span class="score-cell dim" role="cell">-</span>' * 3 + "</div>")
     return "\n        ".join(rows)
 

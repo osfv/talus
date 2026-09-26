@@ -2,11 +2,11 @@
 
 Held-out TEST split, 1000 maps per half, noise-floor protocol (`docs/EVALUATION.md`). Scores are 0-100, higher is better; **100 = indistinguishable from real procedural terrain** at this sample size (fidelity scores are `100 / (distance / noise floor)`). Definitions: `benchmarks/scorecard.py`.
 
-## Headline: exp1 official
+## Headline: Talus-1.1 official
 
 Configuration: checkpoint 8000, 50-step DDIM (quadratic spacing), guidance 2.0, eta 0.0.
 
-| Benchmark | What it measures | Real procedural | exp1 official | v1 official | Δ vs v1 official | baseline: blur | baseline: spectral_noise | baseline: retrieval |
+| Benchmark | What it measures | Real procedural | Talus-1.1 official | Talus-1 official | Δ vs Talus-1 official | baseline: blur | baseline: spectral_noise | baseline: retrieval |
 |---|---|---|---|---|---|---|---|---|
 | **Realism** | all 25 terrain metrics vs real (normalized W1) | 100 | **35.8** | 34.4 | +1.4 (+4%) | 9.3 | 10.7 | 100.0 |
 | **Spectrum** | multi-scale detail: power spectrum vs real | 100 | **2.9** | 3.6 | -0.7 (-19%) | 0.3 | 1.2 | 63.7 |
@@ -26,7 +26,7 @@ How to read it: fidelity scores (Realism, Spectrum, Heights, Slopes) are strict,
 
 ## Training progression (same sampler for all checkpoints: 200-step DDIM, uniform, guidance 1.5)
 
-| Benchmark | v1 20k | v1 25k | v1 30k | v1 35k | v1 40k | Δ v1 40k vs v1 20k |
+| Benchmark | Talus-1 20k | Talus-1 25k | Talus-1 30k | Talus-1 35k | Talus-1 40k | Δ Talus-1 40k vs Talus-1 20k |
 |---|---|---|---|---|---|---|
 | **Realism** | 31.4 | 29.3 | 33.3 | 31.1 | 33.2 | +1.8 (+6%) |
 | **Spectrum** | 4.3 | 3.7 | 4.2 | 4.5 | 4.1 | -0.3 (-7%) |
@@ -39,7 +39,7 @@ How to read it: fidelity scores (Realism, Spectrum, Heights, Slopes) are strict,
 | **Clean detail** | 74.5 | 71.7 | 65.8 | 68.7 | 65.7 | -8.7 (-12%) |
 | **Average** | 67.4 | 66.8 | 67.4 | 67.4 | 67.2 | -0.2 (-0%) |
 
-## Raw values behind the scores (exp1 official)
+## Raw values behind the scores (Talus-1.1 official)
 
 | distance | learned vs real | real vs real (floor) | ratio |
 |---|---|---|---|
