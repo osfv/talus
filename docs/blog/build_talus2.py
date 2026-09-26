@@ -36,6 +36,66 @@ def b64(h: np.ndarray) -> str:
     return base64.b64encode(np.rint(np.clip(h, 0, 1) * 65535).astype("<u2").tobytes()).decode()
 
 
+def void_and_cluster(n: int = 64, sigma: float = 1.5, seed: int = 7) -> np.ndarray:
+    """Blue-noise dither ranks 0..n*n-1 (Ulichney 1993), toroidal Gaussian void/cluster filter."""
+    rng = np.random.default_rng(seed)
+    d = np.minimum(np.arange(n), n - np.arange(n))
+    kern = np.exp(-(d[:, None] ** 2 + d[None, :] ** 2) / (2 * sigma**2))
+
+    def add(E, p, s):
+        E += s * np.roll(np.roll(kern, p[0], 0), p[1], 1)
+
+    def energy(mask):
+        E = np.zeros((n, n))
+        for p in np.argwhere(mask):
+            add(E, p, 1)
+        return E
+
+    m = n * n
+    pat = np.zeros((n, n), bool)
+    pat.flat[rng.choice(m, m // 10, replace=False)] = True
+    E = energy(pat)
+    while True:                                   # relax: move tightest cluster into largest void
+        c = np.unravel_index(np.argmax(np.where(pat, E, -np.inf)), pat.shape)
+        pat[c] = False
+        add(E, c, -1)
+        v = np.unravel_index(np.argmin(np.where(~pat, E, np.inf)), pat.shape)
+        pat[v] = True
+        add(E, v, 1)
+        if v == c:
+            break
+    rank = np.zeros((n, n), np.int32)
+    ones = int(pat.sum())
+    p1, e1 = pat.copy(), E.copy()
+    for r in range(ones - 1, -1, -1):             # phase 1: rank the initial points
+        c = np.unravel_index(np.argmax(np.where(p1, e1, -np.inf)), pat.shape)
+        p1[c] = False
+        add(e1, c, -1)
+        rank[c] = r
+    p2, e2 = pat.copy(), E.copy()
+    for r in range(ones, m // 2):                 # phase 2: fill largest voids up to half
+        v = np.unravel_index(np.argmin(np.where(~p2, e2, np.inf)), pat.shape)
+        p2[v] = True
+        add(e2, v, 1)
+        rank[v] = r
+    e3 = energy(~p2)
+    for r in range(m // 2, m):                    # phase 3: minority is now the zeros
+        c = np.unravel_index(np.argmax(np.where(~p2, e3, -np.inf)), pat.shape)
+        p2[c] = True
+        add(e3, c, -1)
+        rank[c] = r
+    return rank
+
+
+def blue_noise_b64() -> str:
+    cache = HERE / "assets" / "bluenoise64.npy"
+    if not cache.exists():
+        np.save(cache, void_and_cluster())
+    rank = np.load(cache)
+    assert sorted(rank.ravel().tolist()) == list(range(rank.size)), "blue-noise ranks must be a permutation"
+    return base64.b64encode(rank.astype("<u2").tobytes()).decode()
+
+
 def compare_maps() -> dict[str, dict[str, np.ndarray]]:
     if not NPZ.exists():
         src = ROOT / "reports" / "samples" / "talus_all"
@@ -60,6 +120,7 @@ def main() -> None:
     rows = [{"name": n, "desc": d, "t2": sc["Talus-2 official"][n], "t11": sc["Talus-1.1 official"][n],
              "t1": sc["Talus-1 official"][n]} for n, d in ROWS]
     data = {
+        "bn": blue_noise_b64(),
         "sea_level": store.world.sea_level,
         "hero": [{"name": a, "b64": b64(fixed[labels.index(a)])} for a in HERO],
         "plains": {"t1": b64(cmp["Talus-1"]["plains"]), "t2": b64(cmp["Talus-2"]["plains"])},

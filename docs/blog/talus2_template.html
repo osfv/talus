@@ -117,6 +117,16 @@
   .cmp .cell.t2 { box-shadow: inset 0 0 0 2px var(--fg); }
   .cmp .hd { text-align: center; }
   .cmp .rl.t2 { color: var(--fg); }
+  /* HUD corner brackets on hover for relightable tiles */
+  .hov { position: relative; }
+  .hov::after { content: ""; position: absolute; inset: -4px; pointer-events: none; opacity: 0; transition: opacity .12s steps(2), inset .18s steps(3);
+    --c: linear-gradient(var(--fg), var(--fg));
+    background: var(--c) top left / 12px 2px no-repeat, var(--c) top left / 2px 12px no-repeat, var(--c) top right / 12px 2px no-repeat,
+                var(--c) top right / 2px 12px no-repeat, var(--c) bottom left / 12px 2px no-repeat, var(--c) bottom left / 2px 12px no-repeat,
+                var(--c) bottom right / 12px 2px no-repeat, var(--c) bottom right / 2px 12px no-repeat; }
+  .hov:hover::after { opacity: 1; inset: -9px; }
+  .hint { margin-top: 18px; font: 600 0.7rem/1 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
+  @media (hover: none) { .hint { display: none; } }
 
   /* scorecard */
   .score { margin-top: 40px; background: var(--bg); box-shadow: inset 0 0 0 2px var(--line); }
@@ -151,7 +161,7 @@
   .game { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; }
   .round { background: var(--bg); box-shadow: inset 0 0 0 2px var(--line); padding: 14px; transition: box-shadow .2s steps(2); }
   .round .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .round button { all: unset; display: block; cursor: pointer; padding: 4px; box-shadow: inset 0 0 0 1px var(--line); transition: box-shadow .12s steps(1); }
+  .round button { all: unset; position: relative; display: block; cursor: pointer; padding: 4px; box-shadow: inset 0 0 0 1px var(--line); transition: box-shadow .12s steps(1); }
   .round button:hover { box-shadow: inset 0 0 0 2px var(--fg); }
   .round button:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
   .round button canvas { width: 100%; height: auto; aspect-ratio: 1; }
@@ -316,6 +326,7 @@
       <div class="ptype" data-text="SAME SEED, THREE GENERATIONS" data-px="h2"></div>
       <p class="rv">Every column shares one starting noise and one terrain type. The big shapes stay put across versions while the plains calm down.</p>
       <div class="cmp" id="cmp"></div>
+      <div class="hint">Hover a tile to move the sun</div>
     </div>
   </section>
 
@@ -404,7 +415,9 @@ const grey32 = (v) => 0xff000000 | (v << 16) | (v << 8) | v;
 
 // ---------- ordered dithering
 const B8 = (() => { const m = [[0]]; let M = m; for (let n = 1; n < 8; n *= 2) { const N = []; for (let y = 0; y < 2 * n; y++) { N.push([]); for (let x = 0; x < 2 * n; x++) N[y].push(4 * M[y % n][x % n] + [0, 2, 3, 1][(y >= n) * 2 + (x >= n)]); } M = N; } return M.flat().map((v) => (v + 0.5) / 64); })();
-const thr = (x, y) => B8[((y & 7) << 3) | (x & 7)];
+const thr = (x, y) => B8[((y & 7) << 3) | (x & 7)];                     // Bayer: structured UI (bars, meters, sky)
+const BN = (() => { const s = atob(DATA.bn), o = new Float32Array(4096); for (let i = 0; i < 4096; i++) o[i] = ((s.charCodeAt(2 * i) | (s.charCodeAt(2 * i + 1) << 8)) + 0.5) / 4096; return o; })();
+const thrN = (x, y) => BN[((y & 63) << 6) | (x & 63)];                   // blue noise (void-and-cluster): terrain
 
 function decode(b64) {
   const s = atob(b64), n = s.length / 2, o = new Float32Array(n);
@@ -419,31 +432,44 @@ function upsample(h, n, N) {
   }
   return o;
 }
-// luminance of a terrain map: exaggerated hillshade on land, sparse water with a bright shoreline
-function lumMap(h64, N, exag) {
-  const h = upsample(h64, 64, N), L = new Float32Array(N * N), k = exag * 1200 / (4096 / N) / 2;
+// Terrain surface for 1-bit rendering: unit normals on land, water/shore masks. Shading is separate so the
+// light can move (hover to relight) without recomputing the surface.
+const LIGHT0 = (() => { const v = [-0.55, 0.7, -0.45], l = Math.hypot(...v); return v.map((c) => c / l); })();
+function terrain(h64, N, exag) {
+  const h = upsample(h64, 64, N), k = exag * 1200 / (4096 / N) / 2;
+  const nx = new Float32Array(N * N), ny = new Float32Array(N * N), nz = new Float32Array(N * N), kind = new Uint8Array(N * N), wl = new Float32Array(N * N);
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     const i = y * N + x, v = h[i];
     if (v < SEA) {
       const shore = (x > 0 && h[i - 1] >= SEA) || (x < N - 1 && h[i + 1] >= SEA) || (y > 0 && h[i - N] >= SEA) || (y < N - 1 && h[i + N] >= SEA);
-      L[i] = shore ? 0.95 : 0.06 + 0.06 * Math.min(1, (SEA - v) * -10 + 1);
+      kind[i] = shore ? 2 : 1; wl[i] = 0.05 + 0.08 * Math.max(0, 1 - (SEA - v) * 8);
       continue;
     }
-    const nx = -(h[y * N + Math.min(N - 1, x + 1)] - h[y * N + Math.max(0, x - 1)]) * k, nz = -(h[Math.min(N - 1, y + 1) * N + x] - h[Math.max(0, y - 1) * N + x]) * k;
-    const s = Math.max(0, (-0.55 * nx + 0.7 + -0.45 * nz) / (Math.hypot(nx, 1, nz) * 1.0));
-    L[i] = Math.min(1, 0.1 + 0.95 * Math.pow(s, 1.35));
+    const gx = -(h[y * N + Math.min(N - 1, x + 1)] - h[y * N + Math.max(0, x - 1)]) * k, gz = -(h[Math.min(N - 1, y + 1) * N + x] - h[Math.max(0, y - 1) * N + x]) * k;
+    const l = Math.hypot(gx, 1, gz); nx[i] = gx / l; ny[i] = 1 / l; nz[i] = gz / l;
   }
-  return L;
+  return { N, nx, ny, nz, kind, wl };
 }
-function bits(L, N) { const b = new Uint8Array(N * N); for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) b[y * N + x] = L[y * N + x] > thr(x, y) ? 1 : 0; return b; }
+function shade(t, L = LIGHT0, out = null) {
+  const n = t.N * t.N, o = out || new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    if (t.kind[i] === 1) { o[i] = t.wl[i]; continue; }
+    if (t.kind[i] === 2) { o[i] = 0.95; continue; }
+    const s = Math.max(0, t.nx[i] * L[0] + t.ny[i] * L[1] + t.nz[i] * L[2]);
+    o[i] = Math.min(1, 0.08 + 0.97 * Math.pow(s, 1.35));
+  }
+  return o;
+}
+const lumMap = (h64, N, exag) => shade(terrain(h64, N, exag));
+function bits(L, N, out = null) { const b = out || new Uint8Array(N * N); for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) b[y * N + x] = L[y * N + x] > thrN(x, y) ? 1 : 0; return b; }
 
-// A 1-bit canvas that can dissolve in (Bayer order), blend to another bitmap, or dissolve out of static.
+// A 1-bit canvas that can dissolve in (blue-noise order), blend to another bitmap, or dissolve out of static.
 class Bit {
   constructor(canvas, N) { this.c = canvas; this.N = N; canvas.width = N; canvas.height = N; this.ctx = canvas.getContext("2d"); this.img = this.ctx.createImageData(N, N); this.px = new Uint32Array(this.img.data.buffer); }
   draw(a, b = null, t = 0, mode = "reveal") {
     const N = this.N, px = this.px;
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-      const i = y * N + x, r = thr(x, y);
+      const i = y * N + x, r = thrN(x, y);
       let v;
       if (mode === "reveal") v = r < t ? a[i] : 0;
       else if (mode === "blend") v = r < t ? b[i] : a[i];
@@ -482,16 +508,26 @@ const G = Object.fromEntries(Object.entries({
   3: "####.|....#|....#|.###.|....#|....#|####.", 4: "...#.|..##.|.#.#.|#..#.|#####|...#.|...#.", 5: "#####|#....|####.|....#|....#|#...#|.###.",
   6: "..##.|.#...|#....|####.|#...#|#...#|.###.", 7: "#####|....#|...#.|..#..|.#...|.#...|.#...", 8: ".###.|#...#|#...#|.###.|#...#|#...#|.###.",
   9: ".###.|#...#|#...#|.####|....#|...#.|.##..", " ": ".....|.....|.....|.....|.....|.....|.....",
-  ".": ".....|.....|.....|.....|.....|.##..|.##..", ",": ".....|.....|.....|.....|.##..|..#..|.#...", "-": ".....|.....|.....|.###.|.....|.....|.....",
+  ".": ".....|.....|.....|.....|.....|.##..|.##..", ",": ".....|.....|.....|.....|.....|..#..|.#...", "-": ".....|.....|.....|.###.|.....|.....|.....",
   ":": ".....|.##..|.##..|.....|.##..|.##..|.....", "/": "....#|....#|...#.|..#..|.#...|#....|#....", "(": "...#.|..#..|.#...|.#...|.#...|..#..|...#.",
   ")": ".#...|..#..|...#.|...#.|...#.|..#..|.#...", "%": "##...|##..#|...#.|..#..|.#...|#..##|...##", "+": ".....|..#..|..#..|#####|..#..|..#..|.....",
   "=": ".....|.....|#####|.....|#####|.....|.....", ">": ".#...|..#..|...#.|....#|...#.|..#..|.#...", "?": ".###.|#...#|....#|...#.|..#..|.....|..#..",
   "!": "..#..|..#..|..#..|..#..|..#..|.....|..#..", "'": "..#..|..#..|.#...|.....|.....|.....|.....",
   "\u2192": ".....|..#..|...#.|#####|...#.|..#..|.....",
 }).map(([k, v]) => [k, v.split("|").join("")]));
-function wrapText(text, maxCols) {
+// proportional metrics: trim empty glyph columns (digits stay 5 wide so counters don't jitter), 1px tracking
+const GM = Object.fromEntries(Object.entries(G).map(([ch, g]) => {
+  let lo = 5, hi = -1;
+  for (let k = 0; k < 35; k++) if (g[k] === "#") { lo = Math.min(lo, k % 5); hi = Math.max(hi, k % 5); }
+  if (/[0-9]/.test(ch)) { lo = 0; hi = 4; }
+  if (hi < lo) { lo = 0; hi = 2; }                       // space
+  return [ch, [lo, hi - lo + 1]];
+}));
+const metric = (ch) => GM[ch] || GM["?"];
+const measure = (s) => [...s].reduce((a, ch) => a + metric(ch)[1] + 1, 0) - 1;
+function wrapText(text, maxW) {
   const words = text.split(" "), lines = []; let cur = "";
-  for (const w of words) { if ((cur ? cur.length + 1 : 0) + w.length > maxCols && cur) { lines.push(cur); cur = w; } else cur = cur ? cur + " " + w : w; }
+  for (const w of words) { const next = cur ? cur + " " + w : w; if (measure(next) > maxW && cur) { lines.push(cur); cur = w; } else cur = next; }
   if (cur) lines.push(cur);
   return lines;
 }
@@ -503,24 +539,27 @@ class PixelType {
   }
   size() {
     const p = this.el.dataset.px, w = this.el.parentElement.clientWidth || 800;
-    if (p === "auto-h1") return Math.max(8, Math.min(18, Math.floor(w * 0.62 / (6 * this.text.length))));
+    if (p === "auto-h1") return Math.max(8, Math.min(20, Math.floor(w * 0.6 / (measure(this.text) + 1))));
     if (p === "h2") return innerWidth < 700 ? 5 : 7;
     return +p || 4;
   }
   layout() {
     const S = this.size(), w = this.el.parentElement.clientWidth || 800;
     this.S = S;
-    this.lines = this.el.dataset.px === "h2" ? wrapText(this.text, Math.max(6, Math.floor((w + S) / (6 * S)))) : [this.text];
-    const cols = Math.max(1, ...this.lines.map((l) => l.length));
+    this.lines = this.el.dataset.px === "h2" ? wrapText(this.text, Math.max(20, Math.floor(w / S))) : [this.text];
     this.sh = this.el.dataset.shadow ? 1 : 0;      // hard 1-pixel drop shadow in BG for text over imagery
-    this.W = cols * 6 - 1 + this.sh; this.H = this.lines.length * 9 - 2 + this.sh;
+    this.W = Math.max(1, ...this.lines.map(measure)) + this.sh; this.H = this.lines.length * 9 - 2 + this.sh;
     this.c.width = this.W; this.c.height = Math.max(1, this.H);
     this.c.style.width = this.W * S + "px";      // height follows the intrinsic aspect ratio
     this.pix = [];
-    this.lines.forEach((line, li) => [...line].forEach((ch, ci) => {
-      const g = G[ch] || G["?"];
-      for (let k = 0; k < 35; k++) if (g[k] === "#") this.pix.push([ci * 6 + (k % 5), li * 9 + ((k / 5) | 0)]);
-    }));
+    this.lines.forEach((line, li) => {
+      let cx = 0;
+      for (const ch of line) {
+        const g = G[ch] || G["?"], [lo, wd] = metric(ch);
+        for (let k = 0; k < 35; k++) if (g[k] === "#") this.pix.push([cx + (k % 5) - lo, li * 9 + ((k / 5) | 0)]);
+        cx += wd + 1;
+      }
+    });
     this.render(this.shown ? 1e9 : -1);
   }
   set(text) { this.text = text.toUpperCase(); this.layout(); }
@@ -597,9 +636,9 @@ function Flyover(canvas, opts) {
   const ctx = canvas.getContext("2d"), W = canvas.width, H = canvas.height, img = ctx.createImageData(W, H), px = new Uint32Array(img.data.buffer);
   const ybuf = new Float32Array(W);
   let cur = opts.start || 0, nxt = (cur + 1) % bakedHero.length, blend = 0, since = 0, cx = 90 + cur * 40, cy = 120, ang = 0.6, camH = 0, visible = true;
-  let steer = 0, steerT = 0, pitch = 0, pitchT = 0, climb = 0, SH = 0, SL = 0;
+  let steer = 0, steerT = 0, pitch = 0, pitchT = 0, climb = 0, SH = 0, SL = 0, intro = opts.intro && !REDUCE ? 0 : 1;
   function sample(x, y) {
-    const u = mir(x | 0), v = mir(y | 0), i = v * T + u, m = blend > 0 && thr(u, v) < blend ? bakedHero[nxt] : bakedHero[cur];
+    const u = mir(x | 0), v = mir(y | 0), i = v * T + u, m = blend > 0 && thrN(u, v) < blend ? bakedHero[nxt] : bakedHero[cur];
     SH = m.h[i] < SEA ? SEA : m.h[i]; SL = m.L[i];
   }
   function render() {
@@ -627,7 +666,7 @@ function Flyover(canvas, opts) {
         const top = ((camH - SH * 150) / z) * (H * 0.72) + horizon;
         if (top < ybuf[i]) {
           const lum = SL * (1 - fog) + 0.34 * fog, t0 = Math.max(0, top | 0);
-          for (let y = t0; y < ybuf[i]; y++) px[y * W + i] = lum > thr(i, y) ? FG32 : BG32;
+          for (let y = t0; y < ybuf[i]; y++) px[y * W + i] = lum > thrN(i, y) ? FG32 : BG32;   // blue noise: organic, less crawl
           if (t0 < ybuf[i] && t0 > 0 && fog < 0.55) px[t0 * W + i] = FG32;     // ridge highlight line
           ybuf[i] = top;
         }
@@ -635,6 +674,7 @@ function Flyover(canvas, opts) {
       }
       z += dz; dz += 0.011;
     }
+    if (intro < 1) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (thrN(x, y) > intro) px[y * W + x] = BG32;  // dissolve in on load
     ctx.putImageData(img, 0, 0);
   }
   this.frame = (time, dt) => {
@@ -642,7 +682,7 @@ function Flyover(canvas, opts) {
     steer += (steerT - steer) * 0.04; pitch += (pitchT - pitch) * 0.05;
     ang = 0.6 + Math.sin(time / 8000) * 0.3;
     cx -= Math.sin(ang + steer) * 0.7; cy -= Math.cos(ang + steer) * 0.7;
-    since += dt;
+    since += dt; if (intro < 1) intro = Math.min(1, intro + dt / 1.3);
     if (since > (opts.hold || 11) && blend === 0) blend = 0.001;
     if (blend > 0) { blend += dt / 1.5; if (blend >= 1) { cur = nxt; nxt = (nxt + 1) % bakedHero.length; blend = 0; since = 0; opts.onMap && opts.onMap(bakedHero[cur].name); } }
     render();
@@ -656,6 +696,7 @@ function Flyover(canvas, opts) {
 }
 const hudMap = document.getElementById("hud-map"), hudAlt = document.getElementById("hud-alt"), hudHdg = document.getElementById("hud-hdg");
 const fly = new Flyover(document.getElementById("fly"), {
+  intro: true,
   onMap: (n) => { hudMap.textContent = n; },
   onHud: (h, a) => { hudAlt.textContent = String(Math.round(h / 150 * 1200)).padStart(4, "0") + " m"; hudHdg.textContent = String(Math.round(((a * 180 / Math.PI) % 360 + 360) % 360)).padStart(3, "0"); },
 });
@@ -670,16 +711,23 @@ const field = (function () {
   const cv = document.getElementById("field"), ctx = cv.getContext("2d"), W = cv.width, H = cv.height, img = ctx.createImageData(W, H), px = new Uint32Array(img.data.buffer);
   const src = bakedHero[1] || bakedHero[0];
   let mx = -999, my = -999, lit = 0;
+  const ripples = [];                                       // click: a pixel shockwave rolls across the contours
   addEventListener("pointermove", (e) => { mx = e.clientX / innerWidth * W; my = e.clientY / innerHeight * H; lit = 1; });
-  const dimA = grey32(34), dimB = grey32(58), dimC = grey32(96);
+  if (!REDUCE) addEventListener("pointerdown", (e) => { ripples.push({ x: e.clientX / innerWidth * W, y: e.clientY / innerHeight * H, t: performance.now() }); if (ripples.length > 4) ripples.shift(); });
+  const dimA = grey32(34), dimB = grey32(58), dimC = grey32(96), dimD = grey32(140);
   return (time) => {
-    const ox = time * 0.004, oy = scrollY * 0.05 + time * 0.0015;
+    const ox = time * 0.004, oy = scrollY * 0.05 + time * 0.0015, ax = innerWidth / W, ay = innerHeight / H, R2 = (130 / ax) ** 2;
+    const live = ripples.filter((r) => time - r.t < 1400).map((r) => [r.x, r.y, (time - r.t) / 1000 * 110, 1 - (time - r.t) / 1400]);
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const u = mir((x * 1.1 + ox) | 0), v = mir((y * 1.1 + oy) | 0), i = v * T + u, h = src.h[i];
-      const f = h * 22, c = f - Math.floor(f), d2 = (x - mx) * (x - mx) + (y - my) * (y - my) * 1.8, glow = lit * Math.max(0, 1 - d2 / 900);
+      const dx = x - mx, dy = (y - my) * ay / ax, f = h * 22, c = f - Math.floor(f), glow = lit * Math.max(0, 1 - (dx * dx + dy * dy) / R2);
       let o = BG32;
-      if (c < 0.09) o = glow > thr(x, y) * 0.9 ? dimC : dimA;
-      else if (glow > 0.05 && src.L[i] * glow * 0.9 > thr(x, y)) o = dimB;
+      if (c < 0.09) o = glow > thrN(x, y) * 0.9 ? dimC : dimA;
+      else if (glow > 0.05 && src.L[i] * glow * 0.9 > thrN(x, y)) o = dimB;
+      for (const [rx, ry, rr, k] of live) {
+        const d = Math.hypot(x - rx, (y - ry) * ay / ax), band = Math.abs(d - rr);
+        if (band < 1.6 && k > thrN(x + 17, y + 29)) o = c < 0.2 || band < 0.6 ? dimD : dimC;
+      }
       px[y * W + x] = o;
     }
     ctx.putImageData(img, 0, 0);
@@ -767,6 +815,28 @@ const formers = [];
   });
 })();
 
+// ---------- hover to relight: the sun follows the pointer across a tile
+const CAN_HOVER = matchMedia("(hover: hover)").matches;
+function relight(el, bit, td) {
+  if (REDUCE || !CAN_HOVER) return;
+  const N = td.N, L = new Float32Array(N * N), B = new Uint8Array(N * N);
+  let cur = LIGHT0.slice(), raf = 0, back = 0;
+  const norm = (v) => { const l = Math.hypot(...v); return v.map((c) => c / l); };
+  const paint = (l) => { shade(td, l, L); bits(L, N, B); bit.draw(B, null, 1); };
+  el.addEventListener("pointermove", (e) => {
+    if (!el._ready) return;
+    const r = el.getBoundingClientRect(), dx = ((e.clientX - r.left) / r.width - 0.5) * 2, dy = ((e.clientY - r.top) / r.height - 0.5) * 2;
+    cur = norm([dx * 1.2, 0.6, dy * 1.2]); back++;
+    cancelAnimationFrame(raf); raf = requestAnimationFrame(() => paint(cur));
+  });
+  el.addEventListener("pointerleave", () => {
+    if (!el._ready) return;
+    const from = cur.slice(), id = ++back;
+    animate(420, (t) => { if (id !== back) return; const k = ease(t); paint(norm(from.map((c, i) => c + (LIGHT0[i] - c) * k))); });
+    cur = LIGHT0.slice();
+  });
+}
+
 // ---------- same seed grid with staggered dissolve
 (function () {
   const g = document.getElementById("cmp"), arch = DATA.compare.archetypes, N = 128, cells = [];
@@ -775,13 +845,14 @@ const formers = [];
   DATA.compare.models.forEach((m, r) => {
     const t2 = m === "Talus-2", rl = document.createElement("div"); rl.className = "label rl" + (t2 ? " t2" : ""); rl.textContent = m; g.appendChild(rl);
     arch.forEach((a, j) => {
-      const c = document.createElement("div"); c.className = "cell" + (t2 ? " t2" : "") + (j > 2 ? " hide-m" : "");
+      const c = document.createElement("div"); c.className = "cell hov" + (t2 ? " t2" : "") + (j > 2 ? " hide-m" : "");
       const cv = document.createElement("canvas"); c.appendChild(cv); g.appendChild(c);
-      const bit = new Bit(cv, N), b = bits(lumMap(decode(DATA.compare.maps[m][a]), N, 3.2), N);
-      bit.draw(b, null, REDUCE ? 1 : 0); cells.push([bit, b, r * 6 + j]);
+      const td = terrain(decode(DATA.compare.maps[m][a]), N, 3.2), bit = new Bit(cv, N), b = bits(shade(td), N);
+      bit.draw(b, null, REDUCE ? 1 : 0); cells.push([bit, b, r * 6 + j, c]);
+      relight(c, bit, td);
     });
   });
-  seen(g, () => cells.forEach(([bit, b, k]) => setTimeout(() => animate(650, (t) => bit.draw(b, null, t)), k * 45)), 0.15);
+  seen(g, () => cells.forEach(([bit, b, k, c]) => setTimeout(() => animate(650, (t) => bit.draw(b, null, t), () => { c._ready = true; }), k * 45)), 0.15);
 })();
 
 // ---------- scorecard with dithered bars and previous-version markers
@@ -828,8 +899,9 @@ const formers = [];
     const btns = order.map(([kind, b64], i) => {
       const b = document.createElement("button"); b.type = "button"; b.setAttribute("aria-label", `${p.archetype}, map ${i ? "B" : "A"}`);
       const cv = document.createElement("canvas"); b.appendChild(cv); pair.appendChild(b);
-      const bit = new Bit(cv, N), m = bits(lumMap(decode(b64), N, 3), N), inv = m.map((v) => 1 - v);
+      const td = terrain(decode(b64), N, 3), bit = new Bit(cv, N), m = bits(shade(td), N), inv = m.map((v) => 1 - v);
       bit.draw(m, null, 1);
+      b.classList.add("hov"); b._ready = true; relight(b, bit, td);
       b.addEventListener("click", () => {
         if (r.classList.contains("done")) return;
         r.classList.add("done"); if (kind === "real") r.classList.add("right");
