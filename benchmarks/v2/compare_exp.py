@@ -40,6 +40,7 @@ def main() -> None:
     ap.add_argument("--name", required=True)
     ap.add_argument("--ckpt", action="append", required=True, help="one or more checkpoints (label=path or path)")
     ap.add_argument("--n", type=int, default=500)
+    ap.add_argument("--guidance", type=float, default=None, help="override the official sampler's guidance")
     args = ap.parse_args()
 
     from nullscape.eval.core import evaluate_generated
@@ -47,13 +48,17 @@ def main() -> None:
     from nullscape.metrics.distribution import metric_table
 
     st = B.store()
-    cfg = B.load_json("pareto")["recommended_config"]
+    cfg = dict(B.load_json("pareto")["recommended_config"])
+    if args.guidance is not None:
+        cfg["guidance"] = args.guidance
     a, b = B.halves(st, "val", args.n)
     ref_a, ref_b = st.heights(a), st.heights(b)
     tables = {"a": metric_table(ref_a, st.world), "b": metric_table(ref_b, st.world)}
     Lb = B._log_rapsd(ref_b)
     la, lb = st.labels[a], st.labels[b]
-    models = [("v1 30k", str(V1))] + [tuple(c.split("=", 1)) if "=" in c else (Path(c).stem, c) for c in args.ckpt]
+    models = [tuple(c.split("=", 1)) if "=" in c else (Path(c).stem, c) for c in args.ckpt]
+    if not any(p == str(V1) for _, p in models):
+        models = [("v1 30k", str(V1))] + models
     out = {"split": "val", "n_per_half": len(a), "sampler": cfg, "models": {}}
     for label, path in models:
         s = TerrainSampler.from_checkpoint(path, device=B.DEVICE)
@@ -79,9 +84,9 @@ def main() -> None:
             ("height W1 ratio", lambda m: m["compact"]["ratio"]["height_w1"]),
             ("slope W1 ratio", lambda m: m["compact"]["ratio"]["slope_w1_deg"]),
             ("adherence nMAE", lambda m: m["compact"]["adherence_nmae_mean"]),
-            ("sink density (ref %.2f)" % out["models"]["v1 30k"]["compact"]["sink_density"]["ref"],
+            ("sink density (ref %.2f)" % next(iter(out["models"].values()))["compact"]["sink_density"]["ref"],
              lambda m: m["compact"]["sink_density"]["gen"]),
-            ("peak density (ref %.2f)" % out["models"]["v1 30k"]["compact"]["peak_density"]["ref"],
+            ("peak density (ref %.2f)" % next(iter(out["models"].values()))["compact"]["peak_density"]["ref"],
              lambda m: m["compact"]["peak_density"]["gen"]),
             ("rugged k13-24 (0 = perfect)", lambda m: m["rugged_k13_24"]),
             ("rugged k25-32 (0 = perfect)", lambda m: m["rugged_k25_32"]),

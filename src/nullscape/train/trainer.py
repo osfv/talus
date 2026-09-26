@@ -16,6 +16,7 @@ from nullscape.data.storage import TerrainStore
 from nullscape.eval.artifacts import ARTIFACTS_ROOT, ArtifactSpec, generate_checkpoint_artifacts
 from nullscape.eval.core import HEADLINE_KEYS, evaluate_generated, split_halves
 from nullscape.inference.sampler import TerrainSampler
+from nullscape.models import heightparam
 from nullscape.models.diffusion import DiffusionConfig, GaussianDiffusion
 from nullscape.models.ema import EMA
 from nullscape.models.unet import UNet, UNetConfig, count_parameters
@@ -40,6 +41,8 @@ DEFAULT_TRAIN: dict[str, Any] = {
     "lr_schedule": "constant",    # "constant" or "cosine" (decays to min_lr_ratio * lr after warmup)
     "min_lr_ratio": 0.1,
     "init_from": None,            # checkpoint to start from (weights + EMA only; fresh optimizer, step 0)
+    "height_param": "absolute",   # "relative": model sees 2(h - mean)/relief (see models/heightparam.py)
+    "prior_bank_per_class": 2000, # training conditions stored per archetype for relative-height placement
 }
 
 
@@ -61,8 +64,10 @@ class TensorBatcher:
     """Random minibatches from an in-memory uint16 split with random dihedral augmentation."""
 
     def __init__(self, heights_u16: np.ndarray, cond: np.ndarray, labels: np.ndarray, device: torch.device,
-                 on_device: bool, seed: int):
+                 on_device: bool, seed: int, placement: np.ndarray | None = None):
         store_dev = device if on_device else torch.device("cpu")
+        # placement: raw (mean elevation, relief) per map for relative heights; None = absolute heights
+        self.pl = None if placement is None else torch.from_numpy(placement.astype(np.float32)).to(store_dev)
         # exact int16 storage (u16 - 32768): half the VRAM of int32, which matters on 8 GB cards where
         # exceeding physical VRAM silently spills to system memory and slows training ~15x on Windows
         self.h = torch.from_numpy((heights_u16.astype(np.int32) - 32768).astype(np.int16)).to(store_dev)
@@ -77,6 +82,9 @@ class TensorBatcher:
     def sample(self, batch_size: int, augment: bool = True) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         idx = torch.randint(0, len(self), (batch_size,), device=self.h.device, generator=self.g)
         x = self.h[idx].float().add_(32768.0).div_(65535.0).mul_(2).sub_(1).unsqueeze(1)
+        if self.pl is not None:
+            p = self.pl[idx].view(-1, 2, 1, 1)
+            x = heightparam.encode((x + 1) / 2, p[:, 0:1], p[:, 1:2], "relative")
         if augment:
             k = torch.randint(0, 8, (batch_size,), device=self.h.device, generator=self.g)
             out = torch.empty_like(x)
@@ -152,6 +160,17 @@ def train(cfg: dict[str, Any], resume: str | None = None) -> Path:
 
     run = RunDir(cfg.get("name", "run"), cfg)
     meta = dataset_meta(store)
+    kind = tcfg["height_param"]
+    meta["height_param"] = heightparam.spec(kind)
+    keys = store.condition_keys
+    place_cols = [keys.index(meta["height_param"]["mean_key"]), keys.index(meta["height_param"]["relief_key"])]
+    if kind == "relative":
+        tr = store.split("train")
+        rng = np.random.default_rng(seed)
+        pick = np.concatenate([rng.permutation(tr[store.labels[tr] == c])[: tcfg["prior_bank_per_class"]]
+                               for c in range(len(store.archetypes))])
+        meta["prior_bank"] = {"conditions": store.conditions[pick].astype(float).round(6).tolist(),
+                              "labels": store.labels[pick].astype(int).tolist()}
     n_params = count_parameters(model)
     (run.path / "model.json").write_text(json.dumps({"parameters": n_params, "unet": model.cfg.to_dict(),
                                                      "diffusion": diffusion.cfg.to_dict()}, indent=2))
@@ -160,13 +179,16 @@ def train(cfg: dict[str, Any], resume: str | None = None) -> Path:
     zc = lambda c: (c - store.condition_mean) / store.condition_std  # noqa: E731
     train_idx = store.split("train")
     batcher = TensorBatcher(np.asarray(store.heights_u16[train_idx]), zc(store.conditions[train_idx]),
-                            store.labels[train_idx], device, tcfg["data_on_gpu"] and device.type == "cuda", seed)
+                            store.labels[train_idx], device, tcfg["data_on_gpu"] and device.type == "cuda", seed,
+                            placement=store.conditions[train_idx][:, place_cols] if kind == "relative" else None)
 
     # fixed validation batch (fixed t and noise) for a low-variance loss curve
     val_idx = store.split("val")
     vi = val_idx[: tcfg["val_size"]]
     vgen = torch.Generator().manual_seed(seed + 1)
-    val_x = torch.from_numpy(store.heights(vi) * 2 - 1)[:, None].to(device)
+    vp = store.conditions[vi][:, place_cols].astype(np.float32)
+    val_x = torch.from_numpy(heightparam.encode(store.heights(vi), vp[:, 0, None, None], vp[:, 1, None, None],
+                                                kind).astype(np.float32))[:, None].to(device)
     val_c = torch.from_numpy(zc(store.conditions[vi]).astype(np.float32)).to(device)
     val_y = torch.from_numpy(store.labels[vi]).to(device)
     val_t = torch.randint(0, diffusion.cfg.timesteps, (len(vi),), generator=vgen).to(device)

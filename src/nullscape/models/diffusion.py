@@ -107,6 +107,7 @@ class GaussianDiffusion(nn.Module):
         guidance: float = 1.0,
         eta: float = 0.0,
         clip_x0: bool = True,
+        clip_range: float = 1.0,
         autocast_dtype: torch.dtype | None = None,
         spacing: str = "uniform",
     ) -> torch.Tensor:
@@ -123,7 +124,7 @@ class GaussianDiffusion(nn.Module):
                 v = self._guided_v(model, x, t, cond, known, label, guidance)
             x0 = ab.sqrt() * x - (1 - ab).sqrt() * v
             if clip_x0:
-                x0 = x0.clamp(-1.0, 1.0)
+                x0 = x0.clamp(-clip_range, clip_range)
             eps = (x - ab.sqrt() * x0) / (1 - ab).sqrt()
             sigma = eta * ((1 - ab_prev) / (1 - ab)).sqrt() * (1 - ab / ab_prev).sqrt()
             x = ab_prev.sqrt() * x0 + (1 - ab_prev - sigma**2).clamp(min=0).sqrt() * eps

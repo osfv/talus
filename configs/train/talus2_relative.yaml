@@ -1,0 +1,39 @@
+# Talus-2 candidate (hypothesis 1 in docs/V1_BENCHMARK.md): relative-height parameterization.
+# The model sees 2 (h - mean) / relief, so flat maps use the full value range; the sampler places the shape at the
+# requested mean elevation and relief. Fine-tuned from Talus-1.1 with its loss/LR recipe (no Min-SNR, cosine decay).
+name: talus2_relative
+seed: 2
+dataset: base64
+model:
+  base_channels: 64
+  channel_mults: [1, 2, 3, 4]
+  num_res_blocks: 2
+  attention_resolutions: [16, 8]
+  dropout: 0.1
+diffusion:
+  timesteps: 1000
+  min_snr_gamma: null
+  p_drop_property: 0.15
+  p_drop_label: 0.15
+  p_drop_all: 0.10
+train:
+  init_from: runs/20260926-181917_v2_exp1_nominsnr_cosine/checkpoints/step_0008000.pt
+  height_param: relative
+  batch_size: 48
+  lr: 1.0e-4
+  lr_schedule: cosine
+  min_lr_ratio: 0.1
+  warmup_steps: 300
+  max_steps: 10000
+  grad_clip: 1.0
+  ema_decay: 0.9995
+  bf16: true
+  log_every: 100
+  val_every: 1000
+  sample_every: 2500
+  eval_every: 5000
+  eval_samples: 256
+  eval_steps: 50
+  eval_guidance: 1.5
+  checkpoint_every: 2500
+  keep_checkpoints: true

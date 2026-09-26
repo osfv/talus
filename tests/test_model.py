@@ -272,3 +272,48 @@ def test_tensor_batcher():
     for j in range(8):
         s = np.sort(x[j, 0].numpy().ravel())
         assert any(np.array_equal(s, e) for e in expected), f"sample {j} not a dihedral copy"
+
+
+def test_heightparam_roundtrip():
+    from nullscape.models import heightparam
+
+    rng = np.random.default_rng(1)
+    h = rng.random((3, 16, 16)).astype(np.float32) * 0.1 + 0.4
+    m, r = h.mean((1, 2))[:, None, None], (np.percentile(h, 98, (1, 2)) - np.percentile(h, 2, (1, 2)))[:, None, None]
+    x = heightparam.encode(h, m, r, "relative")
+    assert np.allclose(heightparam.decode(x, m, r, "relative"), h, atol=1e-6)
+    assert x.std() > 5 * (h * 2 - 1).std()  # a flat map fills far more of the model's range than absolute
+    t = torch.from_numpy(h)
+    assert torch.allclose(heightparam.decode(heightparam.encode(t, torch.from_numpy(m), torch.from_numpy(r),
+                                                                "relative"), torch.from_numpy(m),
+                                             torch.from_numpy(r), "relative"), t, atol=1e-6)
+
+
+def test_tensor_batcher_relative():
+    rng = np.random.default_rng(0)
+    heights = (rng.random((4, 16, 16)) * 65535).astype(np.uint16)
+    h = heights.astype(np.float32) / 65535
+    place = np.stack([h.mean((1, 2)), np.percentile(h, 98, (1, 2)) - np.percentile(h, 2, (1, 2))], 1)
+    b = TensorBatcher(heights, np.zeros((4, K), np.float32), np.arange(4), torch.device("cpu"), on_device=False,
+                      seed=0, placement=place)
+    x, _, _ = b.sample(16, augment=True)
+    assert abs(float(x.mean())) < 0.05  # each map is centred on its own mean
+
+
+def test_relative_sampler_places_and_fills(sampler):
+    from nullscape.models import heightparam
+
+    bank = {"conditions": [[0.3, 0.2, 10.0, 0.1, 4.0], [0.5, 0.05, 3.0, 0.0, 5.0]] * 6,
+            "labels": [c for c in range(C) for _ in range(2)]}
+    meta = {**DATASET_META, "height_param": heightparam.spec("relative"), "prior_bank": bank}
+    rs = TerrainSampler(sampler.model, sampler.diffusion, meta, device="cpu")
+    # an untrained model's shape can be anything within the x0 clamp (+-8); with relief 0.02 the decoded map
+    # must still sit within 8 * 0.02 / 2 = 0.08 of the requested mean elevation
+    a = rs.sample(n=2, seed=1, steps=4, archetype="plains", properties={"mean_elevation": 0.4, "relief": 0.02})
+    assert a.shape == (2, 16, 16) and a.min() >= 0 and a.max() <= 1
+    assert abs(float(a.mean()) - 0.4) <= 0.08 + 1e-6
+    b = rs.sample(n=3, seed=2, steps=4, archetype="hills")  # placement borrowed from the prior bank
+    assert b.shape == (3, 16, 16) and np.isfinite(b).all()
+    with pytest.raises(ValueError):
+        TerrainSampler(sampler.model, sampler.diffusion, {**meta, "prior_bank": None}, device="cpu").sample(
+            n=1, seed=0, steps=2)

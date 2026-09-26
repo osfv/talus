@@ -17,6 +17,7 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 import torch
 
+from nullscape.models import heightparam
 from nullscape.models.diffusion import DiffusionConfig, GaussianDiffusion, per_sample_noise
 from nullscape.models.unet import UNet, UNetConfig
 from nullscape.utils.seed import derive_seed
@@ -35,6 +36,36 @@ class TerrainSampler:
         self.archetypes: list[str] = list(self.meta["archetypes"])
         self.cond_mean = np.asarray(self.meta["condition_stats"]["mean"], dtype=np.float32)
         self.cond_std = np.asarray(self.meta["condition_stats"]["std"], dtype=np.float32)
+        self.height_param = dict(self.meta.get("height_param") or heightparam.spec("absolute"))
+        bank = self.meta.get("prior_bank")
+        self._bank = None if bank is None else (np.asarray(bank["conditions"], dtype=np.float32),
+                                                np.asarray(bank["labels"], dtype=np.int64))
+
+    def _fill_placement(self, raw: np.ndarray, kn: np.ndarray, lab: np.ndarray,
+                        seeds: Sequence[int]) -> tuple[np.ndarray, np.ndarray]:
+        """Relative heights need a mean elevation and relief for every sample. Where the caller left them
+        open, borrow them from a random one of the 16 training maps (same archetype if known) whose known
+        properties are closest, so unspecified placements follow the training distribution."""
+        jm = self.condition_keys.index(self.height_param["mean_key"])
+        jr = self.condition_keys.index(self.height_param["relief_key"])
+        need = ~(kn[:, jm] & kn[:, jr])
+        if not need.any():
+            return raw, kn
+        if self._bank is None:
+            raise ValueError("relative-height checkpoint without prior_bank: give mean_elevation and relief")
+        bc, bl = self._bank
+        bz = (bc - self.cond_mean) / self.cond_std
+        raw, kn = raw.copy(), kn.copy()
+        for i in np.flatnonzero(need):
+            cand = np.flatnonzero(bl == lab[i]) if lab[i] < len(self.archetypes) else np.arange(len(bl))
+            z = (raw[i] - self.cond_mean) / self.cond_std
+            d = ((bz[cand] - z) ** 2 * kn[i]).sum(1)
+            pick = cand[np.random.default_rng(seeds[i]).choice(np.argsort(d)[:16])]
+            for j in (jm, jr):
+                if not kn[i, j]:
+                    raw[i, j] = bc[pick, j]
+                    kn[i, j] = True
+        return raw, kn
 
     @classmethod
     def from_checkpoint(cls, path: str | Path, device: torch.device | str | None = None,
@@ -65,8 +96,8 @@ class TerrainSampler:
             raise ValueError(f"unknown archetype {archetype!r}; choose from {self.archetypes}")
         return np.full(n, idx, dtype=np.int64)
 
-    def _conditions(self, n: int, properties: Mapping[str, float] | None, cond_raw: np.ndarray | None,
-                    known: np.ndarray | None) -> tuple[np.ndarray, np.ndarray]:
+    def _raw_conditions(self, n: int, properties: Mapping[str, float] | None, cond_raw: np.ndarray | None,
+                        known: np.ndarray | None) -> tuple[np.ndarray, np.ndarray]:
         k = len(self.condition_keys)
         if cond_raw is not None:
             raw = np.asarray(cond_raw, dtype=np.float32).reshape(n, k)
@@ -80,8 +111,7 @@ class TerrainSampler:
                 j = self.condition_keys.index(key)
                 raw[:, j] = value
                 kn[:, j] = True
-        z = np.where(kn, (raw - self.cond_mean) / self.cond_std, 0.0).astype(np.float32)
-        return z, kn
+        return raw, kn
 
     @torch.no_grad()
     def sample(
@@ -107,9 +137,18 @@ class TerrainSampler:
         ``cond_raw``/``known`` give per-sample values and masks instead. Unspecified properties
         and ``archetype=None`` are left to the model (sampled from the learned distribution).
         """
-        z, kn = self._conditions(n, properties, cond_raw, known)
+        raw, kn = self._raw_conditions(n, properties, cond_raw, known)
         lab = self._label_ids(n, archetype, labels)
         seeds = list(seeds) if seeds is not None else [derive_seed(seed, i) for i in range(n)]
+        kind = self.height_param["kind"]
+        if kind == "relative":
+            raw, kn = self._fill_placement(raw, kn, lab, seeds)
+        z = np.where(kn, (raw - self.cond_mean) / self.cond_std, 0.0).astype(np.float32)
+        placement = None
+        if kind == "relative":
+            jm = self.condition_keys.index(self.height_param["mean_key"])
+            jr = self.condition_keys.index(self.height_param["relief_key"])
+            placement = (raw[:, jm, None, None], raw[:, jr, None, None])
         r = self.world.resolution
         use_bf16 = self.device.type == "cuda"
         was_training = self.model.training
@@ -124,8 +163,11 @@ class TerrainSampler:
                 torch.from_numpy(lab[sl]).to(self.device),
                 per_sample_noise(seeds[sl], (1, r, r)),
                 steps=steps, guidance=guidance, eta=eta, spacing=spacing,
+                clip_range=heightparam.X0_RANGE[kind],
                 autocast_dtype=torch.bfloat16 if use_bf16 else None,
             )
-            out.append(((x[:, 0].float().clamp(-1, 1) + 1) / 2).cpu().numpy())
+            x = x[:, 0].float().cpu().numpy()
+            m, rel = (placement[0][sl], placement[1][sl]) if placement else (None, None)
+            out.append(np.clip(heightparam.decode(x, m, rel, kind), 0.0, 1.0))
         self.model.train(was_training)
         return np.concatenate(out).astype(np.float32)
