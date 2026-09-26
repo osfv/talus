@@ -10,3 +10,4 @@ __pycache__/
 .venvs/
 reports/**/*.npy
 artifacts/**/*.npy
+benchmarks/**/*.npy

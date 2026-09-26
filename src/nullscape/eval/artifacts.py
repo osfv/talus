@@ -101,8 +101,13 @@ def generate_checkpoint_artifacts(
     spec: ArtifactSpec = ArtifactSpec(),
     train_bank: np.ndarray | None = None,
     memorization_device: str = "cpu",
+    save_generated: bool = False,
 ) -> Path:
-    """Render all artifacts for one checkpoint into ``root/step_XXXXXXX`` and refresh run-level figures."""
+    """Render all artifacts for one checkpoint into ``root/step_XXXXXXX`` and refresh run-level figures.
+
+    ``save_generated`` also stores the distribution-set maps as ``generated_eval.npy`` (row i was
+    generated from the conditions of ``eval_halves(store, spec)[0][i]``) for offline analysis.
+    """
     import matplotlib.pyplot as plt
 
     from nullscape.eval.cli import _write_summary
@@ -137,6 +142,8 @@ def generate_checkpoint_artifacts(
     gen = sampler.sample(n=len(a), seed=spec.seed + 1, cond_raw=store.conditions[a], known=np.ones((len(a), k), bool),
                          labels=store.labels[a], **spec.sampler_kwargs())
     sample_secs = time.time() - t0
+    if save_generated:
+        np.save(out / "generated_eval.npy", gen)
     tables = {"a": metric_table(ref_a, world), "b": metric_table(ref_b, world), "gen": metric_table(gen, world)}
     rep = evaluate_generated(gen, ref_a, ref_b, world, requested_conds=store.conditions[a],
                              gen_labels=store.labels[a], ref_a_labels=store.labels[a], ref_b_labels=store.labels[b],
