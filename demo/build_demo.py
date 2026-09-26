@@ -24,6 +24,7 @@ HERE = Path(__file__).resolve().parent
 MODELS = {
     "Talus-1": ROOT / "benchmarks" / "v1" / "artifacts_official",
     "Talus-1.1": ROOT / "benchmarks" / "v2" / "exp1" / "artifacts_official",
+    "Talus-2": ROOT / "benchmarks" / "v2" / "talus2" / "artifacts_official",
 }
 PER_ARCHETYPE = 5
 MIN_ROUTE_CELLS = 24
@@ -31,7 +32,7 @@ MIN_ROUTE_CELLS = 24
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="Talus-1.1", choices=list(MODELS))
+    ap.add_argument("--model", default="Talus-2", choices=list(MODELS))
     args = ap.parse_args()
     src = MODELS[args.model]
     st = TerrainStore.open("base64")

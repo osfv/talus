@@ -142,6 +142,9 @@ The model is called **Talus** ([docs/TALUS.md](docs/TALUS.md)).
 - **Talus-1** is the official v1: checkpoint 30k plus 50-step quadratic DDIM at guidance 2.0.
 - **Talus-1.1** is an 8k-step fine-tune without the Min-SNR cap. It raises the scorecard average from
   67.0 to 70.4 ([docs/V2_EXP1.md](docs/V2_EXP1.md)).
+- **Talus-2** (current best) generates relative heights and fixes the grainy plains
+  ([docs/TALUS2.md](docs/TALUS2.md)). Scorecard average 77.5; realism 1.77x the noise floor, down from
+  2.90x; micro-relief matches real terrain.
 
 Talus-1 headline numbers:
 - Realism: 2.9x the real-vs-real noise floor.

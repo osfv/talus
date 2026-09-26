@@ -36,5 +36,9 @@
   (the blog reads the `Talus-1 ...` keys from `benchmarks/scorecard.json`)
   (always pass --out/--json/--fig so the v1 scorecard is not overwritten).
 - Playable demo: `demo/nullscape-demo.html` (build: `python demo/build_demo.py`). Blog: `docs/blog/nullscape-v1.html`.
-- Next planned: v2 exp2 = relative-height parameterization (fixes plains grain), started from exp1;
-  robust roughness condition; faster sampling. Game direction: Tamashika-like low-res neon FPS.
+- Talus-2 (current best): relative heights (`train.height_param: relative`, `models/heightparam.py`), 10k-step
+  fine-tune of Talus-1.1: `runs/20260926-192753_talus2_relative/checkpoints/step_0010000.pt`. TEST average 77.5
+  (`docs/TALUS2.md`, `docs/TALUS2_SCORECARD.md`). Relative checkpoints carry `height_param` + `prior_bank` in
+  their dataset meta; the sampler fills unspecified mean elevation/relief from the bank.
+- Next planned: rugged (mountains/ridges) fine detail, limited-interval guidance for the remaining spectrum gap,
+  distillation for speed. Game direction: Tamashika-like low-res neon FPS.

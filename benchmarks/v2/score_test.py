@@ -26,6 +26,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--name", required=True)
     ap.add_argument("--ckpt", required=True)
+    ap.add_argument("--guidance", type=float, default=None, help="guidance chosen on VAL (default: v1 official)")
     args = ap.parse_args()
 
     import torch
@@ -37,6 +38,10 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=True)
     v1 = json.loads((ROOT / "benchmarks" / "v1" / "results.json").read_text())
     spec = ArtifactSpec(**json.loads((ROOT / "benchmarks" / "v1" / "artifacts_official" / "spec.json").read_text()))
+    sampler_cfg = dict(v1["official"]["sampler"])
+    if args.guidance is not None:
+        spec = ArtifactSpec(**{**asdict(spec), "guidance": args.guidance})
+        sampler_cfg["guidance"] = args.guidance
     st = B.store()
     s = TerrainSampler.from_checkpoint(args.ckpt, device="cuda")
     t0 = time.time()
@@ -54,7 +59,7 @@ def main() -> None:
                                       "diffusion_config": ck["diffusion_config"]},
                        "spec": asdict(spec), "created_at": time.strftime("%Y-%m-%dT%H:%M:%S")},
         "checkpoints_test": {"compact": {}},
-        "official": {"checkpoint": int(ck["step"]), "sampler": v1["official"]["sampler"],
+        "official": {"checkpoint": int(ck["step"]), "sampler": sampler_cfg,
                      "compact": B.compact(rep), "wall_seconds": time.time() - t0,
                      "artifacts_dir": str(d.relative_to(ROOT))},
         "perf": v1["perf"],  # same architecture and sampler, so v1's isolated timings apply
