@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NULLSCAPE v1: teaching a model to make terrain</title>
+<meta name="description" content="How we built a procedural terrain dataset, trained a 23M-parameter diffusion model on one RTX 5060, and benchmarked it on 30,000 generated maps.">
+<meta name="color-scheme" content="dark light">
+<style>
+  :root {
+    --bg: #0e0f12;
+    --bg-2: #15171c;
+    --line: #262a33;
+    --text: #e9e7e4;
+    --text-2: #a6a8ae;
+    --text-3: #7a7d86;
+    --accent: #e04a7c;
+    --accent-soft: rgba(224, 74, 124, 0.14);
+    --water: #4c6f8f;
+    --radius: 14px;
+    --measure: 68ch;
+    --font-body: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --font-display: "Bahnschrift", "Segoe UI Variable Display", "DIN Alternate", system-ui, sans-serif;
+    --font-mono: "Cascadia Code", "SF Mono", ui-monospace, Consolas, "Liberation Mono", monospace;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f6f4;
+      --bg-2: #ecedea;
+      --line: #d7d8d4;
+      --text: #17181b;
+      --text-2: #4a4c52;
+      --text-3: #6b6e75;
+      --accent: #c12e62;
+      --accent-soft: rgba(193, 46, 98, 0.10);
+      --water: #5a7fa3;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 17px/1.7 var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: var(--accent); text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  ::selection { background: var(--accent); color: #fff; }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 28px; }
+  .prose { max-width: var(--measure); }
+  .prose p, .prose li { color: var(--text-2); }
+  .prose strong { color: var(--text); font-weight: 600; }
+  h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.015em; line-height: 1.1; color: var(--text); }
+  h2 { font-size: clamp(1.8rem, 3.2vw, 2.5rem); margin: 0 0 18px; font-weight: 600; }
+  h3 { font-size: 1.2rem; margin: 0 0 6px; font-weight: 600; letter-spacing: 0; }
+  code, pre { font-family: var(--font-mono); font-size: 0.86em; }
+  :not(pre) > code { background: var(--bg-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; color: var(--text); }
+
+  /* top bar */
+  .bar { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+         background: color-mix(in srgb, var(--bg) 82%, transparent); border-bottom: 1px solid var(--line); }
+  .bar .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+  .brand { font-family: var(--font-display); font-weight: 700; letter-spacing: 0.08em; color: var(--text); text-decoration: none; }
+  .brand span { color: var(--accent); }
+  .bar nav { display: flex; gap: 26px; }
+  .bar nav a { color: var(--text-2); text-decoration: none; font-size: 0.92rem; }
+  .bar nav a:hover { color: var(--text); }
+  .progress { position: absolute; left: 0; bottom: -1px; height: 2px; width: 100%; background: var(--accent);
+              transform-origin: 0 50%; transform: scaleX(0); }
+
+  /* hero */
+  .hero { padding: 72px 0 40px; }
+  .hero .wrap { display: grid; grid-template-columns: 1.02fr 1fr; gap: 48px; align-items: center; }
+  .kicker { font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); }
+  .hero h1 { font-size: clamp(2.4rem, 5vw, 3.9rem); margin: 14px 0 18px; font-weight: 700; }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero .lede { font-size: 1.16rem; color: var(--text-2); max-width: 44ch; margin: 0 0 26px; }
+  .meta { color: var(--text-3); font-size: 0.9rem; margin-bottom: 28px; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; background: var(--accent); color: #fff; text-decoration: none;
+         font-weight: 600; padding: 12px 20px; border-radius: 999px; transition: transform .25s var(--ease), box-shadow .25s var(--ease);
+         box-shadow: 0 8px 24px -12px var(--accent); }
+  .btn:hover { transform: translateY(-2px); text-decoration: none; }
+  .btn:active { transform: translateY(0) scale(.98); }
+  .btn svg { width: 16px; height: 16px; }
+  .terrain-card { position: relative; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-2); overflow: hidden; }
+  .terrain-card canvas { display: block; width: 100%; height: auto; aspect-ratio: 5 / 4; }
+  .terrain-cap { display: flex; justify-content: space-between; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--line);
+                 font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-3); }
+  .terrain-cap b { color: var(--text); font-weight: 500; }
+
+  /* stats */
+  .stats { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-top: 36px; }
+  .stats .wrap { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .stat { padding: 26px 22px 24px; border-left: 1px solid var(--line); }
+  .stat:first-child { border-left: 0; padding-left: 0; }
+  .stat .num { font-family: var(--font-display); font-size: clamp(1.9rem, 3.4vw, 2.6rem); font-weight: 600; color: var(--text); line-height: 1; }
+  .stat .num small { font-size: 0.5em; color: var(--text-3); font-weight: 500; margin-left: 4px; }
+  .stat .lbl { color: var(--text-3); font-size: 0.9rem; margin-top: 8px; }
+
+  section { padding: 88px 0 0; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+  figure { margin: 0; }
+  figure img { display: block; width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--line); background: #fff; }
+  figcaption { color: var(--text-3); font-size: 0.86rem; margin-top: 10px; line-height: 1.5; }
+  .wide { margin-top: 34px; }
+
+  /* timeline */
+  .timeline { position: relative; margin: 36px 0 0; padding: 0; list-style: none; max-width: 860px; }
+  .timeline::before { content: ""; position: absolute; left: 112px; top: 6px; bottom: 6px; width: 1px; background: var(--line); }
+  .timeline li { display: grid; grid-template-columns: 112px 1fr; gap: 0 34px; padding: 0 0 30px; position: relative; }
+  .timeline li::after { content: ""; position: absolute; left: 108px; top: 9px; width: 9px; height: 9px; border-radius: 50%;
+                        background: var(--bg); border: 2px solid var(--accent); }
+  .timeline .when { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-3); padding-top: 3px; }
+  .timeline p { margin: 0; color: var(--text-2); max-width: 62ch; }
+
+  /* scorecard */
+  .score { margin-top: 30px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .score-row { display: grid; grid-template-columns: 1.25fr 2.4fr repeat(4, 0.72fr); align-items: center; gap: 12px;
+               padding: 13px 20px; border-top: 1px solid var(--line); }
+  .score-row:first-child { border-top: 0; }
+  .score-head { background: var(--bg-2); font-size: 0.78rem; color: var(--text-3); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; }
+  .score-name b { display: block; font-weight: 600; color: var(--text); }
+  .score-name span { font-size: 0.8rem; color: var(--text-3); }
+  .meter { display: flex; align-items: center; gap: 12px; }
+  .meter i { display: block; height: 10px; border-radius: 999px; background: var(--accent); width: calc(var(--v) * 1%);
+             transform-origin: 0 50%; transform: scaleX(0); transition: transform 1.1s var(--ease); }
+  .meter i.zero { background: transparent; }
+  .in .meter i { transform: scaleX(1); }
+  .meter em { font-style: normal; font-family: var(--font-mono); font-size: 0.9rem; color: var(--text); min-width: 3.4ch; }
+  .score-cell { font-family: var(--font-mono); font-size: 0.86rem; color: var(--text-2); text-align: right; }
+  .score-cell.dim { color: var(--text-3); }
+  .score-foot { padding: 14px 20px; background: var(--bg-2); color: var(--text-3); font-size: 0.84rem; border-top: 1px solid var(--line); }
+
+  /* findings: asymmetric grid */
+  .findings { display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; margin-top: 30px; }
+  .find { border: 1px solid var(--line); border-radius: var(--radius); padding: 26px; background: var(--bg-2); }
+  .find.big { grid-row: span 2; display: flex; flex-direction: column; justify-content: space-between;
+              background: linear-gradient(160deg, var(--accent-soft), transparent 60%), var(--bg-2); }
+  .find .figure-num { font-family: var(--font-display); font-size: clamp(2.8rem, 6vw, 4.4rem); font-weight: 700; color: var(--accent); line-height: 1; }
+  .find p { color: var(--text-2); margin: 10px 0 0; font-size: 0.97rem; }
+
+  /* use cases */
+  .uses { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 56px; margin-top: 28px; }
+  .use { padding: 22px 0; border-top: 1px solid var(--line); }
+  .use p { margin: 0; color: var(--text-2); font-size: 0.97rem; }
+
+  pre { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; overflow-x: auto;
+        color: var(--text); line-height: 1.6; margin: 22px 0 0; }
+  pre .c { color: var(--text-3); }
+  pre .a { color: var(--accent); }
+
+  .next { counter-reset: n; margin: 26px 0 0; padding: 0; list-style: none; max-width: var(--measure); }
+  .next li { counter-increment: n; position: relative; padding: 0 0 18px 46px; color: var(--text-2); }
+  .next li::before { content: counter(n); position: absolute; left: 0; top: 1px; width: 28px; height: 28px; border-radius: 50%;
+                     border: 1px solid var(--line); display: grid; place-items: center; font-family: var(--font-mono); font-size: 0.8rem; color: var(--text); }
+  .next li b { color: var(--text); font-weight: 600; }
+
+  footer { margin-top: 110px; border-top: 1px solid var(--line); padding: 34px 0 60px; color: var(--text-3); font-size: 0.9rem; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+
+  /* reveal */
+  .reveal { opacity: 0; transform: translateY(22px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
+  .reveal.in { opacity: 1; transform: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal, .reveal.in { opacity: 1; transform: none; transition: none; }
+    .meter i { transform: none; transition: none; }
+    .progress { display: none; }
+  }
+  @media (max-width: 900px) {
+    .hero .wrap, .split, .findings, .uses { grid-template-columns: 1fr; }
+    .find.big { grid-row: auto; }
+    .stats .wrap { grid-template-columns: repeat(2, 1fr); }
+    .stat { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); }
+    .stat:nth-child(-n+2) { border-top: 0; }
+    .bar nav { display: none; }
+    .score-row { grid-template-columns: 1fr 1.4fr; }
+    .score-row .score-cell { display: none; }
+    .timeline::before { left: 6px; }
+    .timeline li { grid-template-columns: 1fr; padding-left: 30px; }
+    .timeline li::after { left: 2px; }
+    section { padding-top: 68px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="#top">NULL<span>SCAPE</span></a>
+    <nav aria-label="Sections">
+      <a href="#journey">Journey</a>
+      <a href="#benchmark">Benchmark</a>
+      <a href="#limits">Limits</a>
+      <a href="#uses">Use it</a>
+    </nav>
+  </div>
+  <div class="progress" aria-hidden="true"></div>
+</header>
+
+<main id="top">
+  <div class="hero">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="kicker">NULLSCAPE v1</div>
+        <h1>Teaching a model to <em>make terrain</em></h1>
+        <p class="lede">We built the data, trained a diffusion model on one RTX 5060, and measured it on 30,000 generated maps.</p>
+        <div class="meta">September 2026 · 10 minute read</div>
+        <a class="btn" href="#benchmark">Jump to results
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5"/></svg>
+        </a>
+      </div>
+      <figure class="terrain-card reveal" aria-label="Animated ridgeline render of heightmaps generated by the v1 model">
+        <canvas id="terrain" width="1000" height="800"></canvas>
+        <figcaption class="terrain-cap"><span>Learned sample: <b id="terrain-name">mountains</b></span><span>real v1 output, noise to terrain</span></figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="stats reveal">
+    <div class="wrap">
+      <div class="stat"><div class="num" data-count="50000">50,000</div><div class="lbl">procedural training maps</div></div>
+      <div class="stat"><div class="num" data-count="23.2" data-dec="1">23.2<small>M</small></div><div class="lbl">model parameters</div></div>
+      <div class="stat"><div class="num" data-count="5.5" data-dec="1">5.5<small>maps/s</small></div><div class="lbl">on an 8 GB RTX 5060</div></div>
+      <div class="stat"><div class="num" data-count="0">0</div><div class="lbl">copied training maps found</div></div>
+    </div>
+  </div>
+
+  <section id="why">
+    <div class="wrap split">
+      <div class="prose reveal">
+        <h2>Why train our own</h2>
+        <p>NULLSCAPE is a game whose worlds come from a machine-learning model. We wanted to own that model end to end: the training data, the architecture, the training loop, the evaluation and the inference code. No external generative API.</p>
+        <p>We started small on purpose. Every world in v1 is a <strong>64 by 64 heightmap</strong> covering 4 km, with heights up to 1,200 m and a sea level. At that size one consumer GPU can train a model in an afternoon, so we could run experiments fast.</p>
+        <p>We compared VAEs, GANs, autoregressive transformers and diffusion models. We picked a <strong>conditional diffusion U-Net</strong>. Its training is stable, it covers the whole range of terrain rather than collapsing onto a few favourite maps, and you can steer it with properties like relief or water.</p>
+      </div>
+      <figure class="reveal">
+        <img src="{{IMG:docs/blog/assets/archetypes.png|1200}}" alt="Grid of procedural training heightmaps: plains, hills, mountains, ridges, islands and mesas">
+        <figcaption>The training data: six procedural terrain types with noise, domain warping, stream-power erosion and thermal erosion. 50,000 maps took 45 minutes to build.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="journey">
+    <div class="wrap">
+      <div class="prose reveal">
+        <h2>What we went through</h2>
+        <p>The whole v1 cycle took two days, from an empty folder to a frozen, benchmarked model.</p>
+      </div>
+      <ol class="timeline">
+        <li class="reveal"><span class="when">Day 1, early</span><div><h3>Research and metrics first</h3><p>We wrote the evaluation before the model: 25 terrain metrics, a traversability check for a walking player, and a noise-floor protocol that compares learned maps against real maps the same way it compares real maps against each other.</p></div></li>
+        <li class="reveal"><span class="when">Day 1</span><div><h3>A procedural world generator</h3><p>Six terrain archetypes, erosion, global height normalization, and seeds that regenerate each map bit for bit. We rendered previews after every tweak until mountains looked like mountains.</p></div></li>
+        <li class="reveal"><span class="when">Day 1, afternoon</span><div><h3>The first training run crawled</h3><p>Training ran at under one step per second. On an 8 GB card, Windows silently spills video memory into system RAM when you run out, and everything slows by 10x or more. We capped PyTorch's memory and got 4.3 steps per second.</p></div></li>
+        <li class="reveal"><span class="when">Day 1, evening</span><div><h3>30,000 steps in 2.2 hours</h3><p>The model learned the big shapes within a few thousand steps. We added visual artifacts at every checkpoint, then continued to 40,000 steps to see if it kept improving. It did not.</p></div></li>
+        <li class="reveal"><span class="when">Day 1, late</span><div><h3>The sampler was hiding quality</h3><p>With 50 evenly spaced denoising steps the maps came out grainy. Placing more steps at low noise, called quadratic spacing, removed most of the grain without extra cost.</p></div></li>
+        <li class="reveal"><span class="when">Day 2</span><div><h3>Freeze, then benchmark everything</h3><p>We locked every checkpoint and the dataset read-only and scored five checkpoints and 20 sampler settings. We also stress-tested the controls and checked for memorization against all 45,000 training maps. That took about four GPU hours and 30,000 generated maps.</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="progress">
+    <div class="wrap">
+      <div class="prose reveal">
+        <h2>Same seed, five checkpoints</h2>
+        <p>Each row below uses the identical starting noise and the identical requested properties. The top row is the real procedural map. You can see training settle: by 20,000 steps the layout is right, and from 30,000 to 40,000 steps the samples barely change.</p>
+      </div>
+      <figure class="wide reveal">
+        <img src="{{IMG:benchmarks/v1/artifacts_test/progression.png|1600}}" alt="Fixed-seed progression grid: procedural reference row and learned samples at 20k, 25k, 30k, 35k and 40k steps">
+        <figcaption>Fixed-seed progression on the held-out test split. The maps are the first two of each terrain type in the split, not chosen by eye.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="benchmark">
+    <div class="wrap">
+      <div class="prose reveal">
+        <div class="kicker">The benchmark</div>
+        <h2 style="margin-top:12px">How good is v1?</h2>
+        <p>We scored the model on 2,000 held-out maps it never saw during training or tuning. <strong>100 means indistinguishable from real procedural terrain.</strong> Three non-learned baselines show the scale: blurred real maps, shaped noise, and a copy machine that returns the closest training map.</p>
+      </div>
+      <div class="score reveal" role="table" aria-label="NULLSCAPE-Bench scorecard">
+        <div class="score-row score-head" role="row"><span role="columnheader">Benchmark</span><span role="columnheader">v1 official</span><span class="score-cell" role="columnheader">Old sampler</span><span class="score-cell" role="columnheader">Blur</span><span class="score-cell" role="columnheader">Noise</span><span class="score-cell" role="columnheader">Copy</span></div>
+        {{SCORE_ROWS}}
+        <div class="score-foot">Official v1: checkpoint 30k, 50-step DDIM with quadratic spacing, guidance 2.0. The old sampler is the same checkpoint with 200 uniform steps. Fidelity scores are strict because at 1,000 maps per half the real-vs-real noise floor is tiny.</div>
+      </div>
+
+      <div class="findings">
+        <div class="find big reveal">
+          <div>
+            <div class="figure-num">4x</div>
+            <h3 style="margin-top:14px">faster, with better realism</h3>
+            <p>The 50-step quadratic sampler at guidance 2.0 beats the old 200-step default on realism, slopes and control, at 5.5 instead of 1.4 maps per second. 200 steps never made the quality-speed frontier.</p>
+          </div>
+          <figure style="margin-top:22px">
+            <img src="{{IMG:benchmarks/v1/figures/sampler_pareto.png|900}}" alt="Scatter plot of sampler quality against milliseconds per map with the Pareto frontier highlighted">
+          </figure>
+        </div>
+        <div class="find reveal">
+          <div class="figure-num">2-11%</div>
+          <h3 style="margin-top:14px">control error</h3>
+          <p>Ask for a mean elevation, relief, slope or water fraction and you get it: errors are 2%, 7%, 11% and 5% of the natural spread, from the low end of each range to the high end.</p>
+        </div>
+        <div class="find reveal">
+          <div class="figure-num">1.01</div>
+          <h3 style="margin-top:14px">memorization ratio</h3>
+          <p>Learned maps sit as far from the training set as brand-new real maps do (1.0 means equal), checked under all eight rotations and flips.</p>
+        </div>
+      </div>
+
+      <figure class="wide reveal">
+        <img src="{{IMG:benchmarks/v1/artifacts_official/step_0030000/procedural_vs_learned.png|1500}}" alt="Pairs of rows comparing procedural maps with learned maps generated from the same properties and seeds">
+        <figcaption>Procedural (upper rows) against learned (lower rows), official configuration, same requested properties and seeds.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="limits">
+    <div class="wrap split">
+      <div class="prose reveal">
+        <h2>Where it falls short</h2>
+        <p><strong>Flat ground is noisy.</strong> Plains carry fine grain that real plains lack: about 3,000 times too much power at the finest scale and 4.6 times too many tiny pits. Ask the model for flat terrain and you get flat but rough ground.</p>
+        <p><strong>Rugged ground is a little too smooth.</strong> Mountains, ridges and mesas lose detail at the 130 to 300 m scale, and mesa cliff edges come out soft. In the averaged spectrum the two errors cancel. We only saw them by splitting the numbers by terrain type.</p>
+        <p><strong>One control does not work.</strong> The roughness dial, spectral beta, barely moves the output. Water only behaves when you also give the other properties.</p>
+        <p>We suspected mesas were the weakest terrain type. The data says plains. Mesas came second best overall.</p>
+      </div>
+      <figure class="reveal">
+        <img src="{{IMG:benchmarks/v1/figures/spectrum_error_by_frequency.png|1200}}" alt="Two line charts of spectrum error by frequency, for all checkpoints and per terrain type">
+        <figcaption>Spectrum error by frequency. Right: plains spike at the finest scale while mountains, ridges and mesas dip below zero.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="memorization">
+    <div class="wrap">
+      <div class="prose reveal">
+        <h2>Is it copying?</h2>
+        <p>A model that returns its training data would ace most terrain metrics. So we searched all 45,000 training maps for the nearest match to every generated map, including rotated and mirrored versions, and pulled up the twelve closest cases. Each one shares a type with its neighbour, like a lone island or a gentle plain, and differs in structure. The difference panels on the right of each pair show it.</p>
+      </div>
+      <figure class="wide reveal">
+        <img src="{{IMG:benchmarks/v1/figures/memorization_most_suspicious.png|1400}}" alt="Twelve generated maps next to their nearest training maps with five times amplified difference panels">
+        <figcaption>The twelve generated maps closest to the training set, aligned to their nearest training map, with 5x amplified differences.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="uses">
+    <div class="wrap">
+      <div class="prose reveal">
+        <h2>What you can use it for</h2>
+        <p>v1 already produces maps you can walk around in. Every export carries the physical scale an engine needs.</p>
+      </div>
+      <div class="uses">
+        <div class="use reveal"><h3>Daily worlds from a seed</h3><p>The sampler is deterministic per seed, so a date can become a seed and every player gets the same map that day. Leaderboards work without shipping map files.</p></div>
+        <div class="use reveal"><h3>Level layouts</h3><p>The traversability module marks walkable ground, water and cliffs, and traces a long walkable route. Turn that route into the corridor of a run and steep slopes into walls.</p></div>
+        <div class="use reveal"><h3>Designer controls</h3><p>Request a terrain type plus any subset of mean elevation, relief, slope and water. Leave the rest open and the model fills them in.</p></div>
+        <div class="use reveal"><h3>Straight into an engine</h3><p>Export 16-bit PNG for Godot or Unreal, R16 for Unity, an OBJ mesh for quick previews, and a JSON sidecar with extent, cell size, max height and sea level.</p></div>
+        <div class="use reveal"><h3>Batch generation</h3><p>Generate a whole day's worth of maps in seconds on a desktop GPU and serve them, rather than running the model on every player's machine.</p></div>
+        <div class="use reveal"><h3>A research baseline</h3><p>The frozen benchmark and scorecard exist so every future version gets measured the same way, with a column for exactly how much it improved.</p></div>
+      </div>
+<pre><span class="c"># generate 16 islands with lots of water, ready for Unity</span>
+nullscape sample --checkpoint runs/.../step_0030000.pt <span class="a">--archetype islands --prop water_fraction=0.6</span> \
+  --steps 50 --spacing quadratic --guidance 2.0 --n 16 --formats png16,r16,obj --unity</pre>
+    </div>
+  </section>
+
+  <section id="next">
+    <div class="wrap split">
+      <div class="prose reveal">
+        <h2>What comes next</h2>
+        <p>v2 targets the measured weaknesses, in order of cost. Each change must move its metric on this benchmark without hurting originality or control.</p>
+        <ol class="next">
+          <li><b>Fix four export bugs.</b> For example, Unity sizing doubles maps that already have a valid size (513 becomes 1025).</li>
+          <li><b>Rebalance training.</b> Change the loss weighting that under-trains fine detail and add learning-rate decay. A short fine-tune tests it.</li>
+          <li><b>Relative heights.</b> Generate each map's shape at full scale, then rescale it with the requested elevation and relief, so flat maps get full precision.</li>
+          <li><b>A better roughness control</b> built on a measure that stays stable.</li>
+          <li><b>Faster sampling</b> through distillation to a handful of steps.</li>
+        </ol>
+      </div>
+      <figure class="reveal">
+        <img src="{{IMG:benchmarks/v1/artifacts_official/step_0030000/compare_3d.png|900}}" alt="3D surface renders comparing procedural and learned terrain side by side">
+        <figcaption>Procedural (left) and learned (right) terrain in 3D, official v1 configuration.</figcaption>
+      </figure>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>NULLSCAPE v1 benchmark. Full report: <code>docs/V1_BENCHMARK.md</code>, scorecard: <code>docs/BENCHMARK_SCORECARD.md</code></span>
+    <span>Measured on one RTX 5060, September 2026</span>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // scroll reveals and count-ups
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      e.target.classList.add("in");
+      e.target.querySelectorAll("[data-count]").forEach(countUp);
+      io.unobserve(e.target);
+    }
+  }, { threshold: 0.18 });
+  document.querySelectorAll(".reveal, .score").forEach((el) => (reduce ? el.classList.add("in") : io.observe(el)));
+
+  function countUp(el) {
+    if (reduce || el.dataset.done) return;
+    el.dataset.done = "1";
+    const target = parseFloat(el.dataset.count), dec = +(el.dataset.dec || 0);
+    const small = el.querySelector("small");
+    const suffix = small ? small.outerHTML : "";
+    const t0 = performance.now(), dur = 1400;
+    const step = (t) => {
+      const p = Math.min(1, (t - t0) / dur), v = target * (1 - Math.pow(1 - p, 3));
+      el.innerHTML = v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec }) + suffix;
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  // reading progress bar: scroll-driven animation where supported, hidden elsewhere
+  const bar = document.querySelector(".progress");
+  if (!reduce && CSS.supports("animation-timeline: scroll()")) {
+    bar.animate([{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], { fill: "both", timeline: new ScrollTimeline({ source: document.documentElement }) });
+  } else {
+    bar.style.display = "none";
+  }
+
+  // hero: ridgeline render of real v1 heightmaps, morphing from noise to terrain
+  const DATA = {{TERRAIN_DATA}};
+  const canvas = document.getElementById("terrain"), ctx = canvas.getContext("2d");
+  const nameEl = document.getElementById("terrain-name");
+  const N = DATA.size;
+  const maps = DATA.maps.map((m) => {
+    const bytes = Uint8Array.from(atob(m.b64), (c) => c.charCodeAt(0));
+    return { name: m.name, h: Float32Array.from(bytes, (b) => b / 255) };
+  });
+  const SEA = DATA.sea_level;
+  const noise = () => {  // diffusion starts from noise: low-amplitude static around mid height
+    const f = new Float32Array(N * N);
+    for (let i = 0; i < f.length; i++) f[i] = 0.3 + Math.random() * 0.16;
+    return f;
+  };
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const rgb = (hex) => { const n = parseInt(hex.replace("#", ""), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+  const mix = (a, b, t) => `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(",")})`;
+  const range = (h) => { const s = Array.from(h).sort((x, y) => x - y); return [Math.max(s[Math.floor(s.length * 0.05)], SEA), s[Math.floor(s.length * 0.995)]]; };
+  maps.forEach((m) => (m.range = range(m.h)));
+  let cur = new Float32Array(maps[0].h), from = noise(), idx = 0, phase = "form", t0 = performance.now();
+
+  function draw(h, rangeLoHi) {
+    const W = canvas.width, H = canvas.height, bg = css("--bg-2");
+    const accent = rgb(css("--accent")), line = rgb(css("--text-3")), water = css("--water");
+    const [lo, hi] = rangeLoHi;
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    const R = 36, top = 190, bottom = H - 50, amp = 560;
+    for (let r = 0; r < R; r++) {
+      const t = r / (R - 1);                              // 0 = far row, 1 = near row
+      const row = Math.round(t * (N - 1));
+      const y0 = top + (bottom - top) * Math.pow(t, 1.25);
+      const half = (W / 2 - 60) * (0.62 + 0.38 * t);      // far rows are narrower (perspective)
+      const a = amp * (0.5 + 0.5 * t);
+      const pts = [];
+      let peak = 0;
+      for (let c = 0; c < N; c++) {
+        const v = h[row * N + c];
+        peak = Math.max(peak, v);
+        pts.push([W / 2 - half + (c / (N - 1)) * 2 * half, y0 - (Math.max(v, SEA) - SEA) * a]);
+      }
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0], H);
+      pts.forEach(([x, y]) => ctx.lineTo(x, y));
+      ctx.lineTo(pts[N - 1][0], H);
+      ctx.closePath();
+      ctx.fillStyle = bg; ctx.fill();                     // hides the rows behind (painter's order)
+      ctx.beginPath();
+      pts.forEach(([x, y], c) => (c ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+      const rel = Math.min(1, Math.max(0, (peak - lo) / Math.max(hi - lo, 1e-3)));
+      const k = Math.min(1, Math.max(0, (rel - 0.55) / 0.4));
+      ctx.strokeStyle = peak < SEA + 0.004 ? water : mix(line, accent, k * k * (3 - 2 * k));
+      ctx.globalAlpha = 0.3 + 0.7 * t;
+      ctx.lineWidth = 1.2 + 1.0 * t;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  const ease = (p) => 1 - Math.pow(1 - p, 3);
+  function frame(t) {
+    const target = maps[idx].h;
+    if (phase === "form") {
+      const p = Math.min(1, (t - t0) / 2600), e = ease(p);
+      for (let i = 0; i < cur.length; i++) cur[i] = from[i] + (target[i] - from[i]) * e;
+      if (p >= 1) { phase = "hold"; t0 = t; }
+    } else if (phase === "hold" && t - t0 > 3200) {
+      idx = (idx + 1) % maps.length;
+      from = new Float32Array(cur);
+      const n = noise();
+      for (let i = 0; i < from.length; i++) from[i] = from[i] * 0.35 + n[i] * 0.65;
+      nameEl.textContent = maps[idx].name;
+      phase = "form"; t0 = t;
+    }
+    if (visible) draw(cur, maps[idx].range);
+    requestAnimationFrame(frame);
+  }
+  let visible = true;
+  if (reduce) { draw(maps[0].h, maps[0].range); }
+  else {
+    new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(canvas);
+    requestAnimationFrame(frame);
+  }
+  window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => draw(cur, maps[idx].range));
+})();
+</script>
+</body>
+</html>
