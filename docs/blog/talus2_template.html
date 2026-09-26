@@ -7,369 +7,375 @@
 <meta name="description" content="Talus-2 changes how the NULLSCAPE terrain model sees height. Benchmark average 70.4 to 77.5, plains fixed, micro-relief now matches real terrain.">
 <meta name="color-scheme" content="dark">
 <style>
-  /* Palette is locked to the NULLSCAPE game look: magenta = primary accent, yellow = key numbers,
-     cyan = Talus-2 data. Neutrals are violet-greys. Dark only, by design of the pixel theme. */
+  /* Monochrome 1-bit system: every visual is FG or BG, greys only through ordered dithering. */
   :root {
-    --bg: #0b0812; --bg-2: #120d1c; --bg-3: #1a1328; --line: #2a2140;
-    --text: #efe9fb; --text-2: #b7aed0; --text-3: #7f769a;
-    --mag: #ff3d9a; --mag-deep: #7a0f4a; --yel: #ffe45e; --cyan: #36f1ff;
-    --notch: 8px;
+    --bg: #0c0c0d; --fg: #e8e5de; --mid: #8e8b85; --dim: #5b5955; --line: #2a2a2c; --panel: #111112;
     --mono: "Cascadia Code", "Cascadia Mono", Consolas, "SF Mono", ui-monospace, monospace;
-    --display: "Bahnschrift Condensed", "Bahnschrift", "Segoe UI Variable Display", "Arial Narrow", sans-serif;
-    --body: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
     --ease: cubic-bezier(0.16, 1, 0.3, 1);
   }
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; background: var(--bg); }
-  body { margin: 0; color: var(--text); font: 17px/1.7 var(--body); -webkit-font-smoothing: antialiased; }
-  ::selection { background: var(--mag); color: var(--bg); }
-  a { color: var(--cyan); text-underline-offset: 3px; }
-  body::after { /* scanlines + vignette: fixed, non-interactive, never on scrolling containers */
-    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 50;
-    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.16) 0 1px, transparent 1px 3px),
-                radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%);
-  }
-  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 28px; }
-  .mono { font-family: var(--mono); }
-  h1, h2, h3 { font-family: var(--display); text-transform: uppercase; line-height: 1; margin: 0; letter-spacing: 0.01em; }
-  h2 { font-size: clamp(2.1rem, 4.4vw, 3.4rem); font-weight: 700; text-shadow: 3px 3px 0 var(--mag-deep); margin-bottom: 18px; }
-  h3 { font-size: 1.35rem; font-weight: 700; letter-spacing: 0.02em; }
-  p { color: var(--text-2); margin: 0 0 16px; }
-  strong { color: var(--text); font-weight: 600; }
-  .prose { max-width: 62ch; }
-  .kicker { font: 600 0.78rem/1 var(--mono); letter-spacing: 0.22em; text-transform: uppercase; color: var(--yel); }
-  .pix { clip-path: polygon(var(--notch) 0, calc(100% - var(--notch)) 0, 100% var(--notch), 100% calc(100% - var(--notch)),
-         calc(100% - var(--notch)) 100%, var(--notch) 100%, 0 calc(100% - var(--notch)), 0 var(--notch)); }
-  canvas.tile { display: block; width: 100%; height: auto; aspect-ratio: 1; image-rendering: pixelated; }
+  html { background: var(--bg); }
+  body { margin: 0; color: var(--fg); font: 16px/1.75 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  ::selection { background: var(--fg); color: var(--bg); }
+  a { color: var(--fg); text-underline-offset: 4px; }
+  canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+  #field { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
+  body::after { content: ""; position: fixed; inset: 0; z-index: 60; pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0 1px, transparent 1px 3px); }
+  main, footer, .bar { position: relative; z-index: 1; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 32px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .label { font: 600 0.72rem/1 var(--mono); letter-spacing: 0.22em; text-transform: uppercase; color: var(--mid); }
+  p { color: #bcb9b2; margin: 0 0 16px; max-width: 60ch; }
+  strong { color: var(--fg); font-weight: 600; }
+  .ptype { display: block; margin: 0 0 22px; }
+  .ptype canvas { max-width: 100%; height: auto; }
 
   /* top bar */
-  .bar { position: fixed; top: 0; left: 0; right: 0; z-index: 40; transition: background .3s var(--ease), border-color .3s var(--ease);
-         border-bottom: 1px solid transparent; }
-  .bar.solid { background: rgba(11, 8, 18, 0.86); border-color: var(--line); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-  .bar .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
-  .logo { font: 700 1.05rem/1 var(--mono); letter-spacing: 0.16em; color: var(--text); text-decoration: none; }
-  .logo b { color: var(--mag); }
-  .bar nav { display: flex; gap: 28px; }
-  .bar nav a { font: 600 0.8rem/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-2); text-decoration: none; }
-  .bar nav a:hover { color: var(--yel); }
+  .bar { position: fixed; top: 0; left: 0; right: 0; z-index: 40; height: 60px; transition: background .3s var(--ease); }
+  .bar.solid { background: rgba(12, 12, 13, 0.92); box-shadow: 0 1px 0 var(--line); }
+  .bar .wrap { height: 100%; display: flex; align-items: center; justify-content: space-between; }
+  .bar nav { display: flex; gap: 30px; }
+  .bar nav a { font: 600 0.74rem/1 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--mid); text-decoration: none; }
+  .bar nav a:hover { color: var(--fg); }
+  #prog { position: absolute; left: 0; bottom: -2px; height: 2px; width: 100%; }
 
   /* hero */
-  .hero { position: relative; min-height: min(92dvh, 980px); display: grid; align-items: end; overflow: hidden; }
-  #sky { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
-  .hero::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
-    background: linear-gradient(90deg, rgba(11,8,18,0.92) 0%, rgba(11,8,18,0.55) 42%, transparent 70%),
-                linear-gradient(0deg, var(--bg) 0%, transparent 28%); }
-  .hero .wrap { position: relative; z-index: 2; width: 100%; padding-top: 110px; padding-bottom: 76px; }
-  .hero h1 { font-size: clamp(4.4rem, 12vw, 9.5rem); font-weight: 700; margin: 18px 0 10px; color: var(--text);
-             text-shadow: 5px 5px 0 var(--mag), 10px 10px 0 var(--mag-deep); letter-spacing: 0.02em; }
-  .hero .sub { font: 700 clamp(1.4rem, 2.6vw, 2rem)/1.15 var(--display); text-transform: uppercase; color: var(--yel); margin-bottom: 18px; }
-  .hero .lede { font-size: 1.12rem; max-width: 44ch; color: var(--text-2); margin-bottom: 30px; }
-  .cta { display: flex; gap: 18px; flex-wrap: wrap; }
-  .btn { display: inline-block; font: 700 0.86rem/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none;
-         padding: 15px 22px; background: var(--mag); color: var(--bg); box-shadow: 5px 5px 0 var(--yel);
-         transition: transform .18s steps(3), box-shadow .18s steps(3); }
-  .btn:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--yel); }
-  .btn:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--yel); }
-  .btn.ghost { background: transparent; color: var(--text); box-shadow: inset 0 0 0 2px var(--text-2), 5px 5px 0 var(--line); }
-  .btn.ghost:hover { box-shadow: inset 0 0 0 2px var(--yel), 7px 7px 0 var(--line); }
-  .hud { position: absolute; z-index: 2; right: 28px; bottom: 26px; font: 600 0.72rem/1.5 var(--mono); letter-spacing: 0.14em; text-transform: uppercase;
-         color: var(--text-3); text-align: right; }
-  .hud b { color: var(--cyan); font-weight: 600; }
+  .hero { position: relative; height: min(100vh, 1000px); min-height: 640px; overflow: hidden; background: var(--bg); }
+  #fly { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .hero .shade { position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(90deg, rgba(12,12,13,0.95) 0%, rgba(12,12,13,0.82) 44%, rgba(12,12,13,0.35) 64%, rgba(12,12,13,0) 80%),
+                linear-gradient(0deg, var(--bg) 0%, rgba(12,12,13,0) 26%); }
+  .hero .wrap { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 88px; }
+  .hero .sub { font: 700 0.95rem/1.4 var(--mono); letter-spacing: 0.2em; text-transform: uppercase; color: var(--fg); margin: 6px 0 16px; min-height: 1.4em; }
+  .hero .sub .cur { display: inline-block; width: 0.6em; height: 1em; background: var(--fg); vertical-align: -0.12em; margin-left: 4px; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .hero .lede { font-size: 1.08rem; color: #c9c6bf; max-width: 42ch; margin-bottom: 30px; }
+  .cta { display: flex; gap: 16px; flex-wrap: wrap; }
+  .btn { position: relative; display: inline-block; font: 700 0.8rem/1 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; text-decoration: none;
+         padding: 16px 22px; color: var(--bg); background: var(--fg); box-shadow: 5px 5px 0 var(--dim); transition: transform .16s steps(2), box-shadow .16s steps(2); }
+  .btn:hover { transform: translate(-3px, -3px); box-shadow: 8px 8px 0 var(--mid); }
+  .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--mid); }
+  .btn.ghost { color: var(--fg); background: var(--bg); box-shadow: inset 0 0 0 2px var(--fg), 5px 5px 0 var(--line); }
+  .btn.ghost:hover { background: var(--fg); color: var(--bg); }
+  .hud { position: absolute; right: 32px; bottom: 30px; font: 600 0.7rem/1.9 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--mid); text-align: right;
+         background: var(--bg); padding: 12px 16px; box-shadow: inset 0 0 0 1px var(--line); }
+  .hud b { color: var(--fg); font-weight: 600; display: inline-block; min-width: 9ch; }
+  .hud .live::before { content: ""; display: inline-block; width: 8px; height: 8px; background: var(--fg); margin-right: 8px; animation: blink 1.2s steps(1) infinite; }
+
+  /* marquee (the page's only one) */
+  .marquee { position: relative; background: var(--fg); color: var(--bg); overflow: hidden; white-space: nowrap; border-top: 2px solid var(--bg); }
+  .marquee .track { display: inline-flex; animation: slide 38s linear infinite; }
+  .marquee span { font: 700 0.86rem/1 var(--mono); letter-spacing: 0.18em; text-transform: uppercase; padding: 15px 0; }
+  .marquee span::after { content: "/"; margin: 0 26px; opacity: 0.5; }
+  @keyframes slide { to { transform: translateX(-50%); } }
 
   /* stats */
-  .stats { border-top: 2px solid var(--line); border-bottom: 2px solid var(--line); background: var(--bg-2); }
+  .stats { background: var(--bg); border-bottom: 2px solid var(--line); }
   .stats .wrap { display: grid; grid-template-columns: repeat(4, 1fr); }
-  .stat { padding: 28px 24px; border-left: 2px solid var(--line); }
+  .stat { padding: 34px 26px 30px; border-left: 2px solid var(--line); }
   .stat:first-child { border-left: 0; padding-left: 0; }
-  .stat .n { font: 700 clamp(2.2rem, 4.2vw, 3.2rem)/1 var(--mono); color: var(--yel); letter-spacing: -0.02em; }
-  .stat .n small { font-size: 0.42em; color: var(--text-3); margin-left: 6px; letter-spacing: 0; }
-  .stat .l { margin-top: 10px; font-size: 0.9rem; color: var(--text-2); }
-  .stat .was { font: 0.78rem var(--mono); color: var(--text-3); margin-top: 4px; }
+  .stat .l { margin-top: 14px; font-size: 0.9rem; color: #bcb9b2; }
+  .stat .was { margin-top: 2px; font: 0.74rem var(--mono); letter-spacing: 0.08em; color: var(--dim); text-transform: uppercase; }
 
-  section { padding: 110px 0 0; }
-  .split { display: grid; grid-template-columns: 1fr 1.05fr; gap: 64px; align-items: center; }
+  section { padding: 130px 0 0; }
 
-  /* before/after slider */
-  .ba { position: relative; background: var(--bg-3); padding: 14px; user-select: none; }
-  .ba-stage { position: relative; aspect-ratio: 1; cursor: ew-resize; touch-action: none; }
-  .ba-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
-  .ba-stage canvas.top { clip-path: inset(0 calc(100% - var(--x, 50%)) 0 0); }
-  .ba-handle { position: absolute; top: 0; bottom: 0; left: var(--x, 50%); width: 4px; margin-left: -2px; background: var(--yel);
-               box-shadow: 0 0 0 2px var(--bg); pointer-events: none; }
-  .ba-handle::after { content: ""; position: absolute; top: 50%; left: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; background: var(--yel);
-                      box-shadow: 0 0 0 3px var(--bg); }
-  .ba-labels { display: flex; justify-content: space-between; margin-top: 12px; font: 600 0.78rem/1 var(--mono); letter-spacing: 0.14em;
-               text-transform: uppercase; }
-  .ba-labels .l { color: var(--mag); } .ba-labels .r { color: var(--cyan); }
-  .ba input { position: absolute; inset: 14px 14px auto 14px; width: calc(100% - 28px); aspect-ratio: 1; opacity: 0; cursor: ew-resize; margin: 0; }
-  figcaption { font-size: 0.86rem; color: var(--text-3); margin-top: 12px; line-height: 1.5; }
+  /* pinned story */
+  .story { height: 330vh; padding: 0; margin-top: 130px; }
+  .story .sticky { position: sticky; top: 0; height: 100vh; display: flex; align-items: center; }
+  .story .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: center; width: 100%; }
+  .steps { position: relative; min-height: 330px; }
+  .step { position: absolute; inset: 0; opacity: 0; transform: translateY(16px); transition: opacity .45s var(--ease), transform .45s var(--ease); }
+  .step.on { opacity: 1; transform: none; }
+  .step .big { font: 700 clamp(2.2rem, 4vw, 3.2rem)/1 var(--mono); letter-spacing: -0.02em; margin: 14px 0 16px; }
+  .stage { position: relative; background: var(--bg); box-shadow: inset 0 0 0 2px var(--fg); padding: 16px; }
+  .stage > canvas { width: 100%; height: auto; aspect-ratio: 1; }
+  .stage .tag { position: absolute; left: 30px; top: 30px; background: var(--bg); padding: 6px 8px; }
+  .meter { display: flex; gap: 6px; margin-top: 18px; }
+  .meter i { flex: 1; height: 6px; background: var(--line); transition: background .2s steps(1); }
+  .meter i.on { background: var(--fg); }
+  .static-pair { display: none; }
 
-  /* fix: range bars */
-  .ranges { background: var(--bg-2); padding: 28px; margin-top: 8px; }
-  .ranges h3 { font-size: 1rem; color: var(--text-2); margin-bottom: 16px; font-family: var(--mono); letter-spacing: 0.1em; }
-  .rg { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 14px; margin: 10px 0; font: 0.82rem var(--mono); color: var(--text-2); }
-  .rg .track { position: relative; height: 18px; }
-  .rg .fill { position: absolute; top: 0; bottom: 0; left: var(--a); width: var(--w);
-              background: repeating-linear-gradient(90deg, var(--c) 0 6px, transparent 6px 8px);
-              transform-origin: left; transform: scaleX(0); transition: transform .9s steps(12); }
-  .in .rg .fill { transform: scaleX(1); }
-  .formula { font: 600 1.05rem/1.6 var(--mono); color: var(--text); background: var(--bg-3); padding: 18px 20px; margin: 20px 0 22px; border-left: 4px solid var(--mag); }
-  .formula span { color: var(--cyan); }
+  /* fix */
+  .fix { display: grid; grid-template-columns: 1.1fr 1fr; gap: 72px; align-items: start; }
+  .ranges { box-shadow: inset 0 0 0 2px var(--line); background: var(--bg); padding: 30px; }
+  .rg { display: grid; grid-template-columns: 90px 1fr; gap: 16px; align-items: center; margin: 12px 0; font: 600 0.74rem var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--mid); }
+  .rg canvas { width: 100%; height: 14px; }
+  .rg-head { margin: 26px 0 6px; } .rg-head:first-child { margin-top: 0; }
 
-  /* comparison grid */
-  .cmp { margin-top: 34px; display: grid; grid-template-columns: 110px repeat(6, 1fr); gap: 10px; align-items: center; }
-  .cmp .hd { font: 600 0.74rem/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); text-align: center; padding-bottom: 4px; }
-  .cmp .rl { font: 700 0.8rem/1.2 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-2); }
-  .cmp .rl.t2 { color: var(--cyan); }
-  .cmp .cell { background: var(--bg-3); padding: 5px; }
-  .cmp .cell.t2 { background: rgba(54, 241, 255, 0.14); }
+  /* forming tiles */
+  .forms { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-top: 40px; }
+  .form { background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); padding: 8px; }
+  .form canvas { width: 100%; height: auto; aspect-ratio: 1; }
+  .form .label { margin-top: 10px; display: flex; justify-content: space-between; }
+
+  /* same seed grid */
+  .cmp { display: grid; grid-template-columns: 120px repeat(6, 1fr); gap: 12px; align-items: center; margin-top: 40px; }
+  .cmp canvas { width: 100%; height: auto; aspect-ratio: 1; }
+  .cmp .cell { background: var(--bg); padding: 6px; box-shadow: inset 0 0 0 1px var(--line); }
+  .cmp .cell.t2 { box-shadow: inset 0 0 0 2px var(--fg); }
+  .cmp .hd { text-align: center; }
+  .cmp .rl.t2 { color: var(--fg); }
 
   /* scorecard */
-  .score { margin-top: 34px; background: var(--bg-2); }
-  .srow { display: grid; grid-template-columns: 1.2fr 2.3fr 0.7fr 0.7fr 0.8fr; gap: 14px; align-items: center; padding: 13px 22px;
-          border-top: 2px solid var(--bg); }
-  .srow.head { font: 600 0.72rem/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); border-top: 0; padding-top: 18px; }
-  .srow .nm b { display: block; font: 700 1.02rem/1.2 var(--display); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text); }
-  .srow .nm span { font-size: 0.8rem; color: var(--text-3); }
-  .bar2 { display: flex; align-items: center; gap: 12px; }
-  .bar2 i { display: block; height: 14px; width: calc(var(--v) * 1%);
-            background: repeating-linear-gradient(90deg, var(--cyan) 0 8px, transparent 8px 10px);
-            clip-path: inset(0 100% 0 0); transition: clip-path 1.1s steps(18); }
-  .in .bar2 i { clip-path: inset(0 0 0 0); }
-  .bar2 em { font: 700 1rem var(--mono); font-style: normal; color: var(--text); min-width: 4ch; }
-  .sc { font: 0.9rem var(--mono); color: var(--text-2); text-align: right; }
-  .sc.up { color: var(--yel); } .sc.down { color: var(--mag); }
-  .srow.total { background: var(--bg-3); }
-  .srow.total .nm b { color: var(--yel); }
-  .score-note { padding: 14px 22px 18px; font-size: 0.84rem; color: var(--text-3); }
+  .score { margin-top: 40px; background: var(--bg); box-shadow: inset 0 0 0 2px var(--line); }
+  .srow { display: grid; grid-template-columns: 1.15fr 2.6fr 0.62fr 0.62fr 0.7fr; gap: 16px; align-items: center; padding: 14px 26px; box-shadow: 0 -1px 0 var(--line); }
+  .srow.head { box-shadow: none; padding: 20px 26px 10px; }
+  .srow .nm b { display: block; font: 700 0.86rem/1.3 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; }
+  .srow .nm span { font-size: 0.8rem; color: var(--dim); }
+  .srow .bar2 { display: flex; align-items: center; gap: 14px; }
+  .srow .bar2 canvas { flex: 1; height: 16px; }
+  .srow .bar2 em { font: 700 1rem var(--mono); font-style: normal; min-width: 4ch; text-align: right; }
+  .sc { font: 0.86rem var(--mono); color: var(--mid); text-align: right; }
+  .sc.up { color: var(--fg); }
+  .srow.total { background: var(--fg); color: var(--bg); }
+  .srow.total .nm span, .srow.total .sc { color: #4a4845; }
+  .srow.total .sc.up { color: var(--bg); }
+  .score-note { padding: 16px 26px 20px; font: 0.76rem/1.6 var(--mono); color: var(--dim); box-shadow: 0 -1px 0 var(--line); }
+  .legend { display: flex; gap: 22px; padding: 0 26px 14px; font: 600 0.68rem var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+  .legend i { display: inline-block; width: 10px; height: 10px; margin-right: 8px; vertical-align: -1px; }
+  .legend .a { background: var(--fg); } .legend .b { background: repeating-linear-gradient(0deg, var(--mid) 0 2px, transparent 2px 4px); }
 
-  /* findings bento: 5 cells */
-  .bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-top: 34px; }
-  .card { background: var(--bg-2); padding: 26px; position: relative; }
-  .card .big { font: 700 clamp(2rem, 3.6vw, 2.9rem)/1 var(--mono); color: var(--yel); letter-spacing: -0.02em; }
-  .card .big .arr { color: var(--mag); padding: 0 6px; }
-  .card h3 { margin: 14px 0 8px; }
-  .card p { margin: 0; font-size: 0.95rem; }
-  .c1 { grid-column: span 4; background: linear-gradient(135deg, rgba(255,61,154,0.18), transparent 55%), var(--bg-2); }
-  .c2 { grid-column: span 2; }
-  .c3 { grid-column: span 2; }
-  .c4 { grid-column: span 2; }
-  .c5 { grid-column: span 2; background: repeating-linear-gradient(45deg, rgba(255,228,94,0.06) 0 6px, transparent 6px 12px), var(--bg-2); }
+  /* bento: 5 cells */
+  .bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-top: 40px; }
+  .card { background: var(--bg); box-shadow: inset 0 0 0 2px var(--line); padding: 28px; min-height: 230px; display: flex; flex-direction: column; justify-content: space-between; }
+  .card h3 { font: 700 0.86rem/1.3 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; margin: 20px 0 8px; }
+  .card p { font-size: 0.93rem; margin: 0; }
+  .card.inv { background: var(--fg); color: var(--bg); box-shadow: none; }
+  .card.inv p { color: #3b3936; }
+  .c1 { grid-column: span 4; } .c2 { grid-column: span 2; } .c3, .c4, .c5 { grid-column: span 2; }
+  .card.hatch { background: repeating-linear-gradient(45deg, #1a1a1b 0 2px, var(--bg) 2px 7px); }
 
-  /* spot the real one */
-  .game { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 30px; }
-  .round { background: var(--bg-2); padding: 14px; transition: background .25s steps(3); }
+  /* spot the real map */
+  .game { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; }
+  .round { background: var(--bg); box-shadow: inset 0 0 0 2px var(--line); padding: 14px; transition: box-shadow .2s steps(2); }
   .round .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .round button { all: unset; cursor: pointer; display: block; background: var(--bg-3); padding: 4px; outline-offset: 3px; }
-  .round button:hover { background: var(--line); }
-  .round button:focus-visible { outline: 2px solid var(--yel); }
-  .round .meta { display: flex; justify-content: space-between; margin-top: 10px; font: 600 0.74rem/1.3 var(--mono); letter-spacing: 0.1em;
-                 text-transform: uppercase; color: var(--text-3); min-height: 1.3em; }
-  .round.right { background: rgba(54, 241, 255, 0.12); }
-  .round.wrong { background: rgba(255, 61, 154, 0.14); }
+  .round button { all: unset; display: block; cursor: pointer; padding: 4px; box-shadow: inset 0 0 0 1px var(--line); transition: box-shadow .12s steps(1); }
+  .round button:hover { box-shadow: inset 0 0 0 2px var(--fg); }
+  .round button:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
+  .round button canvas { width: 100%; height: auto; aspect-ratio: 1; }
+  .round .meta { display: flex; justify-content: space-between; margin-top: 12px; font: 600 0.7rem/1.3 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
+  .round.right { box-shadow: inset 0 0 0 2px var(--fg); }
+  .round.right .meta { color: var(--fg); }
   .round.done button { cursor: default; }
-  .tally { margin-top: 20px; font: 700 1.05rem var(--mono); color: var(--yel); min-height: 1.6em; }
+  .round.done button:hover { box-shadow: inset 0 0 0 1px var(--line); }
+  .round button.real { box-shadow: inset 0 0 0 2px var(--fg); }
+  .tally { margin-top: 24px; min-height: 60px; }
 
   /* limits + play */
-  .limits { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 56px; margin-top: 26px; }
-  .limit { padding: 20px 0 20px 34px; border-top: 2px solid var(--line); position: relative; }
-  .limit::before { content: ""; position: absolute; left: 0; top: 30px; width: 12px; height: 12px; background: var(--mag); box-shadow: 4px 4px 0 var(--mag-deep); }
-  .limit p { margin: 6px 0 0; font-size: 0.95rem; }
-  .play { margin-top: 110px; background: linear-gradient(120deg, rgba(255,61,154,0.22), rgba(54,241,255,0.10)), var(--bg-2); padding: 56px; display: grid;
-          grid-template-columns: 1fr auto; gap: 28px 40px; align-items: end; }
-  .play pre { grid-column: 1 / -1; }
-  .play p { max-width: 52ch; margin-bottom: 0; }
-  .play h2 { margin-bottom: 12px; }
-  pre { margin: 0; background: var(--bg); padding: 18px 20px; overflow-x: auto; font: 0.82rem/1.65 var(--mono); color: var(--text-2); }
-  pre b { color: var(--cyan); font-weight: 600; }
-  footer { margin-top: 90px; border-top: 2px solid var(--line); padding: 30px 0 56px; font: 0.8rem/1.6 var(--mono); color: var(--text-3); }
-  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
-  footer a { color: var(--text-2); }
+  .limits { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 64px; margin-top: 30px; }
+  .limit { padding: 22px 0 22px 34px; box-shadow: 0 -2px 0 var(--line); position: relative; }
+  .limit::before { content: ""; position: absolute; left: 0; top: 30px; width: 12px; height: 12px; background: var(--fg); box-shadow: 4px 4px 0 var(--dim); }
+  .limit h3 { font: 700 0.86rem/1.3 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 6px; }
+  .limit p { margin: 0; font-size: 0.94rem; }
+  .play { position: relative; margin-top: 130px; overflow: hidden; background: var(--bg); box-shadow: inset 0 0 0 2px var(--fg); }
+  #fly2 { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.75; }
+  .play .inner { position: relative; padding: 64px; display: grid; grid-template-columns: 1fr auto; gap: 28px 40px; align-items: end;
+                 background: linear-gradient(90deg, rgba(12,12,13,0.95) 0%, rgba(12,12,13,0.75) 50%, rgba(12,12,13,0.3) 100%); }
+  pre { grid-column: 1 / -1; margin: 0; background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); padding: 18px 20px; overflow-x: auto;
+        font: 0.8rem/1.7 var(--mono); color: var(--mid); }
+  pre b { color: var(--fg); font-weight: 600; }
+  footer { margin-top: 110px; box-shadow: 0 -2px 0 var(--line); padding: 30px 0 60px; font: 0.76rem/1.7 var(--mono); color: var(--dim); background: var(--bg); }
+  footer .wrap { display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+  footer a { color: var(--mid); }
 
-  /* motion: text fades, visuals wipe in stepped pixels */
-  .rv { opacity: 0; transform: translateY(18px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
+  .rv { opacity: 0; transform: translateY(20px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
   .rv.in { opacity: 1; transform: none; }
-  .wipe { clip-path: inset(0 100% 0 0); }
-  .wipe.in { animation: wipe .75s steps(10) forwards; }
-  @keyframes wipe { to { clip-path: inset(0 0 0 0); } }
-  .wipe.pix.in { animation-name: wipepix; }
-  @keyframes wipepix { from { clip-path: polygon(0 0, 0 0, 0 100%, 0 100%); }
-    to { clip-path: polygon(var(--notch) 0, calc(100% - var(--notch)) 0, 100% var(--notch), 100% calc(100% - var(--notch)),
-         calc(100% - var(--notch)) 100%, var(--notch) 100%, 0 calc(100% - var(--notch)), 0 var(--notch)); } }
 
+  /* #shot: layout for full-page screenshots (no pinning) */
+  .shot .story { height: auto; } .shot .story .sticky { position: static; height: auto; padding: 60px 0; }
+  .shot .hero { height: 900px; }
   @media (prefers-reduced-motion: reduce) {
-    html { scroll-behavior: auto; }
     .rv, .rv.in { opacity: 1; transform: none; transition: none; }
-    .wipe, .wipe.in { clip-path: none; animation: none; }
-    .wipe.pix, .wipe.pix.in { clip-path: polygon(var(--notch) 0, calc(100% - var(--notch)) 0, 100% var(--notch), 100% calc(100% - var(--notch)),
-         calc(100% - var(--notch)) 100%, var(--notch) 100%, 0 calc(100% - var(--notch)), 0 var(--notch)); }
-    .bar2 i, .in .bar2 i { clip-path: none; transition: none; }
-    .rg .fill { transform: none; transition: none; }
+    .marquee .track { animation: none; }
+    .hero .sub .cur, .hud .live::before { animation: none; }
+    .story { height: auto; margin-top: 130px; }
+    .story .sticky { position: static; height: auto; }
+    .steps { min-height: 0; } .step { position: static; opacity: 1; transform: none; margin-bottom: 28px; }
+    .stage, .meter { display: none; }
+    .static-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .btn { transition: none; }
   }
   @media (max-width: 900px) {
-    .split, .play, .limits { grid-template-columns: 1fr; }
-    .stats .wrap { grid-template-columns: repeat(2, 1fr); }
-    .stat { border-left: 0; padding-left: 0; border-top: 2px solid var(--line); }
-    .stat:nth-child(-n+2) { border-top: 0; }
     .bar nav { display: none; }
-    .cmp { grid-template-columns: 70px repeat(3, 1fr); }
-    .cmp .hide-m { display: none; }
-    .srow { grid-template-columns: 1fr 1.3fr; }
-    .srow .sc { display: none; }
-    .bento { grid-template-columns: 1fr; }
-    .bento .card { grid-column: auto; }
+    .stats .wrap { grid-template-columns: repeat(2, 1fr); }
+    .stat { border-left: 0; padding-left: 0; box-shadow: 0 -2px 0 var(--line); }
+    .story .grid, .fix, .limits { grid-template-columns: 1fr; gap: 36px; }
+    .story { height: 280vh; }
+    .steps { min-height: 260px; }
+    .forms { grid-template-columns: repeat(3, 1fr); }
+    .cmp { grid-template-columns: 70px repeat(3, 1fr); } .cmp .hide-m { display: none; }
+    .srow { grid-template-columns: 1fr 1.4fr; } .srow .sc { display: none; }
+    .bento { grid-template-columns: 1fr; } .bento .card { grid-column: auto; }
     .game { grid-template-columns: 1fr; }
-    .play { padding: 32px; }
+    .play .inner { grid-template-columns: 1fr; padding: 34px; }
     .hud { display: none; }
-    section { padding-top: 80px; }
+    section { padding-top: 96px; }
   }
 </style>
 </head>
 <body>
+<canvas id="field" width="240" height="135" aria-hidden="true"></canvas>
 
 <header class="bar" id="bar">
   <div class="wrap">
-    <a class="logo" href="#top">NULL<b>SCAPE</b></a>
-    <nav aria-label="Sections">
-      <a href="#fix">The fix</a>
-      <a href="#compare">Compare</a>
-      <a href="#score">Scorecard</a>
-      <a href="#spot">Spot the real</a>
-    </nav>
+    <a href="#top" aria-label="NULLSCAPE"><span class="ptype" data-text="NULLSCAPE" data-px="3" data-static="1" style="margin:0"></span></a>
+    <nav aria-label="Sections"><a href="#story">The fix</a><a href="#form">Live</a><a href="#score">Scorecard</a><a href="#spot">Spot the real</a></nav>
   </div>
+  <canvas id="prog" width="400" height="1" aria-hidden="true"></canvas>
 </header>
 
 <main id="top">
-  <div class="hero">
-    <canvas id="sky" width="320" height="180" aria-label="Live pixel flyover of terrain generated by Talus-2"></canvas>
+  <div class="hero" id="hero">
+    <canvas id="fly" width="320" height="180" aria-label="Live 1-bit flyover of terrain generated by Talus-2. Move the pointer to steer."></canvas>
+    <div class="shade"></div>
     <div class="wrap">
-      <div class="kicker rv">NULLSCAPE release</div>
-      <h1 id="title" aria-label="Talus-2">TALUS-2</h1>
-      <div class="sub rv">Flat ground, finally flat.</div>
+      <div class="label rv">NULLSCAPE / release</div>
+      <h1 class="sr">Talus-2</h1>
+      <div class="ptype" id="h1" data-text="TALUS-2" data-px="auto-h1" data-shadow="1" aria-hidden="true" style="margin:18px 0 6px"></div>
+      <div class="sub" id="sub"><span id="subtext"></span><span class="cur"></span></div>
       <p class="lede rv">One change to how our terrain model sees height lifted its benchmark average from 70.4 to 77.5.</p>
-      <div class="cta rv">
-        <a class="btn" href="#score">See the scorecard</a>
-        <a class="btn ghost" href="../../demo/nullscape-demo.html">Play the demo</a>
-      </div>
+      <div class="cta rv"><a class="btn" href="#score">See the scorecard</a><a class="btn ghost" href="../../demo/nullscape-demo.html">Play the demo</a></div>
     </div>
-    <div class="hud" aria-hidden="true">Live: <b id="hud-map">mountains</b><br>Talus-2 output, rendered in your browser</div>
+    <div class="hud" aria-hidden="true">
+      <div class="live">Live Talus-2 output</div>
+      <div>Terrain <b id="hud-map">mountains</b></div>
+      <div>Alt <b id="hud-alt">0000 m</b></div>
+      <div>Hdg <b id="hud-hdg">000</b></div>
+    </div>
   </div>
 
-  <div class="stats rv">
+  <div class="marquee" aria-hidden="true"><div class="track" id="track"></div></div>
+
+  <div class="stats">
     <div class="wrap">
-      <div class="stat"><div class="n" data-count="77.5" data-dec="1">77.5</div><div class="l">benchmark average</div><div class="was">Talus-1: 67.0</div></div>
-      <div class="stat"><div class="n" data-count="1.77" data-dec="2">1.77<small>x</small></div><div class="l">realism gap to real terrain</div><div class="was">Talus-1: 2.90x</div></div>
-      <div class="stat"><div class="n" data-count="97.7" data-dec="1">97.7</div><div class="l">clean detail score</div><div class="was">Talus-1: 58.4</div></div>
-      <div class="stat"><div class="n" data-count="40" data-dec="0">40<small>min</small></div><div class="l">of training on one RTX 5060</div><div class="was">fine-tuned from Talus-1.1</div></div>
+      <div class="stat rv"><span class="ptype" data-count="77.5" data-dec="1" data-px="7" style="margin:0"></span><div class="l">benchmark average</div><div class="was">Talus-1: 67.0</div></div>
+      <div class="stat rv"><span class="ptype" data-count="1.77" data-dec="2" data-suffix="X" data-px="7" style="margin:0"></span><div class="l">realism gap to real terrain</div><div class="was">Talus-1: 2.90x</div></div>
+      <div class="stat rv"><span class="ptype" data-count="97.7" data-dec="1" data-px="7" style="margin:0"></span><div class="l">clean detail score</div><div class="was">Talus-1: 58.4</div></div>
+      <div class="stat rv"><span class="ptype" data-count="40" data-dec="0" data-suffix=" MIN" data-px="7" style="margin:0"></span><div class="l">of training on one RTX 5060</div><div class="was">fine-tuned from Talus-1.1</div></div>
     </div>
   </div>
 
-  <section id="problem">
-    <div class="wrap split">
-      <div class="prose rv">
-        <h2>The grain on the plains</h2>
-        <p>Talus-1 made convincing mountains and islands. Its plains had a problem you could see: a fine, restless grain on ground that should be calm. The benchmark put numbers on it. Plains scored 3.98 times the real-vs-real noise floor, the worst of six terrain types, with 4.6 times too many tiny pits.</p>
-        <p>Drag the slider. Both sides come from the same seed and the same request. The shading is exaggerated so you can see the surface.</p>
-      </div>
-      <figure class="rv">
-        <div class="ba pix wipe" id="ba">
-          <div class="ba-stage" id="ba-stage">
-            <canvas id="ba-right" width="64" height="64"></canvas>
-            <canvas id="ba-left" class="top" width="64" height="64"></canvas>
-            <div class="ba-handle"></div>
+  <div class="story" id="story">
+    <div class="sticky">
+      <div class="wrap grid">
+        <div>
+          <h2 class="sr">The grain on the plains</h2>
+          <div class="ptype" data-text="THE GRAIN ON THE PLAINS" data-px="h2"></div>
+          <div class="steps" id="steps">
+            <div class="step" data-i="0"><div class="label">Talus-1</div><div class="big">3.98x</div><p>Flat ground came out restless. Plains scored 3.98 times the real-vs-real noise floor, the worst of six terrain types, with 4.6 times too many tiny pits.</p></div>
+            <div class="step" data-i="1"><div class="label">The change</div><div class="big">shape first</div><p>Talus-2 learns each map's shape at full scale. The sampler then lifts it to the elevation you asked for and stretches it to the relief you asked for.</p></div>
+            <div class="step" data-i="2"><div class="label">Talus-2</div><div class="big" id="story-num">1.23x</div><p>Same seed, same request. Pits per 1,000 cells: 14.6 before, 8.8 now, 8.4 in real terrain.</p></div>
           </div>
-          <input type="range" min="0" max="100" value="50" id="ba-range" aria-label="Compare Talus-1 and Talus-2 plains">
-          <div class="ba-labels"><span class="l">Talus-1</span><span class="r">Talus-2</span></div>
+          <div class="static-pair"><canvas id="sp1" width="192" height="192"></canvas><canvas id="sp2" width="192" height="192"></canvas></div>
         </div>
-        <figcaption>Plains, seed 7, 64 x 64 cells covering 4 km. Every square is one cell of the heightmap.</figcaption>
-      </figure>
+        <div>
+          <div class="stage"><canvas id="stage" width="256" height="256" aria-label="Plains from the same seed: Talus-1 dissolving into Talus-2 as you scroll"></canvas>
+            <span class="tag ptype" id="stage-tag" data-text="TALUS-1" data-px="3" data-static="1" style="margin:0"></span></div>
+          <div class="meter" id="meter"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section id="fix">
+    <div class="wrap">
+      <h2 class="sr">The fix: relative heights</h2>
+      <div class="ptype" data-text="X = 2 (H - MEAN) / RELIEF" data-px="h2"></div>
+      <div class="fix">
+        <div class="rv">
+          <p>Talus-1 saw every map on one global scale, from sea floor to 1,200 m. A plain spans about 5% of that scale. Tiny errors left over from denoising barely register on a mountain. On a plain they are as tall as the terrain itself.</p>
+          <p>Talus-2 learns the <strong>shape</strong> instead. If you leave elevation and relief open, the sampler borrows them from one of the 16 most similar real training maps. The architecture and speed stay the same. Training took 40 minutes, starting from Talus-1.1.</p>
+        </div>
+        <div class="ranges rv">
+          <div class="label rg-head">Absolute heights (Talus-1)</div>
+          <div class="rg"><span>mountain</span><canvas width="100" height="4" data-range="0.18,0.70"></canvas></div>
+          <div class="rg"><span>plain</span><canvas width="100" height="4" data-range="0.24,0.29"></canvas></div>
+          <div class="label rg-head">Relative heights (Talus-2)</div>
+          <div class="rg"><span>mountain</span><canvas width="100" height="4" data-range="0,1"></canvas></div>
+          <div class="rg"><span>plain</span><canvas width="100" height="4" data-range="0,1"></canvas></div>
+          <div class="label" style="margin-top:18px;letter-spacing:0.1em">Share of the model's value range each map uses</div>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section id="fix">
-    <div class="wrap split">
-      <div class="rv">
-        <div class="ranges pix">
-          <h3>Share of the model's value range each map uses</h3>
-          <div class="rg"><span>mountain</span><div class="track"><i class="fill" style="--a:18%;--w:52%;--c:var(--mag)"></i></div></div>
-          <div class="rg"><span>plain</span><div class="track"><i class="fill" style="--a:24%;--w:5%;--c:var(--mag)"></i></div></div>
-          <div class="rg" style="margin-top:22px"><span>mountain</span><div class="track"><i class="fill" style="--a:0%;--w:100%;--c:var(--cyan)"></i></div></div>
-          <div class="rg"><span>plain</span><div class="track"><i class="fill" style="--a:0%;--w:100%;--c:var(--cyan)"></i></div></div>
-          <figcaption style="margin-top:16px">Magenta: absolute heights (Talus-1). Cyan: relative heights (Talus-2).</figcaption>
-        </div>
-      </div>
-      <div class="prose rv">
-        <h2>The fix: relative heights</h2>
-        <p>Talus-1 saw every map on one global scale, from sea floor to 1,200 m. A plain spans about 5% of that scale. Tiny errors left over from denoising barely register on a mountain, but on a plain they are as tall as the terrain itself.</p>
-        <div class="formula">x = 2 (h <span>&minus;</span> mean) / relief</div>
-        <p>Talus-2 learns each map's <strong>shape</strong> at full scale instead. When you generate, the sampler lifts that shape to the elevation you asked for and stretches it to the relief you asked for. If you leave those open, it borrows them from one of the 16 most similar real training maps. The architecture and speed stay the same. Training took 40 minutes, starting from Talus-1.1.</p>
-      </div>
+  <section id="form">
+    <div class="wrap">
+      <h2 class="sr">Out of the static</h2>
+      <div class="ptype" data-text="OUT OF THE STATIC" data-px="h2"></div>
+      <p class="rv">Diffusion models start from pure noise and remove it step by step. These tiles dissolve that noise into real Talus-2 maps, one per terrain type. The noise-to-map blend is an illustration; the maps are genuine model output.</p>
+      <div class="forms" id="forms"></div>
     </div>
   </section>
 
   <section id="compare">
     <div class="wrap">
-      <div class="prose rv">
-        <h2>Same seed, three generations</h2>
-        <p>Every column shares one starting noise and one terrain type. Watch the plains calm down, and notice how the big shapes stay put across versions.</p>
-      </div>
-      <div class="cmp wipe" id="cmp"></div>
+      <h2 class="sr">Same seed, three generations</h2>
+      <div class="ptype" data-text="SAME SEED, THREE GENERATIONS" data-px="h2"></div>
+      <p class="rv">Every column shares one starting noise and one terrain type. The big shapes stay put across versions while the plains calm down.</p>
+      <div class="cmp" id="cmp"></div>
     </div>
   </section>
 
   <section id="score">
     <div class="wrap">
-      <div class="prose rv">
-        <div class="kicker">NULLSCAPE-Bench</div>
-        <h2 style="margin-top:14px">The scorecard</h2>
-        <p>Scored on 2,000 held-out maps the model never saw. <strong>100 means indistinguishable from real procedural terrain.</strong> Same protocol, sampler and seeds for every version, so the differences come from the weights.</p>
-      </div>
-      <div class="score pix rv" id="scorecard" role="table" aria-label="NULLSCAPE-Bench scorecard"></div>
+      <div class="label rv">NULLSCAPE-Bench</div>
+      <h2 class="sr">The scorecard</h2>
+      <div class="ptype" data-text="THE SCORECARD" data-px="h2" style="margin-top:16px"></div>
+      <p class="rv">Scored on 2,000 held-out maps the model never saw. <strong>100 means indistinguishable from real procedural terrain.</strong> Same protocol, sampler and seeds for every version, so the differences come from the weights.</p>
+      <div class="score rv" id="scorecard" role="table" aria-label="NULLSCAPE-Bench scorecard"></div>
     </div>
   </section>
 
   <section id="findings">
     <div class="wrap">
-      <div class="prose rv"><h2>What moved</h2></div>
+      <h2 class="sr">What moved</h2>
+      <div class="ptype" data-text="WHAT MOVED" data-px="h2"></div>
       <div class="bento">
-        <div class="card pix c1 rv"><div class="big">3.98<span class="arr">&rarr;</span>1.23</div><h3>Plains, fixed</h3><p>The worst terrain type became one of the best. Its excess finest-scale power fell from +3.4 to +0.9 decades.</p></div>
-        <div class="card pix c2 rv"><div class="big">8.8</div><h3>Pits per 1,000 cells</h3><p>Real terrain has 8.4. Talus-1 had 14.6. Peaks match too: 11.6 against 11.9.</p></div>
-        <div class="card pix c3 rv"><div class="big">&minus;51%</div><h3>Roughness control error</h3><p>The roughness dial barely worked before. Now it follows requests twice as closely.</p></div>
-        <div class="card pix c4 rv"><div class="big">1.4%</div><h3>Still original</h3><p>Share of maps closer to the training set than 99% of real held-out maps. Talus-1 had 2.5%.</p></div>
-        <div class="card pix c5 rv"><div class="big">&minus;53%</div><h3>An honest correction</h3><p>The quick check during training showed an 87% spectrum gain. The full test run says 53%, from 28x to 13x the noise floor. We quote the test.</p></div>
+        <div class="card inv c1 rv"><span class="ptype" data-text="3.98 &#8594; 1.23" data-px="8" data-ink="bg" style="margin:0"></span><div><h3>Plains, fixed</h3><p>The worst terrain type became one of the best. Its excess finest-scale power fell from +3.4 to +0.9 decades.</p></div></div>
+        <div class="card c2 rv"><span class="ptype" data-text="8.8" data-px="7" style="margin:0"></span><div><h3>Pits per 1,000 cells</h3><p>Real terrain has 8.4. Talus-1 had 14.6. Peaks match too: 11.6 against 11.9.</p></div></div>
+        <div class="card c3 rv"><span class="ptype" data-text="-51%" data-px="7" style="margin:0"></span><div><h3>Roughness error</h3><p>The roughness control barely worked before. It now follows requests twice as closely.</p></div></div>
+        <div class="card c4 rv"><span class="ptype" data-text="1.4%" data-px="7" style="margin:0"></span><div><h3>Still original</h3><p>Maps closer to the training set than 99% of real held-out maps. Talus-1 had 2.5%.</p></div></div>
+        <div class="card hatch c5 rv"><span class="ptype" data-text="-53%" data-px="7" style="margin:0"></span><div><h3>Honest correction</h3><p>The quick check during training showed an 87% spectrum gain. The full test says 53%, from 28x to 13x the noise floor. We quote the test.</p></div></div>
       </div>
     </div>
   </section>
 
   <section id="spot">
     <div class="wrap">
-      <div class="prose rv">
-        <h2>Spot the real map</h2>
-        <p>Each pair shares its terrain type and properties. One map came from our procedural generator, the other from Talus-2. Click the one you think is procedural.</p>
-      </div>
+      <h2 class="sr">Spot the real map</h2>
+      <div class="ptype" data-text="SPOT THE REAL MAP" data-px="h2"></div>
+      <p class="rv">Each pair shares its terrain type and properties. One map came from our procedural generator, the other from Talus-2. Click the one you think is procedural.</p>
       <div class="game" id="game"></div>
-      <div class="tally" id="tally" aria-live="polite"></div>
+      <div class="tally" id="tally" aria-live="polite"><span class="sr" id="tally-sr"></span><span class="ptype" id="tally-px" data-text="" data-px="4" data-static="1" style="margin:0"></span></div>
     </div>
   </section>
 
   <section id="limits">
     <div class="wrap">
-      <div class="prose rv"><h2>Where it still falls short</h2></div>
+      <h2 class="sr">Where it still falls short</h2>
+      <div class="ptype" data-text="WHERE IT STILL FALLS SHORT" data-px="h2"></div>
       <div class="limits">
         <div class="limit rv"><h3>Mountains and ridges</h3><p>Now the weakest types, at 1.9x and 2.2x the noise floor. They gave back part of Talus-1.1's fine detail.</p></div>
         <div class="limit rv"><h3>The spectrum gap</h3><p>At 13x the real-vs-real floor, detail across scales remains the largest distance to real terrain.</p></div>
         <div class="limit rv"><h3>Placement by design</h3><p>Mean elevation lands almost exactly because the sampler places each shape there. Relief, slope, water and roughness still come from the model.</p></div>
         <div class="limit rv"><h3>One world</h3><p>Talus only knows our procedural generator. Real elevation data comes later.</p></div>
       </div>
-      <div class="play pix rv">
-        <div>
-          <h2>Walk it yourself</h2>
-          <p>The daily-run demo now uses Talus-2 maps. Follow the cyan beacons across a world no one designed by hand.</p>
-        </div>
-        <a class="btn" href="../../demo/nullscape-demo.html">Play the demo</a>
+      <div class="play rv">
+        <canvas id="fly2" width="320" height="120" aria-hidden="true"></canvas>
+        <div class="inner">
+          <div>
+            <div class="label">Live</div>
+            <h2 class="sr">Walk it yourself</h2>
+            <div class="ptype" data-text="WALK IT YOURSELF" data-px="h2" style="margin-top:14px"></div>
+            <p style="margin:0">The daily-run demo now uses Talus-2 maps. Follow the beacons across a world no one designed by hand.</p>
+          </div>
+          <a class="btn" href="../../demo/nullscape-demo.html">Play the demo</a>
 <pre><b>nullscape sample</b> --checkpoint runs/20260926-192753_talus2_relative/checkpoints/step_0010000.pt \
   --archetype plains --n 16 --steps 50 --spacing quadratic --guidance 2.0 --formats png16,r16 --unity</pre>
+        </div>
       </div>
     </div>
   </section>
@@ -377,7 +383,7 @@
 
 <footer>
   <div class="wrap">
-    <span>Talus-2 report: docs/TALUS2.md. Scorecard: docs/TALUS2_SCORECARD.md. <a href="nullscape-v1.html">Read the Talus-1 post</a></span>
+    <span>Report: docs/TALUS2.md. Scorecard: docs/TALUS2_SCORECARD.md. <a href="nullscape-v1.html">Read the Talus-1 post</a></span>
     <span>NULLSCAPE, September 2026</span>
   </div>
 </footer>
@@ -385,267 +391,476 @@
 <script>
 "use strict";
 const DATA = {{DATA}};
-const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const SEA = DATA.sea_level;
+const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
+if (location.hash === "#shot") document.documentElement.classList.add("shot");
+if (location.hash.startsWith("#only=")) {                // test view: start the page at a given section
+  const target = document.getElementById(location.hash.slice(6));
+  document.documentElement.classList.add("shot");
+  for (const el of [...document.querySelector("main").children]) { if (el === target) break; el.style.display = "none"; }
+}
+const FG = [232, 229, 222], BG = [12, 12, 13], SEA = DATA.sea_level;
+const FG32 = 0xff000000 | (FG[2] << 16) | (FG[1] << 8) | FG[0], BG32 = 0xff000000 | (BG[2] << 16) | (BG[1] << 8) | BG[0];
+const grey32 = (v) => 0xff000000 | (v << 16) | (v << 8) | v;
+
+// ---------- ordered dithering
+const B8 = (() => { const m = [[0]]; let M = m; for (let n = 1; n < 8; n *= 2) { const N = []; for (let y = 0; y < 2 * n; y++) { N.push([]); for (let x = 0; x < 2 * n; x++) N[y].push(4 * M[y % n][x % n] + [0, 2, 3, 1][(y >= n) * 2 + (x >= n)]); } M = N; } return M.flat().map((v) => (v + 0.5) / 64); })();
+const thr = (x, y) => B8[((y & 7) << 3) | (x & 7)];
 
 function decode(b64) {
-  const bin = atob(b64), n = bin.length / 2, out = new Float32Array(n);
-  for (let i = 0; i < n; i++) out[i] = (bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8)) / 65535;
-  return out;
+  const s = atob(b64), n = s.length / 2, o = new Float32Array(n);
+  for (let i = 0; i < n; i++) o[i] = (s.charCodeAt(2 * i) | (s.charCodeAt(2 * i + 1) << 8)) / 65535;
+  return o;
 }
-
-// ---------- neon terrain colouring (absolute height, same mapping for every version)
-const STOPS = [[0, [247, 215, 116]], [0.05, [62, 224, 137]], [0.3, [22, 163, 131]], [0.55, [255, 61, 154]], [0.8, [255, 154, 60]], [1, [255, 233, 176]]];
-function ramp(h) {
-  if (h < SEA) {
-    const t = Math.min(1, (SEA - h) / (SEA * 0.7));
-    return [54 + (26 - 54) * t, 198 + (20 - 198) * t, 255 + (70 - 255) * t];
+function upsample(h, n, N) {
+  const o = new Float32Array(N * N);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const gx = x / (N - 1) * (n - 1), gy = y / (N - 1) * (n - 1), i = Math.min(n - 2, gx | 0), j = Math.min(n - 2, gy | 0), fx = gx - i, fy = gy - j;
+    o[y * N + x] = (h[j * n + i] * (1 - fx) + h[j * n + i + 1] * fx) * (1 - fy) + (h[(j + 1) * n + i] * (1 - fx) + h[(j + 1) * n + i + 1] * fx) * fy;
   }
-  const t = Math.min(1, (h - SEA) / (0.75 - SEA));
-  for (let k = 1; k < STOPS.length; k++) {
-    if (t <= STOPS[k][0]) {
-      const [t0, c0] = STOPS[k - 1], [t1, c1] = STOPS[k], f = (t - t0) / (t1 - t0);
-      return c0.map((v, i) => v + (c1[i] - v) * f);
+  return o;
+}
+// luminance of a terrain map: exaggerated hillshade on land, sparse water with a bright shoreline
+function lumMap(h64, N, exag) {
+  const h = upsample(h64, 64, N), L = new Float32Array(N * N), k = exag * 1200 / (4096 / N) / 2;
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const i = y * N + x, v = h[i];
+    if (v < SEA) {
+      const shore = (x > 0 && h[i - 1] >= SEA) || (x < N - 1 && h[i + 1] >= SEA) || (y > 0 && h[i - N] >= SEA) || (y < N - 1 && h[i + N] >= SEA);
+      L[i] = shore ? 0.95 : 0.06 + 0.06 * Math.min(1, (SEA - v) * -10 + 1);
+      continue;
     }
+    const nx = -(h[y * N + Math.min(N - 1, x + 1)] - h[y * N + Math.max(0, x - 1)]) * k, nz = -(h[Math.min(N - 1, y + 1) * N + x] - h[Math.max(0, y - 1) * N + x]) * k;
+    const s = Math.max(0, (-0.55 * nx + 0.7 + -0.45 * nz) / (Math.hypot(nx, 1, nz) * 1.0));
+    L[i] = Math.min(1, 0.1 + 0.95 * Math.pow(s, 1.35));
   }
-  return STOPS[STOPS.length - 1][1];
+  return L;
 }
-const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => v / 16 - 0.5);
-function shadeMap(h, n, exag) {                 // hillshade in [0, 1] from a heightmap (1 cell = 64 m, 1.0 = 1200 m)
-  const s = new Float32Array(n * n), k = exag * 1200 / 64 / 2, L = [-0.5, 0.707, -0.5], ln = Math.hypot(...L);
-  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-    const xl = h[y * n + Math.max(0, x - 1)], xr = h[y * n + Math.min(n - 1, x + 1)];
-    const yu = h[Math.max(0, y - 1) * n + x], yd = h[Math.min(n - 1, y + 1) * n + x];
-    const nx = -(xr - xl) * k, nz = -(yd - yu) * k, len = Math.hypot(nx, 1, nz);
-    s[y * n + x] = Math.max(0, (nx * L[0] + L[1] + nz * L[2]) / (len * ln));
-  }
-  return s;
-}
-function paint(canvas, h, exag = 2.5) {
-  const n = Math.round(Math.sqrt(h.length)), ctx = canvas.getContext("2d"), img = ctx.createImageData(n, n), s = shadeMap(h, n, exag);
-  for (let i = 0; i < n * n; i++) {
-    const c = ramp(h[i]), b = BAYER[(Math.floor(i / n) % 4) * 4 + (i % n) % 4];
-    const lit = Math.round((0.28 + 0.9 * s[i]) * 6 + b) / 6;       // 6 dithered light bands
-    img.data.set([Math.min(255, c[0] * lit), Math.min(255, c[1] * lit), Math.min(255, c[2] * lit), 255], i * 4);
-  }
-  canvas.width = n; canvas.height = n; ctx.putImageData(img, 0, 0);
-}
-function tile(h, exag) { const c = document.createElement("canvas"); c.className = "tile"; paint(c, h, exag); return c; }
+function bits(L, N) { const b = new Uint8Array(N * N); for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) b[y * N + x] = L[y * N + x] > thr(x, y) ? 1 : 0; return b; }
 
-// ---------- reveal, count-up, sticky bar
-const io = new IntersectionObserver((es) => es.forEach((e) => {
-  if (!e.isIntersecting) return;
-  e.target.classList.add("in");
-  e.target.querySelectorAll("[data-count]").forEach(countUp);
-  io.unobserve(e.target);
-}), { threshold: 0.15 });
-function observe(el) { reduce ? el.classList.add("in") : io.observe(el); }
-function countUp(el) {
-  if (reduce) return;
-  const target = +el.dataset.count, dec = +el.dataset.dec, small = el.querySelector("small"), suf = small ? small.outerHTML : "";
+// A 1-bit canvas that can dissolve in (Bayer order), blend to another bitmap, or dissolve out of static.
+class Bit {
+  constructor(canvas, N) { this.c = canvas; this.N = N; canvas.width = N; canvas.height = N; this.ctx = canvas.getContext("2d"); this.img = this.ctx.createImageData(N, N); this.px = new Uint32Array(this.img.data.buffer); }
+  draw(a, b = null, t = 0, mode = "reveal") {
+    const N = this.N, px = this.px;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const i = y * N + x, r = thr(x, y);
+      let v;
+      if (mode === "reveal") v = r < t ? a[i] : 0;
+      else if (mode === "blend") v = r < t ? b[i] : a[i];
+      else v = r < t ? a[i] : (Math.random() < 0.5 ? 1 : 0);         // "static"
+      px[i] = v ? FG32 : BG32;
+    }
+    this.ctx.putImageData(this.img, 0, 0);
+  }
+}
+const ease = (t) => 1 - Math.pow(1 - t, 3);
+function animate(ms, fn, done) {
+  if (REDUCE) { fn(1); done && done(); return; }
   const t0 = performance.now();
-  const f = (t) => {
-    const p = Math.min(1, (t - t0) / 1300), v = target * (1 - Math.pow(1 - p, 4));
-    el.innerHTML = v.toFixed(dec) + suf;
-    if (p < 1) requestAnimationFrame(f);
-  };
+  const f = (t) => { const p = Math.min(1, (t - t0) / ms); fn(p); if (p < 1) requestAnimationFrame(f); else done && done(); };
   requestAnimationFrame(f);
 }
-new IntersectionObserver(([e]) => document.getElementById("bar").classList.toggle("solid", !e.isIntersecting))
-  .observe(document.getElementById("title"));
+const seen = (el, fn, threshold = 0.2) => {
+  if (REDUCE) { fn(); return; }
+  const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { io.disconnect(); fn(); } }, { threshold });
+  io.observe(el);
+};
 
-// ---------- title decode effect
-(function () {
-  const el = document.getElementById("title"), final = el.textContent;
-  if (reduce) return;
-  const glyphs = "#%&@$*+=?/\\<>";
-  let frame = 0;
-  const tick = () => {
-    frame++;
-    el.textContent = [...final].map((ch, i) => (frame > i * 3 + 6 ? ch : glyphs[(Math.random() * glyphs.length) | 0])).join("");
-    if (frame < final.length * 3 + 7) setTimeout(tick, 40); else el.textContent = final;
-  };
-  tick();
-})();
-
-// ---------- before / after
-(function () {
-  paint(document.getElementById("ba-left"), decode(DATA.plains.t1), 6);
-  paint(document.getElementById("ba-right"), decode(DATA.plains.t2), 6);
-  const stage = document.getElementById("ba-stage"), range = document.getElementById("ba-range"), box = document.getElementById("ba");
-  const set = (v) => { box.style.setProperty("--x", v + "%"); range.value = v; };
-  range.addEventListener("input", () => set(+range.value));
-  const drag = (e) => { const r = stage.getBoundingClientRect(); set(Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100))); };
-  stage.addEventListener("pointerdown", (e) => { stage.setPointerCapture(e.pointerId); drag(e); });
-  stage.addEventListener("pointermove", (e) => { if (stage.hasPointerCapture(e.pointerId)) drag(e); });
-  observe(box);
-  if (!reduce) {   // one gentle sweep when it first appears, to show it moves
-    const once = new IntersectionObserver(([e]) => {
-      if (!e.isIntersecting) return; once.disconnect();
-      const t0 = performance.now();
-      const f = (t) => { const p = Math.min(1, (t - t0) / 1600); set(50 + 28 * Math.sin(p * Math.PI * 2) * (1 - p)); if (p < 1) requestAnimationFrame(f); };
-      setTimeout(() => requestAnimationFrame(f), 700);
-    }, { threshold: 0.6 });
-    once.observe(stage);
+// ---------- 5x7 pixel font
+// each glyph: 7 rows of 5 columns, rows separated by "|"
+const G = Object.fromEntries(Object.entries({
+  A: ".###.|#...#|#...#|#####|#...#|#...#|#...#", B: "####.|#...#|#...#|####.|#...#|#...#|####.", C: ".###.|#...#|#....|#....|#....|#...#|.###.",
+  D: "####.|#...#|#...#|#...#|#...#|#...#|####.", E: "#####|#....|#....|####.|#....|#....|#####", F: "#####|#....|#....|####.|#....|#....|#....",
+  G: ".###.|#...#|#....|#.###|#...#|#...#|.####", H: "#...#|#...#|#...#|#####|#...#|#...#|#...#", I: ".###.|..#..|..#..|..#..|..#..|..#..|.###.",
+  J: "..###|...#.|...#.|...#.|...#.|#..#.|.##..", K: "#...#|#..#.|#.#..|##...|#.#..|#..#.|#...#", L: "#....|#....|#....|#....|#....|#....|#####",
+  M: "#...#|##.##|#.#.#|#.#.#|#...#|#...#|#...#", N: "#...#|#...#|##..#|#.#.#|#..##|#...#|#...#", O: ".###.|#...#|#...#|#...#|#...#|#...#|.###.",
+  P: "####.|#...#|#...#|####.|#....|#....|#....", Q: ".###.|#...#|#...#|#...#|#.#.#|#..#.|.##.#", R: "####.|#...#|#...#|####.|#.#..|#..#.|#...#",
+  S: ".####|#....|#....|.###.|....#|....#|####.", T: "#####|..#..|..#..|..#..|..#..|..#..|..#..", U: "#...#|#...#|#...#|#...#|#...#|#...#|.###.",
+  V: "#...#|#...#|#...#|#...#|#...#|.#.#.|..#..", W: "#...#|#...#|#...#|#.#.#|#.#.#|#.#.#|.#.#.", X: "#...#|#...#|.#.#.|..#..|.#.#.|#...#|#...#",
+  Y: "#...#|#...#|.#.#.|..#..|..#..|..#..|..#..", Z: "#####|....#|...#.|..#..|.#...|#....|#####",
+  0: ".###.|#...#|#..##|#.#.#|##..#|#...#|.###.", 1: "..#..|.##..|..#..|..#..|..#..|..#..|.###.", 2: ".###.|#...#|....#|...#.|..#..|.#...|#####",
+  3: "####.|....#|....#|.###.|....#|....#|####.", 4: "...#.|..##.|.#.#.|#..#.|#####|...#.|...#.", 5: "#####|#....|####.|....#|....#|#...#|.###.",
+  6: "..##.|.#...|#....|####.|#...#|#...#|.###.", 7: "#####|....#|...#.|..#..|.#...|.#...|.#...", 8: ".###.|#...#|#...#|.###.|#...#|#...#|.###.",
+  9: ".###.|#...#|#...#|.####|....#|...#.|.##..", " ": ".....|.....|.....|.....|.....|.....|.....",
+  ".": ".....|.....|.....|.....|.....|.##..|.##..", ",": ".....|.....|.....|.....|.##..|..#..|.#...", "-": ".....|.....|.....|.###.|.....|.....|.....",
+  ":": ".....|.##..|.##..|.....|.##..|.##..|.....", "/": "....#|....#|...#.|..#..|.#...|#....|#....", "(": "...#.|..#..|.#...|.#...|.#...|..#..|...#.",
+  ")": ".#...|..#..|...#.|...#.|...#.|..#..|.#...", "%": "##...|##..#|...#.|..#..|.#...|#..##|...##", "+": ".....|..#..|..#..|#####|..#..|..#..|.....",
+  "=": ".....|.....|#####|.....|#####|.....|.....", ">": ".#...|..#..|...#.|....#|...#.|..#..|.#...", "?": ".###.|#...#|....#|...#.|..#..|.....|..#..",
+  "!": "..#..|..#..|..#..|..#..|..#..|.....|..#..", "'": "..#..|..#..|.#...|.....|.....|.....|.....",
+  "\u2192": ".....|..#..|...#.|#####|...#.|..#..|.....",
+}).map(([k, v]) => [k, v.split("|").join("")]));
+function wrapText(text, maxCols) {
+  const words = text.split(" "), lines = []; let cur = "";
+  for (const w of words) { if ((cur ? cur.length + 1 : 0) + w.length > maxCols && cur) { lines.push(cur); cur = w; } else cur = cur ? cur + " " + w : w; }
+  if (cur) lines.push(cur);
+  return lines;
+}
+class PixelType {
+  constructor(el) {
+    this.el = el; this.text = (el.dataset.text || "").toUpperCase(); this.ink = el.dataset.ink === "bg" ? BG : FG;
+    this.c = document.createElement("canvas"); el.appendChild(this.c); this.ctx = this.c.getContext("2d"); this.shown = !!el.dataset.static || REDUCE;
+    this.layout();
   }
+  size() {
+    const p = this.el.dataset.px, w = this.el.parentElement.clientWidth || 800;
+    if (p === "auto-h1") return Math.max(8, Math.min(18, Math.floor(w * 0.62 / (6 * this.text.length))));
+    if (p === "h2") return innerWidth < 700 ? 5 : 7;
+    return +p || 4;
+  }
+  layout() {
+    const S = this.size(), w = this.el.parentElement.clientWidth || 800;
+    this.S = S;
+    this.lines = this.el.dataset.px === "h2" ? wrapText(this.text, Math.max(6, Math.floor((w + S) / (6 * S)))) : [this.text];
+    const cols = Math.max(1, ...this.lines.map((l) => l.length));
+    this.sh = this.el.dataset.shadow ? 1 : 0;      // hard 1-pixel drop shadow in BG for text over imagery
+    this.W = cols * 6 - 1 + this.sh; this.H = this.lines.length * 9 - 2 + this.sh;
+    this.c.width = this.W; this.c.height = Math.max(1, this.H);
+    this.c.style.width = this.W * S + "px";      // height follows the intrinsic aspect ratio
+    this.pix = [];
+    this.lines.forEach((line, li) => [...line].forEach((ch, ci) => {
+      const g = G[ch] || G["?"];
+      for (let k = 0; k < 35; k++) if (g[k] === "#") this.pix.push([ci * 6 + (k % 5), li * 9 + ((k / 5) | 0)]);
+    }));
+    this.render(this.shown ? 1e9 : -1);
+  }
+  set(text) { this.text = text.toUpperCase(); this.layout(); }
+  render(t) {                                   // t = ms into the assembly animation
+    const ctx = this.ctx; ctx.clearRect(0, 0, this.W, this.H);
+    const on = this.pix.filter(([x, y]) => { const d = (x / Math.max(1, this.W)) * 420 + ((x * 7919 + y * 104729) % 97) / 97 * 320;
+      return t > d || (t > d - 140 && Math.random() < 0.35); });
+    if (this.sh) { ctx.fillStyle = `rgb(${BG})`; for (const [x, y] of on) ctx.fillRect(x + 1, y + 1, 1, 1); }
+    ctx.fillStyle = `rgb(${this.ink})`;
+    for (const [x, y] of on) ctx.fillRect(x, y, 1, 1);
+  }
+  assemble() {
+    if (this.shown) return;
+    this.shown = true;
+    const t0 = performance.now();
+    const f = (t) => { const e = t - t0; this.render(e); if (e < 900) requestAnimationFrame(f); else this.render(1e9); };
+    requestAnimationFrame(f);
+  }
+  glitch() {
+    if (REDUCE) return;
+    const t0 = performance.now(), ctx = this.ctx;
+    const f = (t) => {
+      const e = t - t0; this.render(1e9);
+      if (e < 260) {
+        for (let k = 0; k < 3; k++) { const y = (Math.random() * this.H) | 0, h = 1 + ((Math.random() * 3) | 0), dx = ((Math.random() - 0.5) * 10) | 0;
+          const slice = ctx.getImageData(0, y, this.W, h); ctx.clearRect(0, y, this.W, h); ctx.putImageData(slice, dx, y); }
+        requestAnimationFrame(f);
+      }
+    };
+    requestAnimationFrame(f);
+  }
+}
+const types = [...document.querySelectorAll(".ptype")].map((el) => { const p = new PixelType(el); el._pt = p; return p; });
+types.forEach((p) => { if (!p.shown && !p.el.dataset.count && p.el.id !== "h1") seen(p.el, () => p.assemble(), 0.4); });
+let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => types.forEach((p) => p.layout()), 150); });
+
+// ---------- hero title, typed subline, counters, marquee, bar
+const h1 = document.getElementById("h1")._pt;
+setTimeout(() => h1.assemble(), 150);
+document.getElementById("h1").parentElement.addEventListener("pointerenter", () => h1.glitch());
+(function () {
+  const el = document.getElementById("subtext"), text = "Flat ground, finally flat.";
+  if (REDUCE) { el.textContent = text; return; }
+  let i = 0; setTimeout(function type() { el.textContent = text.slice(0, ++i); if (i < text.length) setTimeout(type, 38); }, 900);
+})();
+document.querySelectorAll("[data-count]").forEach((el) => {
+  const p = el._pt, target = +el.dataset.count, dec = +el.dataset.dec, suf = el.dataset.suffix || "";
+  p.set(target.toFixed(dec) + suf); p.shown = true; p.render(1e9);
+  if (REDUCE) return;
+  p.set((0).toFixed(dec) + suf); p.render(1e9);
+  seen(el, () => animate(1400, (t) => { p.set((target * ease(t)).toFixed(dec) + suf); p.render(1e9); }), 0.5);
+});
+(function () {
+  const items = ["Talus-2", "Benchmark average 77.5", "Plains 3.98 \u2192 1.23", "Realism gap 1.77x", "Clean detail 97.7", "Pits 8.8 per 1,000 cells, real 8.4", "40 min on one RTX 5060", "Same speed, 5.5 maps/s"];
+  const tr = document.getElementById("track"); const html = items.map((s) => `<span>${s}</span>`).join("");
+  tr.innerHTML = html + html;
+})();
+new IntersectionObserver(([e]) => document.getElementById("bar").classList.toggle("solid", !e.isIntersecting), { rootMargin: "-60px 0px 0px 0px" }).observe(document.getElementById("hero"));
+document.querySelectorAll(".rv").forEach((el) => seen(el, () => el.classList.add("in"), 0.15));
+
+// ---------- voxel-space flyover (hero and play panel), 1-bit dithered
+const HERO = DATA.hero.map((m) => ({ name: m.name, h: decode(m.b64) }));
+const T = 256;
+const bakedHero = HERO.map((m) => {
+  const h = upsample(m.h, 64, T), L = new Float32Array(T * T);
+  for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
+    const i = y * T + x, dx = h[y * T + Math.min(T - 1, x + 1)] - h[y * T + Math.max(0, x - 1)], dy = h[Math.min(T - 1, y + 1) * T + x] - h[Math.max(0, y - 1) * T + x];
+    L[i] = h[i] < SEA ? 0.1 : Math.max(0.05, Math.min(1, 0.62 - (dx * 0.9 + dy * 0.55) * 70));
+  }
+  return { name: m.name, h, L };
+});
+const mir = (u) => { const m = ((u % (2 * T)) + 2 * T) % (2 * T); return m < T ? m : 2 * T - 1 - m; };
+function Flyover(canvas, opts) {
+  const ctx = canvas.getContext("2d"), W = canvas.width, H = canvas.height, img = ctx.createImageData(W, H), px = new Uint32Array(img.data.buffer);
+  const ybuf = new Float32Array(W);
+  let cur = opts.start || 0, nxt = (cur + 1) % bakedHero.length, blend = 0, since = 0, cx = 90 + cur * 40, cy = 120, ang = 0.6, camH = 0, visible = true;
+  let steer = 0, steerT = 0, pitch = 0, pitchT = 0, climb = 0, SH = 0, SL = 0;
+  function sample(x, y) {
+    const u = mir(x | 0), v = mir(y | 0), i = v * T + u, m = blend > 0 && thr(u, v) < blend ? bakedHero[nxt] : bakedHero[cur];
+    SH = m.h[i] < SEA ? SEA : m.h[i]; SL = m.L[i];
+  }
+  function render() {
+    const horizon = H * 0.4 + pitch, sa = Math.sin(ang + steer), ca = Math.cos(ang + steer);
+    sample(cx, cy); camH += ((SH * 150 + 42 + climb) - camH) * 0.05;
+    for (let y = 0; y < H; y++) {                           // sky: dithered gradient + sun with scan cuts
+      const g = Math.max(0, Math.min(1, (y - horizon * 0.15) / (horizon * 1.05))) * 0.5;
+      for (let x = 0; x < W; x++) px[y * W + x] = g * g * 1.6 > thr(x, y) ? FG32 : BG32;
+    }
+    const sx0 = W * 0.73 - steer * 120, sy0 = horizon - H * 0.17, R = H * 0.13;
+    for (let y = -R; y <= R; y++) for (let x = -R; x <= R; x++) {
+      if (x * x + y * y > R * R) continue;
+      const yy = (sy0 + y) | 0, xx = (sx0 + x) | 0, band = y > R * 0.1 && ((y | 0) % 6 < 2 + (y / R) * 2);
+      if (!band && yy >= 0 && yy < H && xx >= 0 && xx < W) px[yy * W + xx] = FG32;
+    }
+    ybuf.fill(H);
+    let z = 1, dz = 0.8;
+    const far = opts.far || 560;
+    while (z < far) {
+      const lx = -ca * z - sa * z, ly = sa * z - ca * z, rx = ca * z - sa * z, ry = -sa * z - ca * z, stx = (rx - lx) / W, sty = (ry - ly) / W;
+      let wx = cx + lx, wy = cy + ly;
+      const fog = Math.pow(z / far, 1.2);
+      for (let i = 0; i < W; i++) {
+        sample(wx, wy);
+        const top = ((camH - SH * 150) / z) * (H * 0.72) + horizon;
+        if (top < ybuf[i]) {
+          const lum = SL * (1 - fog) + 0.34 * fog, t0 = Math.max(0, top | 0);
+          for (let y = t0; y < ybuf[i]; y++) px[y * W + i] = lum > thr(i, y) ? FG32 : BG32;
+          if (t0 < ybuf[i] && t0 > 0 && fog < 0.55) px[t0 * W + i] = FG32;     // ridge highlight line
+          ybuf[i] = top;
+        }
+        wx += stx; wy += sty;
+      }
+      z += dz; dz += 0.011;
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+  this.frame = (time, dt) => {
+    if (!visible) return;
+    steer += (steerT - steer) * 0.04; pitch += (pitchT - pitch) * 0.05;
+    ang = 0.6 + Math.sin(time / 8000) * 0.3;
+    cx -= Math.sin(ang + steer) * 0.7; cy -= Math.cos(ang + steer) * 0.7;
+    since += dt;
+    if (since > (opts.hold || 11) && blend === 0) blend = 0.001;
+    if (blend > 0) { blend += dt / 1.5; if (blend >= 1) { cur = nxt; nxt = (nxt + 1) % bakedHero.length; blend = 0; since = 0; opts.onMap && opts.onMap(bakedHero[cur].name); } }
+    render();
+    opts.onHud && opts.onHud(camH, ang + steer);
+  };
+  this.steer = (s, p) => { steerT = s; pitchT = p; };
+  this.climb = (c) => { climb = c; };
+  this.still = () => { sample(cx, cy); camH = SH * 150 + 42; render(); };
+  if (!REDUCE) new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(canvas);
+  sample(cx, cy); camH = SH * 150 + 42;
+}
+const hudMap = document.getElementById("hud-map"), hudAlt = document.getElementById("hud-alt"), hudHdg = document.getElementById("hud-hdg");
+const fly = new Flyover(document.getElementById("fly"), {
+  onMap: (n) => { hudMap.textContent = n; },
+  onHud: (h, a) => { hudAlt.textContent = String(Math.round(h / 150 * 1200)).padStart(4, "0") + " m"; hudHdg.textContent = String(Math.round(((a * 180 / Math.PI) % 360 + 360) % 360)).padStart(3, "0"); },
+});
+hudMap.textContent = bakedHero[0].name;
+const fly2 = new Flyover(document.getElementById("fly2"), { start: 2, far: 420, hold: 9 });
+const hero = document.getElementById("hero");
+hero.addEventListener("pointermove", (e) => { const r = hero.getBoundingClientRect(); fly.steer(((e.clientX - r.left) / r.width - 0.5) * 0.7, ((e.clientY - r.top) / r.height - 0.5) * -26); });
+hero.addEventListener("pointerleave", () => fly.steer(0, 0));
+
+// ---------- background field: drifting 1-bit contour lines that the pointer lights up
+const field = (function () {
+  const cv = document.getElementById("field"), ctx = cv.getContext("2d"), W = cv.width, H = cv.height, img = ctx.createImageData(W, H), px = new Uint32Array(img.data.buffer);
+  const src = bakedHero[1] || bakedHero[0];
+  let mx = -999, my = -999, lit = 0;
+  addEventListener("pointermove", (e) => { mx = e.clientX / innerWidth * W; my = e.clientY / innerHeight * H; lit = 1; });
+  const dimA = grey32(34), dimB = grey32(58), dimC = grey32(96);
+  return (time) => {
+    const ox = time * 0.004, oy = scrollY * 0.05 + time * 0.0015;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const u = mir((x * 1.1 + ox) | 0), v = mir((y * 1.1 + oy) | 0), i = v * T + u, h = src.h[i];
+      const f = h * 22, c = f - Math.floor(f), d2 = (x - mx) * (x - mx) + (y - my) * (y - my) * 1.8, glow = lit * Math.max(0, 1 - d2 / 900);
+      let o = BG32;
+      if (c < 0.09) o = glow > thr(x, y) * 0.9 ? dimC : dimA;
+      else if (glow > 0.05 && src.L[i] * glow * 0.9 > thr(x, y)) o = dimB;
+      px[y * W + x] = o;
+    }
+    ctx.putImageData(img, 0, 0);
+  };
 })();
 
-// ---------- comparison grid
+// ---------- reading progress (dithered)
+const prog = (function () {
+  const cv = document.getElementById("prog"), ctx = cv.getContext("2d"), W = cv.width, img = ctx.createImageData(W, 1), px = new Uint32Array(img.data.buffer);
+  return () => {
+    const p = scrollY / Math.max(1, document.documentElement.scrollHeight - innerHeight);
+    for (let x = 0; x < W; x++) px[x] = x / W < p ? FG32 : 0;
+    ctx.putImageData(img, 0, 0);
+  };
+})();
+
+// ---------- pinned plains story
 (function () {
-  const g = document.getElementById("cmp"), arch = DATA.compare.archetypes;
-  g.appendChild(document.createElement("div"));
-  arch.forEach((a, j) => { const d = document.createElement("div"); d.className = "hd" + (j > 2 ? " hide-m" : ""); d.textContent = a; g.appendChild(d); });
-  DATA.compare.models.forEach((m) => {
-    const t2 = m === "Talus-2", rl = document.createElement("div");
-    rl.className = "rl" + (t2 ? " t2" : ""); rl.textContent = m; g.appendChild(rl);
-    arch.forEach((a, j) => {
-      const c = document.createElement("div"); c.className = "cell" + (t2 ? " t2" : "") + (j > 2 ? " hide-m" : "");
-      c.appendChild(tile(decode(DATA.compare.maps[m][a]), 3)); g.appendChild(c);
+  const N = 256, a = bits(lumMap(decode(DATA.plains.t1), N, 7), N), b = bits(lumMap(decode(DATA.plains.t2), N, 7), N);
+  const stage = new Bit(document.getElementById("stage"), N);
+  new Bit(document.getElementById("sp1"), 192).draw(bits(lumMap(decode(DATA.plains.t1), 192, 7), 192), null, 1);
+  new Bit(document.getElementById("sp2"), 192).draw(bits(lumMap(decode(DATA.plains.t2), 192, 7), 192), null, 1);
+  const story = document.getElementById("story"), steps = [...document.querySelectorAll(".step")], meter = [...document.querySelectorAll("#meter i")];
+  const tag = document.getElementById("stage-tag")._pt, num = document.getElementById("story-num");
+  let last = -1, inView = false, tagText = "TALUS-1";
+  stage.draw(a, b, 0, "blend");
+  if (REDUCE) return;
+  new IntersectionObserver(([e]) => { inView = e.isIntersecting; }).observe(story);
+  window.__story = () => {
+    if (!inView) return;
+    const r = story.getBoundingClientRect(), p = Math.max(0, Math.min(1, -r.top / Math.max(1, r.height - innerHeight)));
+    if (Math.abs(p - last) < 0.002) return;
+    last = p;
+    const t = Math.max(0, Math.min(1, (p - 0.3) / 0.36));
+    stage.draw(a, b, t, "blend");
+    const s = p < 0.3 ? 0 : p < 0.66 ? 1 : 2;
+    steps.forEach((el, i) => el.classList.toggle("on", i === s));
+    meter.forEach((m, i) => m.classList.toggle("on", i / meter.length < p));
+    const want = t > 0.5 ? "TALUS-2" : "TALUS-1";
+    if (want !== tagText) { tagText = want; tag.set(want); tag.render(1e9); }
+    num.textContent = (3.98 - (3.98 - 1.23) * ease(Math.max(0, Math.min(1, (p - 0.62) / 0.3)))).toFixed(2) + "x";
+  };
+  steps[0].classList.add("on");
+})();
+
+// ---------- range bars (fix section)
+document.querySelectorAll("canvas[data-range]").forEach((cv) => {
+  const [a, b] = cv.dataset.range.split(",").map(Number), W = cv.width, H = cv.height, ctx = cv.getContext("2d"), img = ctx.createImageData(W, H), px = new Uint32Array(img.data.buffer);
+  const draw = (t) => {
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const on = x >= a * W && x < b * W, edge = on && (x % 2 === 0);
+      px[y * W + x] = on && thr(x, y) < t ? (edge || y % 2 === 0 ? FG32 : grey32(150)) : grey32(30);
+    }
+    ctx.putImageData(img, 0, 0);
+  };
+  draw(0); seen(cv, () => animate(900, (t) => draw(t)), 0.6);
+});
+
+// ---------- out of the static: tiles forming from noise
+const formers = [];
+(function () {
+  const wrap = document.getElementById("forms"), N = 128;
+  DATA.forms.forEach((f, k) => {
+    const d = document.createElement("div"); d.className = "form rv";
+    const cv = document.createElement("canvas"); d.appendChild(cv);
+    const lab = document.createElement("div"); lab.className = "label"; lab.innerHTML = `<span>${f.archetype}</span><span class="st">noise</span>`; d.appendChild(lab);
+    wrap.appendChild(d);
+    seen(d, () => d.classList.add("in"), 0.15);
+    const maps = f.maps.map((m) => bits(lumMap(decode(m), N, 3.2), N)), bit = new Bit(cv, N), st = lab.querySelector(".st");
+    let idx = 0, phase = 0, t = -k * 0.45, inView = false;
+    if (REDUCE) { bit.draw(maps[0], null, 1); st.textContent = "talus-2"; return; }
+    new IntersectionObserver(([e]) => { inView = e.isIntersecting; }).observe(cv);
+    bit.draw(maps[0], null, 0, "static");
+    formers.push((dt) => {
+      if (!inView) return;
+      t += dt;
+      let p;
+      if (t < 0) p = 0;
+      else if (t < 2.2) { p = ease(t / 2.2); st.textContent = "denoising " + Math.round(p * 100) + "%"; }
+      else if (t < 5.0) { p = 1; st.textContent = "talus-2"; }
+      else if (t < 5.7) { p = 1 - (t - 5.0) / 0.7; st.textContent = "noise"; }
+      else { t = 0; idx = (idx + 1) % maps.length; p = 0; }
+      bit.draw(maps[idx], null, p, "static");
     });
   });
-  observe(g);
 })();
 
-// ---------- scorecard
+// ---------- same seed grid with staggered dissolve
 (function () {
-  const s = document.getElementById("scorecard"), f = (v) => v.toFixed(1);
-  const row = (cls, html) => { const d = document.createElement("div"); d.className = "srow " + cls; d.setAttribute("role", "row"); d.innerHTML = html; s.appendChild(d); };
-  row("head", '<span role="columnheader">Benchmark</span><span role="columnheader">Talus-2</span><span class="sc" role="columnheader">Talus-1.1</span><span class="sc" role="columnheader">Talus-1</span><span class="sc" role="columnheader">vs Talus-1</span>');
-  DATA.score.rows.forEach((r) => {
-    const d = r.t2 - r.t1, cls = r.name === "Average" ? "total" : "";
-    row(cls, `<span class="nm" role="rowheader"><b>${r.name}</b><span>${r.desc}</span></span>` +
-      `<span class="bar2" role="cell"><i style="--v:${r.t2}"></i><em>${f(r.t2)}</em></span>` +
-      `<span class="sc" role="cell">${f(r.t11)}</span><span class="sc" role="cell">${f(r.t1)}</span>` +
-      `<span class="sc ${d >= 0.05 ? "up" : d <= -0.05 ? "down" : ""}" role="cell">${d >= 0 ? "+" : "&minus;"}${f(Math.abs(d))}</span>`);
+  const g = document.getElementById("cmp"), arch = DATA.compare.archetypes, N = 128, cells = [];
+  g.appendChild(document.createElement("div"));
+  arch.forEach((a, j) => { const d = document.createElement("div"); d.className = "label hd" + (j > 2 ? " hide-m" : ""); d.textContent = a; g.appendChild(d); });
+  DATA.compare.models.forEach((m, r) => {
+    const t2 = m === "Talus-2", rl = document.createElement("div"); rl.className = "label rl" + (t2 ? " t2" : ""); rl.textContent = m; g.appendChild(rl);
+    arch.forEach((a, j) => {
+      const c = document.createElement("div"); c.className = "cell" + (t2 ? " t2" : "") + (j > 2 ? " hide-m" : "");
+      const cv = document.createElement("canvas"); c.appendChild(cv); g.appendChild(c);
+      const bit = new Bit(cv, N), b = bits(lumMap(decode(DATA.compare.maps[m][a]), N, 3.2), N);
+      bit.draw(b, null, REDUCE ? 1 : 0); cells.push([bit, b, r * 6 + j]);
+    });
   });
+  seen(g, () => cells.forEach(([bit, b, k]) => setTimeout(() => animate(650, (t) => bit.draw(b, null, t)), k * 45)), 0.15);
+})();
+
+// ---------- scorecard with dithered bars and previous-version markers
+(function () {
+  const s = document.getElementById("scorecard"), f = (v) => v.toFixed(1), bars = [];
+  const row = (cls, html) => { const d = document.createElement("div"); d.className = "srow " + cls; d.setAttribute("role", "row"); d.innerHTML = html; s.appendChild(d); return d; };
+  row("head label", '<span role="columnheader">Benchmark</span><span role="columnheader">Talus-2</span><span class="sc" role="columnheader">Talus-1.1</span><span class="sc" role="columnheader">Talus-1</span><span class="sc" role="columnheader">vs Talus-1</span>');
+  DATA.score.rows.forEach((r) => {
+    const d = r.t2 - r.t1, total = r.name === "Average";
+    const el = row(total ? "total" : "", `<span class="nm" role="rowheader"><b>${r.name}</b><span>${r.desc}</span></span>` +
+      `<span class="bar2" role="cell"><canvas width="100" height="5"></canvas><em>${f(r.t2)}</em></span>` +
+      `<span class="sc" role="cell">${f(r.t11)}</span><span class="sc" role="cell">${f(r.t1)}</span>` +
+      `<span class="sc ${d > 0.05 ? "up" : ""}" role="cell">${d >= 0 ? "+" : "-"}${f(Math.abs(d))}</span>`);
+    const cv = el.querySelector("canvas"), ctx = cv.getContext("2d"), img = ctx.createImageData(100, 5), px = new Uint32Array(img.data.buffer);
+    const ink = total ? BG32 : FG32, faint = total ? grey32(170) : grey32(40), mark = total ? grey32(80) : grey32(150);
+    const draw = (t) => {
+      for (let y = 0; y < 5; y++) for (let x = 0; x < 100; x++) {
+        let o = (x & 1) && y === 2 ? faint : 0;
+        if (x < r.t2 && thr(x, y) < t) o = ink;
+        if ((x === Math.round(r.t1) || x === Math.round(r.t11)) && y % 2 === 0 && x >= r.t2) o = mark;
+        px[y * 100 + x] = o;
+      }
+      ctx.putImageData(img, 0, 0);
+    };
+    draw(0); bars.push(draw);
+  });
+  const lg = document.createElement("div"); lg.className = "legend"; lg.innerHTML = '<span><i class="a"></i>Talus-2</span><span><i class="b"></i>Talus-1 / 1.1 marker, where still ahead</span>'; s.appendChild(lg);
   const n = document.createElement("div"); n.className = "score-note";
   n.textContent = "Sampler for every version: 50-step DDIM, quadratic spacing, guidance 2.0. Speed is unchanged at 5.5 maps per second. The average is withheld for anything that copies training maps.";
   s.appendChild(n);
-  observe(s);
+  seen(s, () => bars.forEach((draw, k) => setTimeout(() => animate(900, draw), k * 70)), 0.2);
 })();
 
 // ---------- spot the real map
 (function () {
-  const g = document.getElementById("game"), tally = document.getElementById("tally");
+  const g = document.getElementById("game"), tallyPx = document.getElementById("tally-px")._pt, tallySr = document.getElementById("tally-sr"), N = 128;
   let answered = 0, right = 0;
-  DATA.pairs.forEach((p, k) => {
-    const r = document.createElement("div"); r.className = "round pix rv";
-    const realFirst = p.real_first, pair = document.createElement("div"); pair.className = "pair";
-    const maps = realFirst ? [["real", p.real], ["model", p.model]] : [["model", p.model], ["real", p.real]];
-    const meta = document.createElement("div"); meta.className = "meta";
-    meta.innerHTML = `<span>${p.archetype}</span><span>pick one</span>`;
-    maps.forEach(([kind, b64], i) => {
-      const b = document.createElement("button"); b.type = "button";
-      b.setAttribute("aria-label", `${p.archetype}, map ${i ? "B" : "A"}`);
-      b.appendChild(tile(decode(b64), 2.5));
+  const say = (t) => { tallySr.textContent = t; tallyPx.set(t); tallyPx.render(1e9); tallyPx.shown = false; tallyPx.assemble(); };
+  DATA.pairs.forEach((p) => {
+    const r = document.createElement("div"); r.className = "round rv";
+    const pair = document.createElement("div"); pair.className = "pair";
+    const meta = document.createElement("div"); meta.className = "meta"; meta.innerHTML = `<span>${p.archetype}</span><span>pick one</span>`;
+    const order = p.real_first ? [["real", p.real], ["model", p.model]] : [["model", p.model], ["real", p.real]];
+    const btns = order.map(([kind, b64], i) => {
+      const b = document.createElement("button"); b.type = "button"; b.setAttribute("aria-label", `${p.archetype}, map ${i ? "B" : "A"}`);
+      const cv = document.createElement("canvas"); b.appendChild(cv); pair.appendChild(b);
+      const bit = new Bit(cv, N), m = bits(lumMap(decode(b64), N, 3), N), inv = m.map((v) => 1 - v);
+      bit.draw(m, null, 1);
       b.addEventListener("click", () => {
         if (r.classList.contains("done")) return;
-        r.classList.add("done", kind === "real" ? "right" : "wrong");
-        meta.innerHTML = `<span>${kind === "real" ? "correct" : "that one was Talus-2"}</span><span>${realFirst ? "A" : "B"} was procedural</span>`;
+        r.classList.add("done"); if (kind === "real") r.classList.add("right");
+        btns.forEach(([bb, k2, bitb, mb, invb]) => { if (k2 === "real") { bb.classList.add("real"); animate(420, (t) => bitb.draw(mb, invb, t < 0.5 ? t * 2 : 2 - t * 2, "blend")); } });
+        meta.innerHTML = `<span>${kind === "real" ? "correct" : "that was Talus-2"}</span><span>${p.real_first ? "A" : "B"} was procedural</span>`;
         answered++; if (kind === "real") right++;
-        tally.textContent = answered < DATA.pairs.length ? `${right} of ${answered} correct so far`
-          : `${right} of ${DATA.pairs.length} correct. ${right <= 3 ? "Talus-2 fooled you as often as a coin flip would." : "Sharp eyes."}`;
+        say(answered < DATA.pairs.length ? `${right} OF ${answered} CORRECT` : `${right} OF ${DATA.pairs.length}. ${right <= 3 ? "COIN FLIP TERRITORY." : "SHARP EYES."}`);
       });
-      pair.appendChild(b);
+      return [b, kind, bit, m, inv];
     });
     r.appendChild(pair); r.appendChild(meta); g.appendChild(r);
+    seen(r, () => r.classList.add("in"), 0.15);
   });
 })();
-document.querySelectorAll(".rv").forEach(observe);
 
-// ---------- hero: voxel-space flyover over Talus-2 maps, dithered to a low-res neon palette
-(function () {
-  const cv = document.getElementById("sky"), ctx = cv.getContext("2d"), W = cv.width, H = cv.height;
-  const img = ctx.createImageData(W, H), px = new Uint32Array(img.data.buffer);
-  const T = 256, maps = DATA.hero.map((m) => ({ name: m.name, ...bake(decode(m.b64)) }));
-  function bake(h64) {                            // 64x64 -> 256x256 bilinear heights + baked colour
-    const n = 64, hh = new Float32Array(T * T), col = new Uint8Array(T * T * 3);
-    for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
-      const gx = x / (T - 1) * (n - 1), gy = y / (T - 1) * (n - 1), i = Math.min(n - 2, gx | 0), j = Math.min(n - 2, gy | 0), fx = gx - i, fy = gy - j;
-      hh[y * T + x] = (h64[j * n + i] * (1 - fx) + h64[j * n + i + 1] * fx) * (1 - fy) + (h64[(j + 1) * n + i] * (1 - fx) + h64[(j + 1) * n + i + 1] * fx) * fy;
-    }
-    for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
-      const i = y * T + x, dx = hh[y * T + Math.min(T - 1, x + 1)] - hh[y * T + Math.max(0, x - 1)];
-      const dy = hh[Math.min(T - 1, y + 1) * T + x] - hh[Math.max(0, y - 1) * T + x];
-      const lit = Math.max(0.25, Math.min(1.25, 0.85 - (dx * 0.8 + dy * 0.5) * 60));
-      const c = ramp(hh[i]);
-      col.set([Math.min(255, c[0] * lit), Math.min(255, c[1] * lit), Math.min(255, c[2] * lit)], i * 3);
-    }
-    return { h: hh, c: col };
-  }
-  const mir = (u) => { const m = ((u % (2 * T)) + 2 * T) % (2 * T); return m < T ? m : 2 * T - 1 - m; };   // seamless mirror tiling
-  let cur = 0, next = 1, blend = 0, t0 = performance.now(), camX = 60, camY = 60, ang = 0.6, camH = 0, visible = true;
-  const hud = document.getElementById("hud-map");
-  const ybuf = new Float32Array(W), FOG = [58, 18, 72], SKY_TOP = [16, 6, 34], SKY_LOW = [255, 64, 140];
-  const levels = 6;
-  function q(v, b) { return Math.max(0, Math.min(255, Math.round((v / 255) * levels + b) / levels * 255)); }
-  let SH = 0, SR = 0, SG = 0, SB = 0;           // sample() writes here: no allocations in the hot loop
-  function sample(x, y) {
-    const u = mir(x | 0), v = mir(y | 0), i = v * T + u;
-    const m = blend > 0 && (BAYER[(v % 4) * 4 + (u % 4)] + 0.5) < blend ? maps[next] : maps[cur];  // dithered dissolve
-    SH = m.h[i]; SR = m.c[i * 3]; SG = m.c[i * 3 + 1]; SB = m.c[i * 3 + 2];
-  }
-  function render(time) {
-    const horizon = H * 0.42, sinA = Math.sin(ang), cosA = Math.cos(ang);
-    sample(camX, camY);
-    camH += ((SH * 150 + 46) - camH) * 0.04;
-    for (let y = 0; y < H; y++) {                   // dithered sky gradient
-      const t = Math.min(1, y / horizon);
-      for (let x = 0; x < W; x++) {
-        const b = BAYER[(y % 4) * 4 + (x % 4)];
-        const r = q(SKY_TOP[0] + (SKY_LOW[0] - SKY_TOP[0]) * t * t, b), g = q(SKY_TOP[1] + (SKY_LOW[1] - SKY_TOP[1]) * t * t, b), bl = q(SKY_TOP[2] + (SKY_LOW[2] - SKY_TOP[2]) * t * t, b);
-        px[y * W + x] = 0xff000000 | (bl << 16) | (g << 8) | r;
-      }
-    }
-    const sunX = W * 0.72, sunY = horizon - 26;                      // pixel sun with banded cut-outs
-    for (let y = -16; y <= 16; y++) for (let x = -16; x <= 16; x++) {
-      if (x * x + y * y > 256 || (y > 2 && (y % 5 === 0 || y % 5 === 1))) continue;
-      const X = (sunX + x) | 0, Y = (sunY + y) | 0;
-      if (X >= 0 && X < W && Y >= 0 && Y < H) px[Y * W + X] = 0xff000000 | (94 << 16) | (228 << 8) | 255;
-    }
-    ybuf.fill(H);
-    let z = 1, dz = 1;
-    const far = 520;
-    while (z < far) {
-      const lx = -cosA * z - sinA * z, ly = sinA * z - cosA * z, rx = cosA * z - sinA * z, ry = -sinA * z - cosA * z;
-      const sx = (rx - lx) / W, sy = (ry - ly) / W;
-      let wx = camX + lx, wy = camY + ly;
-      const fog = Math.min(1, Math.pow(z / far, 1.4));
-      for (let i = 0; i < W; i++) {
-        sample(wx, wy);
-        const top = ((camH - SH * 150) / z) * 120 + horizon;
-        if (top < ybuf[i]) {
-          const t = Math.max(0, top | 0), R = SR + (FOG[0] - SR) * fog, G = SG + (FOG[1] - SG) * fog, B = SB + (FOG[2] - SB) * fog;
-          for (let y = t; y < ybuf[i]; y++) {
-            const bb = BAYER[(y % 4) * 4 + (i % 4)];
-            px[y * W + i] = 0xff000000 | (q(B, bb) << 16) | (q(G, bb) << 8) | q(R, bb);
-          }
-          ybuf[i] = top;
-        }
-        wx += sx; wy += sy;
-      }
-      z += dz; dz += 0.012;
-    }
-    ctx.putImageData(img, 0, 0);
-  }
-  function loop(time) {
-    const dt = 1 / 60;
-    if (visible) {
-      ang = 0.6 + Math.sin(time / 7000) * 0.25;           // slow banking turn
-      camX -= Math.sin(ang) * 0.6; camY -= Math.cos(ang) * 0.6;   // fly forward along the view direction
-      const el = (time - t0) / 1000;
-      if (el > 12 && blend === 0) blend = 0.001;
-      if (blend > 0) { blend += dt / 1.6; if (blend >= 1) { cur = next; next = (next + 1) % maps.length; blend = 0; t0 = time; hud.textContent = maps[cur].name; } }
-      render(time);
-    }
-    requestAnimationFrame(loop);
-  }
-  hud.textContent = maps[0].name;
-  sample(camX, camY); camH = SH * 150 + 46;       // start above the ground, not inside it
-  if (reduce) { render(0); return; }
-  new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(cv);
+// ---------- one loop drives every animated canvas
+let last = performance.now(), acc = 0, perfN = 0, perfMs = 0;
+const PERF = location.hash === "#perf";
+function loop(t) {
+  const dt = Math.min(0.05, (t - last) / 1000); last = t; acc += dt;
+  const w0 = performance.now();
+  if (hero.getBoundingClientRect().bottom > 0) fly.climb(Math.max(0, -hero.getBoundingClientRect().top) * 0.12);
+  fly.frame(t, dt); fly2.frame(t, dt);
+  if (acc > 1 / 30) { field(t); formers.forEach((f) => f(acc)); acc = 0; }
+  window.__story && window.__story();
+  prog();
+  if (PERF) { perfMs += performance.now() - w0; if (++perfN % 60 === 0) { console.log("frame-ms " + (perfMs / 60).toFixed(2)); perfMs = 0; } }
   requestAnimationFrame(loop);
-})();
+}
+if (REDUCE) { fly.still(); fly2.still(); field(0); prog(); }
+else requestAnimationFrame(loop);
 </script>
 </body>
 </html>

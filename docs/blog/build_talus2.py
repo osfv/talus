@@ -66,6 +66,9 @@ def main() -> None:
         "compare": {"models": MODELS, "archetypes": ARCH, "maps": {m: {a: b64(cmp[m][a]) for a in ARCH} for m in MODELS}},
         "pairs": pairs,
         "score": {"rows": rows},
+        # three real Talus-2 maps per terrain type for the "out of the static" tiles
+        "forms": [{"archetype": a, "maps": [b64(fixed[i]) for i, lab in enumerate(labels) if lab == a] + [b64(cmp["Talus-2"][a])]}
+                  for a in ARCH],
     }
     html = (HERE / "talus2_template.html").read_text(encoding="utf-8").replace("{{DATA}}", json.dumps(data, separators=(",", ":")))
     if re.findall(r"\{\{[^}]+\}\}", html):
