@@ -123,4 +123,14 @@ python -m pytest -m "not slow"   # skip the end-to-end train/eval smoke test
 
 ## Results
 
-_Filled in after the first full training run._
+v1 (64x64, frozen) was benchmarked on the held-out test split:
+- [docs/V1_SUMMARY.md](docs/V1_SUMMARY.md): plain-English findings
+- [docs/V1_BENCHMARK.md](docs/V1_BENCHMARK.md): full report
+- [docs/BENCHMARK_SCORECARD.md](docs/BENCHMARK_SCORECARD.md): 0-100 scorecard with baselines
+- [benchmarks/v1/results.json](benchmarks/v1/results.json): machine-readable results
+
+Official v1 = checkpoint 30k + 50-step quadratic DDIM at guidance 2.0.
+- Realism: 2.9x the real-vs-real noise floor.
+- Conditioning error: 2-11% of range for elevation, relief, slope and water.
+- No memorization.
+- 5.5 maps/s on an RTX 5060.

@@ -41,10 +41,15 @@ def _inv(ratio: float) -> float:
     return min(100.0, 100.0 / ratio) if ratio > 0 else 100.0
 
 
+ORIGINALITY_GATE = 90.0  # a generator that copies training maps gets no Average, whatever its other scores
+
+
 def scores(compact: dict) -> dict:
     out = {name: fn(compact) for name, _, fn in BENCHMARKS}
     vals = [v for v in out.values() if v is not None]
-    out["Average"] = float(np.mean(vals)) if len(vals) == len(BENCHMARKS) else None
+    gated = out["Originality"] is not None and out["Originality"] < ORIGINALITY_GATE
+    out["Average"] = float(np.mean(vals)) if len(vals) == len(BENCHMARKS) and not gated else None
+    out["gated"] = gated
     return out
 
 
@@ -75,6 +80,10 @@ def entries(tag: str, r: dict) -> dict[str, dict]:
 
 def fmt(v, d=1):
     return "n/a" if v is None else f"{v:.{d}f}"
+
+
+def fmt_avg(s: dict) -> str:
+    return "gated (copies)" if s.get("gated") else fmt(s["Average"])
 
 
 def delta(new, old):
@@ -116,11 +125,13 @@ def main() -> None:
     header = ["Benchmark", "What it measures", "Real procedural", cur] + ([prev, cmp_label] if prev else []) + \
              [c for c in base_cols]
     rows = []
-    for name, what, _ in BENCHMARKS + [("Average", "mean of the 9 scores", None)]:
-        row = [f"**{name}**", what, "100", f"**{fmt(sc[cur][name])}**"]
+    for name, what, _ in BENCHMARKS + [("Average", f"mean of the 9 scores (only if Originality >= {ORIGINALITY_GATE:.0f})",
+                                        None)]:
+        cell = (lambda k: fmt_avg(sc[k])) if name == "Average" else (lambda k: fmt(sc[k][name]))
+        row = [f"**{name}**", what, "100", f"**{cell(cur)}**"]
         if prev:
-            row += [fmt(sc[prev][name]), delta(sc[cur][name], sc[prev][name])]
-        row += [fmt(sc[c][name]) for c in base_cols]
+            row += [cell(prev), delta(sc[cur][name], sc[prev][name])]
+        row += [cell(c) for c in base_cols]
         rows.append(row)
     sp = [cur_c["speed"]] + ([cols[prev]["speed"]] if prev else [])
     rows.append(["**Speed**", "maps/s, RTX 5060, batch 128", "-", f"**{fmt(sp[0], 2)}**"] +
@@ -136,7 +147,11 @@ def main() -> None:
     lines += ["", "Baselines are non-learned reference generators scored with the same protocol: "
                   "**blur** = real maps blurred (missing detail), **spectral_noise** = noise with each map's "
                   "roughness and height statistics (no landforms), **retrieval** = the training map with the closest "
-                  "conditions (a perfect memorizer: real terrain, zero originality).", ""]
+                  "conditions (a perfect memorizer: real terrain, zero originality).", "",
+              "How to read it: fidelity scores (Realism, Spectrum, Heights, Slopes) are strict, because at 1000 maps "
+              "per half the real-vs-real floor is very small. Clean detail only penalizes *excess* micro-bumps, so "
+              "over-smoothed output (blur) scores 100 there; always read it together with Spectrum. The Average is "
+              "a tracking number, not a ranking. It is withheld for anything that copies training data.", ""]
 
     # progression across checkpoints
     ck_cols = [k for k, v in cols.items() if v["kind"] == "checkpoint"]

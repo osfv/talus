@@ -1,0 +1,21 @@
+[stage] provenance ...
+[stage] provenance done in 15s
+[stage] checkpoints_test ...
+[checkpoints_test] 20000 done in 712s
+[checkpoints_test] 25000 done in 804s
+[checkpoints_test] 30000 done in 761s
+[checkpoints_test] 35000 done in 792s
+[checkpoints_test] 40000 done in 761s
+[stage] checkpoints_test done in 3832s
+[stage] checkpoints_val ...
+[checkpoints_val] 20000: ratio {'metric_w1_mean': 3.5482459523821577, 'rapsd_distance': 9.978342481874614, 'height_w1': 0.9252313133237322, 'slope_w1_deg': 1.5622021359909701}
+[checkpoints_val] 25000: ratio {'metric_w1_mean': 3.671813605813218, 'rapsd_distance': 12.015994205436108, 'height_w1': 0.8863278775769141, 'slope_w1_deg': 2.8452759274223185}
+[checkpoints_val] 30000: ratio {'metric_w1_mean': 3.1638153404314875, 'rapsd_distance': 11.727655311391992, 'height_w1': 0.9623896682456093, 'slope_w1_deg': 1.582144793042713}
+[checkpoints_val] 35000: ratio {'metric_w1_mean': 3.4550972995199665, 'rapsd_distance': 10.496262620843705, 'height_w1': 0.9829800072853899, 'slope_w1_deg': 1.6743764537093673}
+[checkpoints_val] 40000: ratio {'metric_w1_mean': 3.200926946273742, 'rapsd_distance': 11.467350305587331, 'height_w1': 0.7967082849512297, 'slope_w1_deg': 2.2515589232011766}
+[stage] checkpoints_val done in 3604s
+[stage] select ...
+[select] checkpoint 30000: lowest VAL metric_w1_mean ratio (3.164); runner-up 40000 within 0.05 but higher mean headline ratio (4.429 vs 4.359)
+[stage] select done in 0s
+[stage] training ...
+[stage] training done in 0s

@@ -11,3 +11,7 @@ __pycache__/
 reports/**/*.npy
 artifacts/**/*.npy
 benchmarks/**/*.npy
+benchmarks/v1/dryrun/
+benchmarks/v1/generated/
+benchmarks/v1/engineering/cli/
+benchmarks/v1/engineering/export/

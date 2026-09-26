@@ -1,0 +1,259 @@
+{
+  "n": 300,
+  "stored_vs_float_max_abs": {
+    "mean_elevation": 0.0,
+    "relief": 0.0,
+    "mean_slope_deg": 0.0,
+    "water_fraction": 0.0,
+    "spectral_beta": 0.0
+  },
+  "float_vs_quantized": {
+    "mean_elevation": {
+      "mean_diff": 1.5026428930771848e-09,
+      "max_abs_diff": 2.442175173200667e-07,
+      "mean_diff_in_std": 1.4599698237261889e-08,
+      "per_archetype_mean_diff": {
+        "hills": 8.687522729873778e-09,
+        "islands": -2.6998350222129375e-09,
+        "mesas": -3.743288719928578e-10,
+        "mountains": 7.15150044446713e-10,
+        "plains": 3.606032805691939e-09,
+        "ridges": -2.918510445136022e-09
+      }
+    },
+    "std_elevation": {
+      "mean_diff": -3.9296873925731555e-09,
+      "max_abs_diff": 2.1434838302913928e-07,
+      "mean_diff_in_std": -1.3744959149472868e-07,
+      "per_archetype_mean_diff": {
+        "hills": -1.0680596339811232e-08,
+        "islands": 1.616715704742579e-09,
+        "mesas": -1.0093640834762453e-08,
+        "mountains": 8.826354438812886e-09,
+        "plains": 7.246938746073457e-09,
+        "ridges": -1.4941034030558506e-08
+      }
+    },
+    "min_elevation": {
+      "mean_diff": 3.607446948687236e-07,
+      "max_abs_diff": 7.621943950653076e-06,
+      "mean_diff_in_std": 5.00560207769545e-06,
+      "per_archetype_mean_diff": {
+        "hills": 1.5264677424584665e-06,
+        "islands": 6.402842700481415e-07,
+        "mesas": -7.867551686470969e-07,
+        "mountains": 4.913461835760819e-07,
+        "plains": -1.83936208486557e-07,
+        "ridges": 3.798210874516913e-07
+      }
+    },
+    "max_elevation": {
+      "mean_diff": -2.6270747184753416e-07,
+      "max_abs_diff": 7.62939453125e-06,
+      "mean_diff_in_std": -2.10594015739505e-06,
+      "per_archetype_mean_diff": {
+        "hills": -1.0079914523709204e-06,
+        "islands": 1.5087425708770752e-07,
+        "mesas": -3.372368059660259e-07,
+        "mountains": 2.423399373104698e-07,
+        "plains": -4.200264811515808e-07,
+        "ridges": 1.407684163844332e-07
+      }
+    },
+    "relief": {
+      "mean_diff": 1.3154993454056463e-07,
+      "max_abs_diff": 1.332759857175514e-05,
+      "mean_diff_in_std": 1.2551148889766142e-06,
+      "per_archetype_mean_diff": {
+        "hills": -1.1707746213510922e-06,
+        "islands": -7.06920400272403e-07,
+        "mesas": -1.4098589881077132e-07,
+        "mountains": 3.3478203572689935e-06,
+        "plains": 2.5968377788052055e-07,
+        "ridges": 3.050933492923336e-07
+      }
+    },
+    "skewness": {
+      "mean_diff": -1.5211267155908433e-08,
+      "max_abs_diff": 3.978620471284389e-05,
+      "mean_diff_in_std": -1.762809486690508e-08,
+      "per_archetype_mean_diff": {
+        "hills": 6.917833219345967e-07,
+        "islands": -5.860483645742561e-07,
+        "mesas": 3.94719823908682e-08,
+        "mountains": -3.591834308372545e-07,
+        "plains": -3.995608763208228e-07,
+        "ridges": 2.394545708889882e-07
+      }
+    },
+    "kurtosis": {
+      "mean_diff": -1.1863747572789703e-06,
+      "max_abs_diff": 0.0001613474391284342,
+      "mean_diff_in_std": -6.70548276496601e-07,
+      "per_archetype_mean_diff": {
+        "hills": -1.2062339168437918e-06,
+        "islands": -3.7695863047508085e-06,
+        "mesas": -5.035822911924975e-07,
+        "mountains": -1.4197481256954758e-06,
+        "plains": 1.3792712453645587e-08,
+        "ridges": -3.87089628398122e-07
+      }
+    },
+    "hypsometric_integral": {
+      "mean_diff": -6.089711883856818e-07,
+      "max_abs_diff": 0.00015743501505882662,
+      "mean_diff_in_std": -4.340918083703724e-06,
+      "per_archetype_mean_diff": {
+        "hills": -2.078246355626203e-06,
+        "islands": -7.999759902123718e-07,
+        "mesas": 2.6184366814391e-06,
+        "mountains": -1.145854740751041e-06,
+        "plains": -1.491941323202133e-06,
+        "ridges": -1.0539672790738913e-06
+      }
+    },
+    "water_fraction": {
+      "mean_diff": -0.00010823567708333334,
+      "max_abs_diff": 0.00244140625,
+      "mean_diff_in_std": -0.00036137790487735015,
+      "per_archetype_mean_diff": {
+        "hills": -0.00014175907258064517,
+        "islands": -8.646647135416667e-05,
+        "mesas": -7.281387061403508e-05,
+        "mountains": -0.0002826891447368421,
+        "plains": -2.0345052083333332e-05,
+        "ridges": -7.791722074468086e-05
+      }
+    },
+    "mean_slope_deg": {
+      "mean_diff": -3.547893008152651e-06,
+      "max_abs_diff": 0.00014600498028727316,
+      "mean_diff_in_std": -5.435624187068112e-07,
+      "per_archetype_mean_diff": {
+        "hills": -8.129096421868787e-06,
+        "islands": 5.389195632051387e-06,
+        "mesas": -1.3808114089214827e-05,
+        "mountains": 4.800279288169325e-06,
+        "plains": 1.5297193295589946e-06,
+        "ridges": -6.12382877260464e-06
+      }
+    },
+    "p90_slope_deg": {
+      "mean_diff": 3.391210151787227e-05,
+      "max_abs_diff": 0.005345428539470731,
+      "mean_diff_in_std": 3.0473627196141864e-06,
+      "per_archetype_mean_diff": {
+        "hills": 0.0003016955376845507,
+        "islands": -4.704724141043245e-05,
+        "mesas": 0.00025083728231865273,
+        "mountains": -0.00012285979052812106,
+        "plains": -0.00018348668553508363,
+        "ridges": -0.00015095569020830412
+      }
+    },
+    "p99_slope_deg": {
+      "mean_diff": -2.157532659820512e-05,
+      "max_abs_diff": 0.008397479497105564,
+      "mean_diff_in_std": -1.683305046170345e-06,
+      "per_archetype_mean_diff": {
+        "hills": -7.080340464424563e-05,
+        "islands": -5.8264135953667306e-05,
+        "mesas": 0.0001998736113789509,
+        "mountains": 9.50205244656388e-05,
+        "plains": -0.00029121382212999686,
+        "ridges": -6.625971953125605e-06
+      }
+    },
+    "ruggedness_m": {
+      "mean_diff": -3.027968993548254e-06,
+      "max_abs_diff": 0.0006754502100392301,
+      "mean_diff_in_std": -1.3058500140218414e-07,
+      "per_archetype_mean_diff": {
+        "hills": -4.363310503674803e-05,
+        "islands": 4.386695622308571e-05,
+        "mesas": -6.046446697339254e-06,
+        "mountains": 1.288912568105167e-05,
+        "plains": 1.41938628674676e-05,
+        "ridges": -2.4153123750303903e-05
+      }
+    },
+    "curvature_std": {
+      "mean_diff": 6.617865123248873e-07,
+      "max_abs_diff": 1.5152387144112822e-05,
+      "mean_diff_in_std": 3.1996523281617256e-06,
+      "per_archetype_mean_diff": {
+        "hills": -9.252400168726029e-07,
+        "islands": 9.67130983648273e-07,
+        "mesas": 1.7669788295724877e-06,
+        "mountains": 4.955765048725594e-07,
+        "plains": 1.6888293765930983e-06,
+        "ridges": 1.8861780811048244e-07
+      }
+    },
+    "spectral_beta": {
+      "mean_diff": -0.0017007611175839695,
+      "max_abs_diff": 0.18839666136523903,
+      "mean_diff_in_std": -0.0015435780722468052,
+      "per_archetype_mean_diff": {
+        "hills": 4.841357601301132e-05,
+        "islands": -4.328414514309653e-07,
+        "mesas": -9.527937424299407e-07,
+        "mountains": 5.341073693718606e-06,
+        "plains": -0.010697200693264871,
+        "ridges": 2.2932153477049366e-06
+      }
+    },
+    "hf_energy": {
+      "mean_diff": 3.480275442357911e-08,
+      "max_abs_diff": 2.5178703003357616e-06,
+      "mean_diff_in_std": 4.0854197165680786e-06,
+      "per_archetype_mean_diff": {
+        "hills": -4.5823482582476554e-08,
+        "islands": 1.233870882335113e-08,
+        "mesas": 1.0602932245092189e-07,
+        "mountains": 5.1456784826182324e-08,
+        "plains": 7.085930688347746e-08,
+        "ridges": 2.7432942343873013e-08
+      }
+    },
+    "checkerboard": {
+      "mean_diff": 1.6027214348000567e-07,
+      "max_abs_diff": 2.0777465076030592e-05,
+      "mean_diff_in_std": 0.0002670943764689462,
+      "per_archetype_mean_diff": {
+        "hills": -2.7825317464916113e-08,
+        "islands": 1.616063523417196e-07,
+        "mesas": 2.293895993228402e-08,
+        "mountains": 2.318677143852802e-07,
+        "plains": 6.470107736229701e-07,
+        "ridges": 1.8610570590224792e-08
+      }
+    },
+    "peak_density": {
+      "mean_diff": -0.12660423170308707,
+      "max_abs_diff": 0.7804370447450575,
+      "mean_diff_in_std": -0.019849723797506144,
+      "per_archetype_mean_diff": {
+        "hills": -0.046154878990299,
+        "islands": -0.26556538328130425,
+        "mesas": -0.16430253573580145,
+        "mountains": -0.06845938988991741,
+        "plains": -0.16259105098855356,
+        "ridges": -0.055350145017380094
+      }
+    },
+    "sink_density": {
+      "mean_diff": -0.2481493440969346,
+      "max_abs_diff": 5.073208286117007,
+      "mean_diff_in_std": -0.04491091861035949,
+      "per_archetype_mean_diff": {
+        "hills": -0.03669281098595981,
+        "islands": -0.01986505103960562,
+        "mesas": -0.15943223074704502,
+        "mountains": -0.771946191899309,
+        "plains": -0.19259847635257224,
+        "ridges": -0.5010639827312985
+      }
+    }
+  }
+}

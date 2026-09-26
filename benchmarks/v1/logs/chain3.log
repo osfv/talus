@@ -1,0 +1,73 @@
+[stage] perf ...
+[perf] steps 25 g 1.0 bs 1: 1.21 maps/s peak 183 MB, smi 814.0 MB
+[perf] steps 25 g 1.0 bs 32: 21.06 maps/s peak 452 MB, smi 1343.0 MB
+[perf] steps 25 g 1.0 bs 128: 20.94 maps/s peak 1374 MB, smi 3176.0 MB
+[perf] steps 25 g 1.0 bs 256: 21.43 maps/s peak 2595 MB, smi 4184.0 MB
+[perf] steps 25 g 1.5 bs 1: 1.34 maps/s peak 185 MB, smi 814.0 MB
+[perf] steps 25 g 1.5 bs 32: 11.04 maps/s peak 758 MB, smi 1929.0 MB
+[perf] steps 25 g 1.5 bs 128: 10.67 maps/s peak 2592 MB, smi 4206.0 MB
+[perf] steps 25 g 1.5 bs 256: OOM under the 0.60 VRAM cap
+[perf] steps 50 g 1.0 bs 1: 0.68 maps/s peak 183 MB, smi 818.0 MB
+[perf] steps 50 g 1.0 bs 32: 10.19 maps/s peak 452 MB, smi 1349.0 MB
+[perf] steps 50 g 1.0 bs 128: 10.74 maps/s peak 1374 MB, smi 3136.0 MB
+[perf] steps 50 g 1.0 bs 256: 10.78 maps/s peak 2595 MB, smi 4220.0 MB
+[perf] steps 50 g 1.5 bs 1: 0.54 maps/s peak 185 MB, smi 823.0 MB
+[perf] steps 50 g 1.5 bs 32: 5.36 maps/s peak 758 MB, smi 2007.0 MB
+[perf] steps 50 g 1.5 bs 128: 5.48 maps/s peak 2592 MB, smi 4176.0 MB
+[perf] steps 50 g 1.5 bs 256: OOM under the 0.60 VRAM cap
+[perf] steps 100 g 1.0 bs 1: 0.36 maps/s peak 183 MB, smi 814.0 MB
+[perf] steps 100 g 1.0 bs 32: 5.42 maps/s peak 452 MB, smi 1355.0 MB
+[perf] steps 100 g 1.0 bs 128: 5.26 maps/s peak 1374 MB, smi 3145.0 MB
+[perf] steps 100 g 1.0 bs 256: 5.31 maps/s peak 2595 MB, smi 4214.0 MB
+[perf] steps 100 g 1.5 bs 1: 0.36 maps/s peak 185 MB, smi 839.0 MB
+[perf] steps 100 g 1.5 bs 32: 2.81 maps/s peak 758 MB, smi 1806.0 MB
+[perf] steps 100 g 1.5 bs 128: 2.77 maps/s peak 2592 MB, smi 4051.0 MB
+[perf] steps 100 g 1.5 bs 256: OOM under the 0.60 VRAM cap
+[perf] steps 200 g 1.0 bs 1: 0.18 maps/s peak 183 MB, smi 675.0 MB
+[perf] steps 200 g 1.0 bs 32: 2.76 maps/s peak 452 MB, smi 1203.0 MB
+[perf] steps 200 g 1.0 bs 128: 2.74 maps/s peak 1374 MB, smi 3236.0 MB
+[perf] steps 200 g 1.0 bs 256: 2.76 maps/s peak 2595 MB, smi 4327.0 MB
+[perf] steps 200 g 1.5 bs 1: 0.16 maps/s peak 185 MB, smi 936.0 MB
+[perf] steps 200 g 1.5 bs 32: 1.45 maps/s peak 758 MB, smi 2049.0 MB
+[perf] steps 200 g 1.5 bs 128: 1.38 maps/s peak 2592 MB, smi 4421.0 MB
+[perf] steps 200 g 1.5 bs 256: OOM under the 0.60 VRAM cap
+[stage] perf done in 747s
+[stage] pareto ...
+[pareto] frontier ['s50_q_g1_e0', 's25_q_g1.5_e0', 's50_q_g2_e0', 's100_q_g2_e0']; recommended s50_q_g2_e0
+[stage] pareto done in 0s
+[stage] sampler_test ...
+[sampler_test] s50_q_g1_e0: ratio 3.546 rapsd 21.674 82.0 ms/map
+[sampler_test] s25_q_g1.5_e0: ratio 3.657 rapsd 24.412 90.5 ms/map
+[sampler_test] s50_q_g2_e0: ratio 2.904 rapsd 28.041 180.5 ms/map
+[sampler_test] s100_q_g2_e0: ratio 2.816 rapsd 28.911 364.0 ms/map
+[stage] sampler_test done in 757s
+[stage] stress ...
+[stress] single mean_elevation/low: req 0.113 got 0.104 nMAE 0.086
+[stress] single mean_elevation/mid: req 0.313 got 0.311 nMAE 0.024
+[stress] single mean_elevation/high: req 0.489 got 0.491 nMAE 0.026
+[stress] single relief/low: req 0.045 got 0.041 nMAE 0.039
+[stress] single relief/mid: req 0.220 got 0.207 nMAE 0.131
+[stress] single relief/high: req 0.411 got 0.446 nMAE 0.312
+[stress] single mean_slope_deg/low: req 2.763 got 2.101 nMAE 0.166
+[stress] single mean_slope_deg/mid: req 12.303 got 11.504 nMAE 0.160
+[stress] single mean_slope_deg/high: req 25.542 got 25.702 nMAE 0.103
+[stress] single water_fraction/low: req 0.000 got 0.007 nMAE 0.023
+[stress] single water_fraction/mid: req 0.108 got 0.016 nMAE 0.324
+[stress] single water_fraction/high: req 0.877 got 0.533 nMAE 1.187
+[stress] single spectral_beta/low: req 3.410 got 4.046 nMAE 0.576
+[stress] single spectral_beta/mid: req 4.569 got 5.007 nMAE 0.449
+[stress] single spectral_beta/high: req 7.118 got 5.900 nMAE 1.073
+[stress] gain plains: mean_elevation=1.0085561164316974 relief=1.0547962407931306 mean_slope_deg=0.8453150446104593 water_fraction=0.0 spectral_beta=-0.0437057565519232
+[stress] gain hills: mean_elevation=1.0250916065837516 relief=0.9578761973424414 mean_slope_deg=0.9236640507035205 water_fraction=0.3189492001465378 spectral_beta=0.7891291517409963
+[stress] gain mountains: mean_elevation=1.01729773182493 relief=1.1344343915509172 mean_slope_deg=1.133239249738858 water_fraction=0.47068316299085544 spectral_beta=1.051099072299999
+[stress] gain ridges: mean_elevation=1.0464277739981076 relief=1.3634986039136998 mean_slope_deg=1.0295952056700177 water_fraction=0.0038580246913580245 spectral_beta=0.817975127042993
+[stress] gain islands: mean_elevation=1.1090960875456708 relief=1.1206840148882282 mean_slope_deg=0.904151015294155 water_fraction=0.5347306507328915 spectral_beta=0.2452233436250363
+[stress] gain mesas: mean_elevation=1.0338539521118664 relief=0.9713660920030528 mean_slope_deg=1.0476852520379776 water_fraction=0.46884711000621476 spectral_beta=0.6856820075078217
+[stage] stress done in 798s
+[stage] analysis ...
+[stage] analysis done in 70s
+[stage] figures ...
+[stage] figures done in 3s
+[stage] aggregate ...
+[aggregate] -> C:\Users\fearl\OneDrive\Desktop\NULLSCAPE\benchmarks\v1\results.json
+[stage] aggregate done in 0s

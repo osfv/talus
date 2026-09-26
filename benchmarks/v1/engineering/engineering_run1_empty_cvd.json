@@ -1,0 +1,350 @@
+{
+  "started": "2026-09-26T13:18:26",
+  "dataset": {
+    "manifest_config_sha256_matches": true,
+    "n": 50000,
+    "heights_shape": [
+      50000,
+      64,
+      64
+    ],
+    "heights_dtype": "uint16",
+    "splits": {
+      "train": 45000,
+      "val": 2500,
+      "test": 2500
+    },
+    "splits_disjoint_and_covering": true,
+    "dataset_item": {
+      "x_shape": [
+        1,
+        64,
+        64
+      ],
+      "x_min": -0.5951476097106934,
+      "x_max": -0.06663614511489868,
+      "cond_shape": [
+        5
+      ]
+    },
+    "conditions_recomputed_max_abs_diff": 0.12084102630615234,
+    "conditions_recomputed_n": 200,
+    "regeneration": {
+      "n": 100,
+      "bit_exact": 100,
+      "max_uint16_diff": 0,
+      "labels_match": 100
+    },
+    "build_git": {
+      "commit": "HEAD",
+      "dirty": false
+    },
+    "generator_version": "1.0.0"
+  },
+  "dataset_seconds": 12.4,
+  "exports": {
+    "native": {
+      "files": [
+        "native.json",
+        "native.npy",
+        "native.obj",
+        "native.png",
+        "native.r16"
+      ],
+      "png16_roundtrip_exact": true,
+      "r16_roundtrip_exact": true,
+      "r16_bytes": 8192,
+      "r16_expected_bytes": 8192,
+      "npy_exact": true,
+      "obj_counts": {
+        "v": 4096,
+        "vn": 4096,
+        "f": 7938,
+        "expected_v": 4096,
+        "expected_f": 7938
+      },
+      "obj_height_max_abs_err_m": 0.0005144042968936446,
+      "obj_xz_extent_m": [
+        32.0,
+        4064.0
+      ],
+      "sidecar": {
+        "resolution": 64,
+        "extent_m": 4096.0,
+        "cell_size_m": 64.0,
+        "max_height_m": 1200.0,
+        "min_height_m": 0.0,
+        "sea_level": 0.2,
+        "sea_level_m": 240.0,
+        "encoding": "uint16 = round(h * 65535); height_m = h * max_height_m",
+        "byte_order_r16": "little-endian",
+        "files": {
+          "png16": "native.png",
+          "r16": "native.r16",
+          "npy": "native.npy",
+          "obj": "native.obj"
+        },
+        "source": {
+          "index": 39
+        }
+      }
+    },
+    "unity_export_64": {
+      "size": 65,
+      "corners_preserved_max_abs": 0.0,
+      "sidecar_cell_size_m": 63.01538461538462,
+      "sidecar_extent_m": 4096.0,
+      "actual_sample_spacing_m_after_resample": 63.0,
+      "actual_footprint_m": 4032.0
+    },
+    "unity_size_table": {
+      "64": {
+        "unity_size": 65,
+        "input_already_valid_unity_size": false,
+        "upsampled_although_valid": false,
+        "file_bytes_r16": 8450,
+        "file_bytes_if_kept": 8192
+      },
+      "65": {
+        "unity_size": 129,
+        "input_already_valid_unity_size": true,
+        "upsampled_although_valid": true,
+        "file_bytes_r16": 33282,
+        "file_bytes_if_kept": 8450
+      },
+      "128": {
+        "unity_size": 129,
+        "input_already_valid_unity_size": false,
+        "upsampled_although_valid": false,
+        "file_bytes_r16": 33282,
+        "file_bytes_if_kept": 32768
+      },
+      "129": {
+        "unity_size": 257,
+        "input_already_valid_unity_size": true,
+        "upsampled_although_valid": true,
+        "file_bytes_r16": 132098,
+        "file_bytes_if_kept": 33282
+      },
+      "257": {
+        "unity_size": 513,
+        "input_already_valid_unity_size": true,
+        "upsampled_although_valid": true,
+        "file_bytes_r16": 526338,
+        "file_bytes_if_kept": 132098
+      },
+      "513": {
+        "unity_size": 1025,
+        "input_already_valid_unity_size": true,
+        "upsampled_although_valid": true,
+        "file_bytes_r16": 2101250,
+        "file_bytes_if_kept": 526338
+      },
+      "1025": {
+        "unity_size": 2049,
+        "input_already_valid_unity_size": true,
+        "upsampled_although_valid": true,
+        "file_bytes_r16": 8396802,
+        "file_bytes_if_kept": 2101250
+      }
+    },
+    "resample_identity_513_max_abs": 0.0
+  },
+  "exports_seconds": 0.1,
+  "cli": {
+    "commands": [
+      {
+        "cmd": "nullscape.exe --help",
+        "exit_code": 0,
+        "seconds": 3.59,
+        "stderr_tail": []
+      },
+      {
+        "cmd": "nullscape.exe gen-dataset --help",
+        "exit_code": 0,
+        "seconds": 2.98,
+        "stderr_tail": []
+      },
+      {
+        "cmd": "nullscape.exe viz --help",
+        "exit_code": 0,
+        "seconds": 3.46,
+        "stderr_tail": []
+      },
+      {
+        "cmd": "nullscape.exe export --help",
+        "exit_code": 0,
+        "seconds": 3.19,
+        "stderr_tail": []
+      },
+      {
+        "cmd": "nullscape.exe train --help",
+        "exit_code": 0,
+        "seconds": 3.02,
+        "stderr_tail": []
+      },
+      {
+        "cmd": "nullscape.exe sample --help",
+        "exit_code": 0,
+        "seconds": 2.99,
+        "stderr_tail": []
+      },
+      {
+        "cmd": "nullscape.exe evaluate --help",
+        "exit_code": 0,
+        "seconds": 3.02,
+        "stderr_tail": []
+      },
+      {
+        "cmd": "nullscape.exe compare --help",
+        "exit_code": 0,
+        "seconds": 3.01,
+        "stderr_tail": []
+      },
+      {
+        "cmd": "nullscape.exe sampler-sweep --help",
+        "exit_code": 0,
+        "seconds": 3.01,
+        "stderr_tail": []
+      },
+      {
+        "cmd": "nullscape.exe artifacts --help",
+        "exit_code": 0,
+        "seconds": 2.98,
+        "stderr_tail": []
+      },
+      {
+        "cmd": "nullscape.exe gen-dataset --config configs/dataset/smoke.yaml --set name=eng_tiny --set n=24 --workers 2",
+        "exit_code": 0,
+        "seconds": 5.78,
+        "stderr_tail": []
+      },
+      {
+        "cmd": "nullscape.exe viz --dataset C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\benchmarks\\v1\\engineering\\cli\\data\\eng_tiny --n 6 --per-archetype 2 --inspect 1 --out C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\benchmarks\\v1\\engineering\\cli\\viz",
+        "exit_code": 0,
+        "seconds": 4.63,
+        "stderr_tail": []
+      },
+      {
+        "cmd": "nullscape.exe export --dataset C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\data\\base64 --index 0 --formats png16,r16,npy,obj --unity --out C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\benchmarks\\v1\\engineering\\cli\\export",
+        "exit_code": 0,
+        "seconds": 3.34,
+        "stderr_tail": []
+      },
+      {
+        "cmd": "nullscape.exe sample --checkpoint C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\runs\\20260925-164759_diffusion64\\checkpoints\\step_0030000.pt --n 2 --steps 5 --archetype islands --prop water_fraction=0.6 --formats png16,r16,obj --unity --out C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\benchmarks\\v1\\engineering\\cli\\sample",
+        "exit_code": 1,
+        "seconds": 5.73,
+        "stderr_tail": [
+          "  File \"C:\\Users\\fearl\\.venvs\\nullscape\\Lib\\site-packages\\torch\\cuda\\__init__.py\", line 689, in get_device_properties",
+          "    raise AssertionError(\"Invalid device id\")",
+          "AssertionError: Invalid device id"
+        ]
+      },
+      {
+        "cmd": "nullscape.exe evaluate --checkpoint C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\runs\\20260925-164759_diffusion64\\checkpoints\\step_0030000.pt --dataset C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\data\\base64 --split test --n 8 --steps 5 --modes conditional,unconditional --no-memorization --out C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\benchmarks\\v1\\engineering\\cli\\evaluate",
+        "exit_code": 1,
+        "seconds": 5.64,
+        "stderr_tail": [
+          "  File \"C:\\Users\\fearl\\.venvs\\nullscape\\Lib\\site-packages\\torch\\cuda\\__init__.py\", line 689, in get_device_properties",
+          "    raise AssertionError(\"Invalid device id\")",
+          "AssertionError: Invalid device id"
+        ]
+      },
+      {
+        "cmd": "nullscape.exe compare --checkpoint C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\runs\\20260925-164759_diffusion64\\checkpoints\\step_0030000.pt --dataset C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\data\\base64 --split test --n 2 --seeds 1 --steps 5 --n-3d 1 --out C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\benchmarks\\v1\\engineering\\cli\\compare",
+        "exit_code": 1,
+        "seconds": 5.87,
+        "stderr_tail": [
+          "  File \"C:\\Users\\fearl\\.venvs\\nullscape\\Lib\\site-packages\\torch\\cuda\\__init__.py\", line 689, in get_device_properties",
+          "    raise AssertionError(\"Invalid device id\")",
+          "AssertionError: Invalid device id"
+        ]
+      },
+      {
+        "cmd": "nullscape.exe sampler-sweep --checkpoint C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\runs\\20260925-164759_diffusion64\\checkpoints\\step_0030000.pt --dataset C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\data\\base64 --n 4 --steps-list 3 --spacings uniform,quadratic --etas 0 --out C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\benchmarks\\v1\\engineering\\cli\\sweep",
+        "exit_code": 1,
+        "seconds": 5.19,
+        "stderr_tail": [
+          "  File \"C:\\Users\\fearl\\.venvs\\nullscape\\Lib\\site-packages\\torch\\cuda\\__init__.py\", line 689, in get_device_properties",
+          "    raise AssertionError(\"Invalid device id\")",
+          "AssertionError: Invalid device id"
+        ]
+      },
+      {
+        "cmd": "nullscape.exe train --config configs/train/smoke.yaml --set dataset=C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\benchmarks\\v1\\engineering\\cli\\data\\eng_tiny --set train.max_steps=4 --set train.eval_every=4 --set train.sample_every=4 --set train.val_every=2 --set train.val_size=4 --set train.eval_samples=2 --set train.eval_steps=3 --set train.checkpoint_every=4 --set train.bf16=false",
+        "exit_code": 1,
+        "seconds": 6.62,
+        "stderr_tail": [
+          "  File \"C:\\Users\\fearl\\.venvs\\nullscape\\Lib\\site-packages\\torch\\cuda\\__init__.py\", line 689, in get_device_properties",
+          "    raise AssertionError(\"Invalid device id\")",
+          "AssertionError: Invalid device id"
+        ]
+      },
+      {
+        "cmd": "nullscape.exe artifacts --run C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\benchmarks\\v1\\engineering\\cli\\runs\\20260926-131952_smoke --out C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\benchmarks\\v1\\engineering\\cli\\artifacts --device cpu --n 2 --steps 3 --batch-size 4",
+        "exit_code": 0,
+        "seconds": 3.26,
+        "stderr_tail": []
+      }
+    ],
+    "all_exit_zero": false,
+    "expected_outputs": {
+      "viz/mixed.png": true,
+      "export/*.r16": true,
+      "sample/grid.png": false,
+      "evaluate/report.json": false,
+      "compare/compare_2d.png": false,
+      "sweep/sampler_sweep.json": false,
+      "artifacts/index.md": false
+    },
+    "sample_unity_sidecar_resolution": null
+  },
+  "cli_seconds": 77.3,
+  "pytest": {
+    "cmd": "python.exe -m pytest -q -p no:cacheprovider --junitxml=C:\\Users\\fearl\\OneDrive\\Desktop\\NULLSCAPE\\benchmarks\\v1\\engineering\\pytest_junit.xml --durations=10",
+    "exit_code": 1,
+    "seconds": 43.8,
+    "stderr_tail": [],
+    "tests": 90,
+    "failures": 2,
+    "errors": 0,
+    "skipped": 0,
+    "time": 42.28,
+    "slowest": [
+      {
+        "test": "tests.test_train_smoke::test_end_to_end_train_sample_evaluate_compare",
+        "seconds": 14.687
+      },
+      {
+        "test": "tests.test_model::test_overfit_tiny_model",
+        "seconds": 11.55
+      },
+      {
+        "test": "tests.test_train_smoke::test_artifacts_cli",
+        "seconds": 4.822
+      },
+      {
+        "test": "tests.test_data::test_build_independent_of_worker_count",
+        "seconds": 1.492
+      },
+      {
+        "test": "tests.test_eval_core::test_real_data_scores_at_floor_and_blur_scores_worse",
+        "seconds": 1.269
+      },
+      {
+        "test": "tests.test_terrain::test_no_per_map_normalization",
+        "seconds": 0.673
+      },
+      {
+        "test": "tests.test_metrics::test_set_distances_zero_on_identical_sets_and_grow_with_shift",
+        "seconds": 0.536
+      },
+      {
+        "test": "tests.test_viz_utils::test_save_condition_scatter",
+        "seconds": 0.494
+      }
+    ]
+  },
+  "pytest_seconds": 43.8
+}

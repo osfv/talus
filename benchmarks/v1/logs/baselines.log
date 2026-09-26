@@ -1,0 +1,5 @@
+[stage] baselines ...
+[baselines] blur: ratio {'metric_w1_mean': 10.705548406749777, 'rapsd_distance': 334.5007663955635, 'height_w1': 1.021464979716182, 'slope_w1_deg': 13.699381286463096}
+[baselines] spectral_noise: ratio {'metric_w1_mean': 9.332856868579286, 'rapsd_distance': 83.39141492832566, 'height_w1': 1.4080380166920259, 'slope_w1_deg': 16.26301465289971}
+[baselines] retrieval: ratio {'metric_w1_mean': 0.9890510210001892, 'rapsd_distance': 1.5710487032928286, 'height_w1': 1.0228649469129747, 'slope_w1_deg': 1.0657163487223018}
+[stage] baselines done in 86s

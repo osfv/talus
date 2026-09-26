@@ -1,0 +1,1383 @@
+{
+  "checkpoint": 30000,
+  "sampler": {
+    "steps": 50,
+    "spacing": "quadratic",
+    "guidance": 2.0,
+    "eta": 0.0
+  },
+  "levels": {
+    "mean_elevation": {
+      "low": 0.113447006046772,
+      "mid": 0.3134102523326874,
+      "high": 0.488573159277439
+    },
+    "relief": {
+      "low": 0.04509974550455809,
+      "mid": 0.22019367665052414,
+      "high": 0.4113775610923767
+    },
+    "mean_slope_deg": {
+      "low": 2.762806475162506,
+      "mid": 12.302969932556152,
+      "high": 25.541547012329097
+    },
+    "water_fraction": {
+      "low": 0.0,
+      "mid": 0.107666015625,
+      "high": 0.876953125
+    },
+    "spectral_beta": {
+      "low": 3.410379481315613,
+      "mid": 4.569361686706543,
+      "high": 7.118342494964599
+    }
+  },
+  "train_std": {
+    "mean_elevation": 0.10674680435627776,
+    "relief": 0.11203620203711122,
+    "mean_slope_deg": 6.775833498498511,
+    "water_fraction": 0.30268501220552274,
+    "spectral_beta": 1.1361957794488111
+  },
+  "single": {
+    "mean_elevation/low": {
+      "key": "mean_elevation",
+      "level": "low",
+      "requested": 0.113447006046772,
+      "n": 64,
+      "measured_mean": 0.10422199075549088,
+      "measured_std": 0.0023807350883879677,
+      "bias": -0.009225015291281127,
+      "mae": 0.009225015291281127,
+      "nmae": 0.08641959210780445,
+      "others_vs_natural_z": {
+        "relief": -0.484153735699503,
+        "mean_slope_deg": -0.11341453936555218,
+        "water_fraction": 0.061914422640693384,
+        "spectral_beta": -0.31482320799264557
+      },
+      "others_measured_mean": {
+        "relief": 0.25607017618604,
+        "mean_slope_deg": 8.311791066687315,
+        "water_fraction": 0.8873214721679688,
+        "spectral_beta": 4.960376179599351
+      },
+      "others_natural_mean": {
+        "relief": 0.31031292193589166,
+        "mean_slope_deg": 9.080269101737201,
+        "water_fraction": 0.8685809043952726,
+        "spectral_beta": 5.31807697979313
+      }
+    },
+    "mean_elevation/mid": {
+      "key": "mean_elevation",
+      "level": "mid",
+      "requested": 0.3134102523326874,
+      "n": 64,
+      "measured_mean": 0.310814231401082,
+      "measured_std": 0.000486185207990215,
+      "bias": -0.0025960209316053806,
+      "mae": 0.0025960209316053806,
+      "nmae": 0.02431942527235673,
+      "others_vs_natural_z": {
+        "relief": 0.19766747985304972,
+        "mean_slope_deg": 0.6142752938232693,
+        "water_fraction": -0.01521723109036833,
+        "spectral_beta": -0.42536811020853194
+      },
+      "others_measured_mean": {
+        "relief": 0.18946102266199885,
+        "mean_slope_deg": 15.184028313150652,
+        "water_fraction": 0.009693145751953125,
+        "spectral_beta": 4.265871384336357
+      },
+      "others_natural_mean": {
+        "relief": 0.16731510895301596,
+        "mean_slope_deg": 11.021801199962928,
+        "water_fraction": 0.014299173530275523,
+        "spectral_beta": 4.749172835867408
+      }
+    },
+    "mean_elevation/high": {
+      "key": "mean_elevation",
+      "level": "high",
+      "requested": 0.488573159277439,
+      "n": 64,
+      "measured_mean": 0.4912722666326772,
+      "measured_std": 0.0015725069176897883,
+      "bias": 0.002699107355238206,
+      "mae": 0.0027281975426377593,
+      "nmae": 0.02555765073333846,
+      "others_vs_natural_z": {
+        "relief": -0.7225017978165296,
+        "mean_slope_deg": -0.5487878744256439,
+        "water_fraction": -0.0017586788709323046,
+        "spectral_beta": -0.008280397215293693
+      },
+      "others_measured_mean": {
+        "relief": 0.2786775489337742,
+        "mean_slope_deg": 19.93725276124835,
+        "water_fraction": 0.0,
+        "spectral_beta": 4.322411567939952
+      },
+      "others_natural_mean": {
+        "relief": 0.359623906326123,
+        "mean_slope_deg": 23.65574802435142,
+        "water_fraction": 0.0005323257355137396,
+        "spectral_beta": 4.331819720308128
+      }
+    },
+    "relief/low": {
+      "key": "relief",
+      "level": "low",
+      "requested": 0.04509974550455809,
+      "n": 64,
+      "measured_mean": 0.04131988682784139,
+      "measured_std": 0.0037251381504429075,
+      "bias": -0.0037798586767167006,
+      "mae": 0.004424392350483692,
+      "nmae": 0.03949073844022437,
+      "others_vs_natural_z": {
+        "mean_elevation": -0.18209211181494656,
+        "mean_slope_deg": 0.11688250720890737,
+        "water_fraction": -0.02003561967747165,
+        "spectral_beta": -1.877064990351264
+      },
+      "others_measured_mean": {
+        "mean_elevation": 0.2552569954846149,
+        "mean_slope_deg": 3.6662632303135316,
+        "water_fraction": 0.0034332275390625,
+        "spectral_beta": 4.233232251868177
+      },
+      "others_natural_mean": {
+        "mean_elevation": 0.27469474651934644,
+        "mean_slope_deg": 2.8742868225789233,
+        "water_fraction": 0.009497709325683218,
+        "spectral_beta": 6.365945571656407
+      }
+    },
+    "relief/mid": {
+      "key": "relief",
+      "level": "mid",
+      "requested": 0.22019367665052414,
+      "n": 64,
+      "measured_mean": 0.2071149118244648,
+      "measured_std": 0.013792611440325677,
+      "bias": -0.013078764826059353,
+      "mae": 0.014654660737141972,
+      "nmae": 0.13080290540630535,
+      "others_vs_natural_z": {
+        "mean_elevation": 0.8646652058738794,
+        "mean_slope_deg": -0.2391270308693955,
+        "water_fraction": -0.6039890535003758,
+        "spectral_beta": 0.5646548776758052
+      },
+      "others_measured_mean": {
+        "mean_elevation": 0.38283891510718604,
+        "mean_slope_deg": 11.243841422682632,
+        "water_fraction": 0.029804229736328125,
+        "spectral_beta": 5.043364087076263
+      },
+      "others_natural_mean": {
+        "mean_elevation": 0.2905386675420864,
+        "mean_slope_deg": 12.86412636884397,
+        "water_fraction": 0.2126226637670915,
+        "spectral_beta": 4.401805598215828
+      }
+    },
+    "relief/high": {
+      "key": "relief",
+      "level": "high",
+      "requested": 0.4113775610923767,
+      "n": 64,
+      "measured_mean": 0.44557044045068317,
+      "measured_std": 0.01806486424220895,
+      "bias": 0.03419287935830645,
+      "mae": 0.034964618878439026,
+      "nmae": 0.31208322169701214,
+      "others_vs_natural_z": {
+        "mean_elevation": 1.2670441272158357,
+        "mean_slope_deg": 0.4005205775644291,
+        "water_fraction": -0.8320638008873447,
+        "spectral_beta": 0.12018755319304274
+      },
+      "others_measured_mean": {
+        "mean_elevation": 0.4789109465182264,
+        "mean_slope_deg": 22.926891563280385,
+        "water_fraction": 0.043292999267578125,
+        "spectral_beta": 4.817603944840654
+      },
+      "others_natural_mean": {
+        "mean_elevation": 0.3436580349595469,
+        "mean_slope_deg": 20.213030816981355,
+        "water_fraction": 0.2951462409949377,
+        "spectral_beta": 4.681047354160439
+      }
+    },
+    "mean_slope_deg/low": {
+      "key": "mean_slope_deg",
+      "level": "low",
+      "requested": 2.762806475162506,
+      "n": 64,
+      "measured_mean": 2.100567985661609,
+      "measured_std": 1.0442414043879689,
+      "bias": -0.662238489500897,
+      "mae": 1.1280150149119512,
+      "nmae": 0.16647620033194638,
+      "others_vs_natural_z": {
+        "mean_elevation": -0.43401373830590567,
+        "relief": -0.18654857318037912,
+        "water_fraction": 0.6458875311959081,
+        "spectral_beta": -3.006320683189486
+      },
+      "others_measured_mean": {
+        "mean_elevation": 0.22819908205428874,
+        "relief": 0.026679818890988825,
+        "water_fraction": 0.20872116088867188,
+        "spectral_beta": 3.064984747890408
+      },
+      "others_natural_mean": {
+        "mean_elevation": 0.274528661665166,
+        "relief": 0.04758001252556061,
+        "water_fraction": 0.013220685625243474,
+        "spectral_beta": 6.480753619799969
+      }
+    },
+    "mean_slope_deg/mid": {
+      "key": "mean_slope_deg",
+      "level": "mid",
+      "requested": 12.302969932556152,
+      "n": 64,
+      "measured_mean": 11.504013108026268,
+      "measured_std": 0.9725404430717716,
+      "bias": -0.7989568245298848,
+      "mae": 1.0846446526001337,
+      "nmae": 0.16007545829461203,
+      "others_vs_natural_z": {
+        "mean_elevation": 0.694284960780252,
+        "relief": -0.27161152443377573,
+        "water_fraction": -0.6062406913557882,
+        "spectral_beta": 0.44428967560851707
+      },
+      "others_measured_mean": {
+        "mean_elevation": 0.35870797290340306,
+        "relief": 0.19761709491722285,
+        "water_fraction": 0.017581939697265625,
+        "spectral_beta": 4.979312968116159
+      },
+      "others_natural_mean": {
+        "mean_elevation": 0.2845952720274875,
+        "relief": 0.2280474185442931,
+        "water_fraction": 0.2010819107597769,
+        "spectral_beta": 4.4745129138370805
+      }
+    },
+    "mean_slope_deg/high": {
+      "key": "mean_slope_deg",
+      "level": "high",
+      "requested": 25.541547012329097,
+      "n": 64,
+      "measured_mean": 25.702261707064327,
+      "measured_std": 0.9415967752557224,
+      "bias": 0.1607146947352298,
+      "mae": 0.6975799240040251,
+      "nmae": 0.10295116079204206,
+      "others_vs_natural_z": {
+        "mean_elevation": 0.33715920817762624,
+        "relief": 0.07250358810796524,
+        "water_fraction": 0.007922638067252533,
+        "spectral_beta": 0.33610501579078994
+      },
+      "others_measured_mean": {
+        "mean_elevation": 0.49147317752681374,
+        "relief": 0.37797179142944515,
+        "water_fraction": 0.0123748779296875,
+        "spectral_beta": 4.598026342019272
+      },
+      "others_natural_mean": {
+        "mean_elevation": 0.45548250949455915,
+        "relief": 0.36984876478376566,
+        "water_fraction": 0.009976814129601228,
+        "spectral_beta": 4.216145241626201
+      }
+    },
+    "water_fraction/low": {
+      "key": "water_fraction",
+      "level": "low",
+      "requested": 0.0,
+      "n": 64,
+      "measured_mean": 0.006824493408203125,
+      "measured_std": 0.019724766002069617,
+      "bias": 0.006824493408203125,
+      "mae": 0.006824493408203125,
+      "nmae": 0.022546519097448085,
+      "others_vs_natural_z": {
+        "mean_elevation": 0.38510333025575133,
+        "relief": 0.2776748750611708,
+        "mean_slope_deg": 0.3343537351723067,
+        "spectral_beta": -0.018259103906984406
+      },
+      "others_measured_mean": {
+        "mean_elevation": 0.4007501430173761,
+        "relief": 0.23652973654679954,
+        "mean_slope_deg": 15.73057765637904,
+        "spectral_beta": 4.633699328540347
+      },
+      "others_natural_mean": {
+        "mean_elevation": 0.3596415931656144,
+        "relief": 0.2054200981438166,
+        "mean_slope_deg": 13.465052417250424,
+        "spectral_beta": 4.65444524533598
+      }
+    },
+    "water_fraction/mid": {
+      "key": "water_fraction",
+      "level": "mid",
+      "requested": 0.107666015625,
+      "n": 64,
+      "measured_mean": 0.016315460205078125,
+      "measured_std": 0.04349671501465178,
+      "bias": -0.09135055541992188,
+      "mae": 0.09798812866210938,
+      "nmae": 0.3237297015406087,
+      "others_vs_natural_z": {
+        "mean_elevation": 0.8824785230260668,
+        "relief": -0.02648395820395539,
+        "mean_slope_deg": -0.0287136772859484,
+        "spectral_beta": 0.3742524536630251
+      },
+      "others_measured_mean": {
+        "mean_elevation": 0.37262916352381126,
+        "relief": 0.2241166187915951,
+        "mean_slope_deg": 14.389352414141229,
+        "spectral_beta": 4.909970719424946
+      },
+      "others_natural_mean": {
+        "mean_elevation": 0.27842740127773075,
+        "relief": 0.22708378088367587,
+        "mean_slope_deg": 14.583911510560434,
+        "spectral_beta": 4.484746661124655
+      }
+    },
+    "water_fraction/high": {
+      "key": "water_fraction",
+      "level": "high",
+      "requested": 0.876953125,
+      "n": 64,
+      "measured_mean": 0.5325927734375,
+      "measured_std": 0.33733538392414963,
+      "bias": -0.3443603515625,
+      "mae": 0.35915374755859375,
+      "nmae": 1.186559403591245,
+      "others_vs_natural_z": {
+        "mean_elevation": 0.7213860611332316,
+        "relief": -0.5703829118269607,
+        "mean_slope_deg": 0.17823213370482674,
+        "spectral_beta": 0.4797701759733223
+      },
+      "others_measured_mean": {
+        "mean_elevation": 0.19334198849060158,
+        "relief": 0.24023143816739317,
+        "mean_slope_deg": 9.970946835911509,
+        "spectral_beta": 5.8753568745433205
+      },
+      "others_natural_mean": {
+        "mean_elevation": 0.11633633175746669,
+        "relief": 0.30413497331535433,
+        "mean_slope_deg": 8.763275573845478,
+        "spectral_beta": 5.330244025497018
+      }
+    },
+    "spectral_beta/low": {
+      "key": "spectral_beta",
+      "level": "low",
+      "requested": 3.410379481315613,
+      "n": 64,
+      "measured_mean": 4.046374886379841,
+      "measured_std": 0.3185316861074812,
+      "bias": 0.6359954050642278,
+      "mae": 0.65396272559956,
+      "nmae": 0.575572218651269,
+      "others_vs_natural_z": {
+        "mean_elevation": 0.5454608787179964,
+        "relief": -0.09863504140547935,
+        "mean_slope_deg": 0.025171442498892947,
+        "water_fraction": -0.0942033301606079
+      },
+      "others_measured_mean": {
+        "mean_elevation": 0.39498110794158947,
+        "relief": 0.19908892083913088,
+        "mean_slope_deg": 15.153991072876526,
+        "water_fraction": 0.00347137451171875
+      },
+      "others_natural_mean": {
+        "mean_elevation": 0.33675490223707616,
+        "relief": 0.210139616265974,
+        "mean_slope_deg": 14.983433569586998,
+        "water_fraction": 0.03198531065118324
+      }
+    },
+    "spectral_beta/mid": {
+      "key": "spectral_beta",
+      "level": "mid",
+      "requested": 4.569361686706543,
+      "n": 64,
+      "measured_mean": 5.006861900737139,
+      "measured_std": 0.4618200361837463,
+      "bias": 0.4375002140305959,
+      "mae": 0.5101404945977268,
+      "nmae": 0.4489899573867499,
+      "others_vs_natural_z": {
+        "mean_elevation": 0.30064730512983134,
+        "relief": -0.22031824472799702,
+        "mean_slope_deg": -0.21568670537464316,
+        "water_fraction": -0.282873839723457
+      },
+      "others_measured_mean": {
+        "mean_elevation": 0.3648205741701531,
+        "relief": 0.23685023151338097,
+        "mean_slope_deg": 13.902142313702171,
+        "water_fraction": 0.040798187255859375
+      },
+      "others_natural_mean": {
+        "mean_elevation": 0.3327274351092169,
+        "relief": 0.26153385089218856,
+        "mean_slope_deg": 15.363599517160457,
+        "water_fraction": 0.12641985888517704
+      }
+    },
+    "spectral_beta/high": {
+      "key": "spectral_beta",
+      "level": "high",
+      "requested": 7.118342494964599,
+      "n": 64,
+      "measured_mean": 5.899821801661838,
+      "measured_std": 0.7290097812132196,
+      "bias": -1.2185206933027617,
+      "mae": 1.2194858526249188,
+      "nmae": 1.0733060927373919,
+      "others_vs_natural_z": {
+        "mean_elevation": 0.931037283891733,
+        "relief": 1.625604558629377,
+        "mean_slope_deg": 1.3171528877698664,
+        "water_fraction": 0.14937137571496634
+      },
+      "others_measured_mean": {
+        "mean_elevation": 0.3751045839495646,
+        "relief": 0.2520065209362655,
+        "mean_slope_deg": 12.595124886057125,
+        "water_fraction": 0.07158279418945312
+      },
+      "others_natural_mean": {
+        "mean_elevation": 0.2757193291575735,
+        "relief": 0.06987996017321563,
+        "mean_slope_deg": 3.6703162264620137,
+        "water_fraction": 0.02637031750801282
+      }
+    }
+  },
+  "pairs": {
+    "mean_elevation=low|relief=low": {
+      "a": "mean_elevation",
+      "b": "relief",
+      "a_level": "low",
+      "b_level": "low",
+      "a_req": 0.113447006046772,
+      "b_req": 0.04509974550455809,
+      "a_nmae": 0.03895830385931693,
+      "b_nmae": 0.16688301264061856,
+      "a_nmae_alone": 0.08641959210780445,
+      "b_nmae_alone": 0.03949073844022437,
+      "train_support": 0
+    },
+    "mean_elevation=low|relief=high": {
+      "a": "mean_elevation",
+      "b": "relief",
+      "a_level": "low",
+      "b_level": "high",
+      "a_req": 0.113447006046772,
+      "b_req": 0.4113775610923767,
+      "a_nmae": 0.10817333259611052,
+      "b_nmae": 0.16593458422287335,
+      "a_nmae_alone": 0.08641959210780445,
+      "b_nmae_alone": 0.31208322169701214,
+      "train_support": 500
+    },
+    "mean_elevation=high|relief=low": {
+      "a": "mean_elevation",
+      "b": "relief",
+      "a_level": "high",
+      "b_level": "low",
+      "a_req": 0.488573159277439,
+      "b_req": 0.04509974550455809,
+      "a_nmae": 0.15946101640151875,
+      "b_nmae": 0.2075270249368129,
+      "a_nmae_alone": 0.02555765073333846,
+      "b_nmae_alone": 0.03949073844022437,
+      "train_support": 0
+    },
+    "mean_elevation=high|relief=high": {
+      "a": "mean_elevation",
+      "b": "relief",
+      "a_level": "high",
+      "b_level": "high",
+      "a_req": 0.488573159277439,
+      "b_req": 0.4113775610923767,
+      "a_nmae": 0.012301577923016633,
+      "b_nmae": 0.13805474059552705,
+      "a_nmae_alone": 0.02555765073333846,
+      "b_nmae_alone": 0.31208322169701214,
+      "train_support": 569
+    },
+    "mean_elevation=low|mean_slope_deg=low": {
+      "a": "mean_elevation",
+      "b": "mean_slope_deg",
+      "a_level": "low",
+      "b_level": "low",
+      "a_req": 0.113447006046772,
+      "b_req": 2.762806475162506,
+      "a_nmae": 0.07880962517687473,
+      "b_nmae": 0.12021509256622191,
+      "a_nmae_alone": 0.08641959210780445,
+      "b_nmae_alone": 0.16647620033194638,
+      "train_support": 10
+    },
+    "mean_elevation=low|mean_slope_deg=high": {
+      "a": "mean_elevation",
+      "b": "mean_slope_deg",
+      "a_level": "low",
+      "b_level": "high",
+      "a_req": 0.113447006046772,
+      "b_req": 25.541547012329097,
+      "a_nmae": 0.05450608288511238,
+      "b_nmae": 0.6544259328923009,
+      "a_nmae_alone": 0.08641959210780445,
+      "b_nmae_alone": 0.10295116079204206,
+      "train_support": 0
+    },
+    "mean_elevation=high|mean_slope_deg=low": {
+      "a": "mean_elevation",
+      "b": "mean_slope_deg",
+      "a_level": "high",
+      "b_level": "low",
+      "a_req": 0.488573159277439,
+      "b_req": 2.762806475162506,
+      "a_nmae": 0.10692413366146393,
+      "b_nmae": 0.12294332192717365,
+      "a_nmae_alone": 0.02555765073333846,
+      "b_nmae_alone": 0.16647620033194638,
+      "train_support": 0
+    },
+    "mean_elevation=high|mean_slope_deg=high": {
+      "a": "mean_elevation",
+      "b": "mean_slope_deg",
+      "a_level": "high",
+      "b_level": "high",
+      "a_req": 0.488573159277439,
+      "b_req": 25.541547012329097,
+      "a_nmae": 0.014678041303611597,
+      "b_nmae": 0.20416495869183737,
+      "a_nmae_alone": 0.02555765073333846,
+      "b_nmae_alone": 0.10295116079204206,
+      "train_support": 576
+    },
+    "mean_elevation=low|water_fraction=low": {
+      "a": "mean_elevation",
+      "b": "water_fraction",
+      "a_level": "low",
+      "b_level": "low",
+      "a_req": 0.113447006046772,
+      "b_req": 0.0,
+      "a_nmae": 0.023449309753932727,
+      "b_nmae": 2.8317621403263304,
+      "a_nmae_alone": 0.08641959210780445,
+      "b_nmae_alone": 0.022546519097448085,
+      "train_support": 0
+    },
+    "mean_elevation=low|water_fraction=high": {
+      "a": "mean_elevation",
+      "b": "water_fraction",
+      "a_level": "low",
+      "b_level": "high",
+      "a_req": 0.113447006046772,
+      "b_req": 0.876953125,
+      "a_nmae": 0.07919690167185611,
+      "b_nmae": 0.06545926226503374,
+      "a_nmae_alone": 0.08641959210780445,
+      "b_nmae_alone": 1.186559403591245,
+      "train_support": 3425
+    },
+    "mean_elevation=high|water_fraction=low": {
+      "a": "mean_elevation",
+      "b": "water_fraction",
+      "a_level": "high",
+      "b_level": "low",
+      "a_req": 0.488573159277439,
+      "b_req": 0.0,
+      "a_nmae": 0.02317200393922069,
+      "b_nmae": 0.0,
+      "a_nmae_alone": 0.02555765073333846,
+      "b_nmae_alone": 0.022546519097448085,
+      "train_support": 2180
+    },
+    "mean_elevation=high|water_fraction=high": {
+      "a": "mean_elevation",
+      "b": "water_fraction",
+      "a_level": "high",
+      "b_level": "high",
+      "a_req": 0.488573159277439,
+      "b_req": 0.876953125,
+      "a_nmae": 0.22932319498668402,
+      "b_nmae": 2.8960619393398463,
+      "a_nmae_alone": 0.02555765073333846,
+      "b_nmae_alone": 1.186559403591245,
+      "train_support": 0
+    },
+    "mean_elevation=low|spectral_beta=low": {
+      "a": "mean_elevation",
+      "b": "spectral_beta",
+      "a_level": "low",
+      "b_level": "low",
+      "a_req": 0.113447006046772,
+      "b_req": 3.410379481315613,
+      "a_nmae": 0.11331770451717678,
+      "b_nmae": 0.5292794146162441,
+      "a_nmae_alone": 0.08641959210780445,
+      "b_nmae_alone": 0.575572218651269,
+      "train_support": 23
+    },
+    "mean_elevation=low|spectral_beta=high": {
+      "a": "mean_elevation",
+      "b": "spectral_beta",
+      "a_level": "low",
+      "b_level": "high",
+      "a_req": 0.113447006046772,
+      "b_req": 7.118342494964599,
+      "a_nmae": 0.12338661291313406,
+      "b_nmae": 1.0731548885059132,
+      "a_nmae_alone": 0.08641959210780445,
+      "b_nmae_alone": 1.0733060927373919,
+      "train_support": 9
+    },
+    "mean_elevation=high|spectral_beta=low": {
+      "a": "mean_elevation",
+      "b": "spectral_beta",
+      "a_level": "high",
+      "b_level": "low",
+      "a_req": 0.488573159277439,
+      "b_req": 3.410379481315613,
+      "a_nmae": 0.008186282383954253,
+      "b_nmae": 0.4184169596163404,
+      "a_nmae_alone": 0.02555765073333846,
+      "b_nmae_alone": 0.575572218651269,
+      "train_support": 230
+    },
+    "mean_elevation=high|spectral_beta=high": {
+      "a": "mean_elevation",
+      "b": "spectral_beta",
+      "a_level": "high",
+      "b_level": "high",
+      "a_req": 0.488573159277439,
+      "b_req": 7.118342494964599,
+      "a_nmae": 0.10368940660425244,
+      "b_nmae": 1.566697513136707,
+      "a_nmae_alone": 0.02555765073333846,
+      "b_nmae_alone": 1.0733060927373919,
+      "train_support": 0
+    },
+    "relief=low|mean_slope_deg=low": {
+      "a": "relief",
+      "b": "mean_slope_deg",
+      "a_level": "low",
+      "b_level": "low",
+      "a_req": 0.04509974550455809,
+      "b_req": 2.762806475162506,
+      "a_nmae": 0.07601299065604693,
+      "b_nmae": 0.11421893685569391,
+      "a_nmae_alone": 0.03949073844022437,
+      "b_nmae_alone": 0.16647620033194638,
+      "train_support": 4850
+    },
+    "relief=low|mean_slope_deg=high": {
+      "a": "relief",
+      "b": "mean_slope_deg",
+      "a_level": "low",
+      "b_level": "high",
+      "a_req": 0.04509974550455809,
+      "b_req": 25.541547012329097,
+      "a_nmae": 0.6961707898775709,
+      "b_nmae": 0.876585850972118,
+      "a_nmae_alone": 0.03949073844022437,
+      "b_nmae_alone": 0.10295116079204206,
+      "train_support": 0
+    },
+    "relief=high|mean_slope_deg=low": {
+      "a": "relief",
+      "b": "mean_slope_deg",
+      "a_level": "high",
+      "b_level": "low",
+      "a_req": 0.4113775610923767,
+      "b_req": 2.762806475162506,
+      "a_nmae": 2.093124994142525,
+      "b_nmae": 0.29726865311663314,
+      "a_nmae_alone": 0.31208322169701214,
+      "b_nmae_alone": 0.16647620033194638,
+      "train_support": 0
+    },
+    "relief=high|mean_slope_deg=high": {
+      "a": "relief",
+      "b": "mean_slope_deg",
+      "a_level": "high",
+      "b_level": "high",
+      "a_req": 0.4113775610923767,
+      "b_req": 25.541547012329097,
+      "a_nmae": 0.36014329641178905,
+      "b_nmae": 0.07961830252177411,
+      "a_nmae_alone": 0.31208322169701214,
+      "b_nmae_alone": 0.10295116079204206,
+      "train_support": 581
+    },
+    "relief=low|water_fraction=low": {
+      "a": "relief",
+      "b": "water_fraction",
+      "a_level": "low",
+      "b_level": "low",
+      "a_req": 0.04509974550455809,
+      "b_req": 0.0,
+      "a_nmae": 0.028659659558342963,
+      "b_nmae": 0.0,
+      "a_nmae_alone": 0.03949073844022437,
+      "b_nmae_alone": 0.022546519097448085,
+      "train_support": 5125
+    },
+    "relief=low|water_fraction=high": {
+      "a": "relief",
+      "b": "water_fraction",
+      "a_level": "low",
+      "b_level": "high",
+      "a_req": 0.04509974550455809,
+      "b_req": 0.876953125,
+      "a_nmae": 0.11125574658857094,
+      "b_nmae": 0.33599228571155165,
+      "a_nmae_alone": 0.03949073844022437,
+      "b_nmae_alone": 1.186559403591245,
+      "train_support": 0
+    },
+    "relief=high|water_fraction=low": {
+      "a": "relief",
+      "b": "water_fraction",
+      "a_level": "high",
+      "b_level": "low",
+      "a_req": 0.4113775610923767,
+      "b_req": 0.0,
+      "a_nmae": 0.2876752304945336,
+      "b_nmae": 0.0184505891328474,
+      "a_nmae_alone": 0.31208322169701214,
+      "b_nmae_alone": 0.022546519097448085,
+      "train_support": 1935
+    },
+    "relief=high|water_fraction=high": {
+      "a": "relief",
+      "b": "water_fraction",
+      "a_level": "high",
+      "b_level": "high",
+      "a_req": 0.4113775610923767,
+      "b_req": 0.876953125,
+      "a_nmae": 0.324471525708388,
+      "b_nmae": 0.933418328917493,
+      "a_nmae_alone": 0.31208322169701214,
+      "b_nmae_alone": 1.186559403591245,
+      "train_support": 622
+    },
+    "relief=low|spectral_beta=low": {
+      "a": "relief",
+      "b": "spectral_beta",
+      "a_level": "low",
+      "b_level": "low",
+      "a_req": 0.04509974550455809,
+      "b_req": 3.410379481315613,
+      "a_nmae": 0.030265003024140383,
+      "b_nmae": 0.42131691805336713,
+      "a_nmae_alone": 0.03949073844022437,
+      "b_nmae_alone": 0.575572218651269,
+      "train_support": 7
+    },
+    "relief=low|spectral_beta=high": {
+      "a": "relief",
+      "b": "spectral_beta",
+      "a_level": "low",
+      "b_level": "high",
+      "a_req": 0.04509974550455809,
+      "b_req": 7.118342494964599,
+      "a_nmae": 0.06751108559790468,
+      "b_nmae": 2.6444242321623586,
+      "a_nmae_alone": 0.03949073844022437,
+      "b_nmae_alone": 1.0733060927373919,
+      "train_support": 829
+    },
+    "relief=high|spectral_beta=low": {
+      "a": "relief",
+      "b": "spectral_beta",
+      "a_level": "high",
+      "b_level": "low",
+      "a_req": 0.4113775610923767,
+      "b_req": 3.410379481315613,
+      "a_nmae": 0.24831833400013137,
+      "b_nmae": 0.679065689343481,
+      "a_nmae_alone": 0.31208322169701214,
+      "b_nmae_alone": 0.575572218651269,
+      "train_support": 179
+    },
+    "relief=high|spectral_beta=high": {
+      "a": "relief",
+      "b": "spectral_beta",
+      "a_level": "high",
+      "b_level": "high",
+      "a_req": 0.4113775610923767,
+      "b_req": 7.118342494964599,
+      "a_nmae": 0.3493900380541854,
+      "b_nmae": 0.6552994417801336,
+      "a_nmae_alone": 0.31208322169701214,
+      "b_nmae_alone": 1.0733060927373919,
+      "train_support": 0
+    },
+    "mean_slope_deg=low|water_fraction=low": {
+      "a": "mean_slope_deg",
+      "b": "water_fraction",
+      "a_level": "low",
+      "b_level": "low",
+      "a_req": 2.762806475162506,
+      "b_req": 0.0,
+      "a_nmae": 0.12498673994715577,
+      "b_nmae": 0.05225146348687521,
+      "a_nmae_alone": 0.16647620033194638,
+      "b_nmae_alone": 0.022546519097448085,
+      "train_support": 5052
+    },
+    "mean_slope_deg=low|water_fraction=high": {
+      "a": "mean_slope_deg",
+      "b": "water_fraction",
+      "a_level": "low",
+      "b_level": "high",
+      "a_req": 2.762806475162506,
+      "b_req": 0.876953125,
+      "a_nmae": 0.23826712127490718,
+      "b_nmae": 0.28706797764207515,
+      "a_nmae_alone": 0.16647620033194638,
+      "b_nmae_alone": 1.186559403591245,
+      "train_support": 10
+    },
+    "mean_slope_deg=high|water_fraction=low": {
+      "a": "mean_slope_deg",
+      "b": "water_fraction",
+      "a_level": "high",
+      "b_level": "low",
+      "a_req": 25.541547012329097,
+      "b_req": 0.0,
+      "a_nmae": 0.12779038367813025,
+      "b_nmae": 0.007133219569119964,
+      "a_nmae_alone": 0.10295116079204206,
+      "b_nmae_alone": 0.022546519097448085,
+      "train_support": 1993
+    },
+    "mean_slope_deg=high|water_fraction=high": {
+      "a": "mean_slope_deg",
+      "b": "water_fraction",
+      "a_level": "high",
+      "b_level": "high",
+      "a_req": 25.541547012329097,
+      "b_req": 0.876953125,
+      "a_nmae": 0.28780194278929844,
+      "b_nmae": 2.2923092596962755,
+      "a_nmae_alone": 0.10295116079204206,
+      "b_nmae_alone": 1.186559403591245,
+      "train_support": 0
+    },
+    "mean_slope_deg=low|spectral_beta=low": {
+      "a": "mean_slope_deg",
+      "b": "spectral_beta",
+      "a_level": "low",
+      "b_level": "low",
+      "a_req": 2.762806475162506,
+      "b_req": 3.410379481315613,
+      "a_nmae": 0.133364562842052,
+      "b_nmae": 1.207284498641188,
+      "a_nmae_alone": 0.16647620033194638,
+      "b_nmae_alone": 0.575572218651269,
+      "train_support": 13
+    },
+    "mean_slope_deg=low|spectral_beta=high": {
+      "a": "mean_slope_deg",
+      "b": "spectral_beta",
+      "a_level": "low",
+      "b_level": "high",
+      "a_req": 2.762806475162506,
+      "b_req": 7.118342494964599,
+      "a_nmae": 0.13156827203996097,
+      "b_nmae": 3.091957683802949,
+      "a_nmae_alone": 0.16647620033194638,
+      "b_nmae_alone": 1.0733060927373919,
+      "train_support": 868
+    },
+    "mean_slope_deg=high|spectral_beta=low": {
+      "a": "mean_slope_deg",
+      "b": "spectral_beta",
+      "a_level": "high",
+      "b_level": "low",
+      "a_req": 25.541547012329097,
+      "b_req": 3.410379481315613,
+      "a_nmae": 0.1967843775145351,
+      "b_nmae": 0.47129501018450887,
+      "a_nmae_alone": 0.10295116079204206,
+      "b_nmae_alone": 0.575572218651269,
+      "train_support": 260
+    },
+    "mean_slope_deg=high|spectral_beta=high": {
+      "a": "mean_slope_deg",
+      "b": "spectral_beta",
+      "a_level": "high",
+      "b_level": "high",
+      "a_req": 25.541547012329097,
+      "b_req": 7.118342494964599,
+      "a_nmae": 0.28343538869786106,
+      "b_nmae": 1.595387107601825,
+      "a_nmae_alone": 0.10295116079204206,
+      "b_nmae_alone": 1.0733060927373919,
+      "train_support": 0
+    },
+    "water_fraction=low|spectral_beta=low": {
+      "a": "water_fraction",
+      "b": "spectral_beta",
+      "a_level": "low",
+      "b_level": "low",
+      "a_req": 0.0,
+      "b_req": 3.410379481315613,
+      "a_nmae": 0.002797835237358007,
+      "b_nmae": 0.4599234904495865,
+      "a_nmae_alone": 0.022546519097448085,
+      "b_nmae_alone": 0.575572218651269,
+      "train_support": 6813
+    },
+    "water_fraction=low|spectral_beta=high": {
+      "a": "water_fraction",
+      "b": "spectral_beta",
+      "a_level": "low",
+      "b_level": "high",
+      "a_req": 0.0,
+      "b_req": 7.118342494964599,
+      "a_nmae": 0.08612795500948027,
+      "b_nmae": 1.1010750511070737,
+      "a_nmae_alone": 0.022546519097448085,
+      "b_nmae_alone": 1.0733060927373919,
+      "train_support": 1054
+    },
+    "water_fraction=high|spectral_beta=low": {
+      "a": "water_fraction",
+      "b": "spectral_beta",
+      "a_level": "high",
+      "b_level": "low",
+      "a_req": 0.876953125,
+      "b_req": 3.410379481315613,
+      "a_nmae": 1.8807250111303397,
+      "b_nmae": 1.3358900282904935,
+      "a_nmae_alone": 1.186559403591245,
+      "b_nmae_alone": 0.575572218651269,
+      "train_support": 26
+    },
+    "water_fraction=high|spectral_beta=high": {
+      "a": "water_fraction",
+      "b": "spectral_beta",
+      "a_level": "high",
+      "b_level": "high",
+      "a_req": 0.876953125,
+      "b_req": 7.118342494964599,
+      "a_nmae": 0.7062895602343128,
+      "b_nmae": 0.5622699695751205,
+      "a_nmae_alone": 1.186559403591245,
+      "b_nmae_alone": 1.0733060927373919,
+      "train_support": 12
+    }
+  },
+  "partial_nmae_by_known_count": {
+    "1": {
+      "mean_elevation": 0.030783958905812578,
+      "relief": 0.14353489822394688,
+      "mean_slope_deg": 0.18382745003014267,
+      "water_fraction": 0.3752702702883287,
+      "spectral_beta": 0.6130760857925379
+    },
+    "2": {
+      "mean_elevation": 0.026176121830763604,
+      "relief": 0.1542209742745819,
+      "mean_slope_deg": 0.16465615270319825,
+      "water_fraction": 0.15802980003729517,
+      "spectral_beta": 0.5819496895732803
+    },
+    "3": {
+      "mean_elevation": 0.02007431495549248,
+      "relief": 0.09170181256566366,
+      "mean_slope_deg": 0.13137607424629372,
+      "water_fraction": 0.14761154851304606,
+      "spectral_beta": 0.5884146872786499
+    },
+    "4": {
+      "mean_elevation": 0.019587048476367854,
+      "relief": 0.08164317135785219,
+      "mean_slope_deg": 0.10888636082186107,
+      "water_fraction": 0.06538604564149068,
+      "spectral_beta": 0.631374255823846
+    },
+    "5": {
+      "mean_elevation": 0.016794381137777196,
+      "relief": 0.0826858039027566,
+      "mean_slope_deg": 0.09899664396145301,
+      "water_fraction": 0.06441142435760622,
+      "spectral_beta": 0.6975333144280125
+    }
+  },
+  "partial_unknown_prop_nmae_vs_source_map": {
+    "mean_elevation": 0.7909851963731296,
+    "relief": 0.6781343322697375,
+    "mean_slope_deg": 0.6150109100486983,
+    "water_fraction": 0.38932256640235413,
+    "spectral_beta": 0.8139993721705633
+  },
+  "archetype_gain": {
+    "plains/mean_elevation": {
+      "archetype": "plains",
+      "key": "mean_elevation",
+      "req_lo": 0.2231861785054207,
+      "req_hi": 0.3293241560459137,
+      "got_lo": 0.2193628537738732,
+      "got_hi": 0.32640896020802757,
+      "gain": 1.0085561164316974,
+      "nmae_lo": 0.03581676055413109,
+      "nmae_hi": 0.02730944364532341
+    },
+    "plains/relief": {
+      "archetype": "plains",
+      "key": "relief",
+      "req_lo": 0.032270677760243414,
+      "req_hi": 0.11876246109604838,
+      "got_lo": 0.02744211256504059,
+      "got_hi": 0.1186733204871416,
+      "gain": 1.0547962407931306,
+      "nmae_lo": 0.04366835088274248,
+      "nmae_hi": 0.04916254024692522
+    },
+    "plains/mean_slope_deg": {
+      "archetype": "plains",
+      "key": "mean_slope_deg",
+      "req_lo": 1.9391037106513977,
+      "req_hi": 5.865244388580322,
+      "got_lo": 1.9720105381055233,
+      "got_hi": 5.290836320415951,
+      "gain": 0.8453150446104593,
+      "nmae_lo": 0.05288416055596105,
+      "nmae_hi": 0.10877572518707691
+    },
+    "plains/water_fraction": {
+      "archetype": "plains",
+      "key": "water_fraction",
+      "req_lo": 0.0,
+      "req_hi": 0.055981445312500044,
+      "got_lo": 0.0,
+      "got_hi": 0.0,
+      "gain": 0.0,
+      "nmae_lo": 0.0,
+      "nmae_hi": 0.18494951205079396
+    },
+    "plains/spectral_beta": {
+      "archetype": "plains",
+      "key": "spectral_beta",
+      "req_lo": 4.852109098434449,
+      "req_hi": 7.939762973785401,
+      "got_lo": 2.923233000320583,
+      "got_hi": 2.788284751727892,
+      "gain": -0.0437057565519232,
+      "nmae_lo": 1.697661734890089,
+      "nmae_hi": 4.5339705667244985
+    },
+    "hills/mean_elevation": {
+      "archetype": "hills",
+      "key": "mean_elevation",
+      "req_lo": 0.23424621671438217,
+      "req_hi": 0.3640913039445877,
+      "got_lo": 0.22905828789635052,
+      "got_hi": 0.3621613969721693,
+      "gain": 1.0250916065837516,
+      "nmae_lo": 0.04860031969403447,
+      "nmae_hi": 0.018079295057650196
+    },
+    "hills/relief": {
+      "archetype": "hills",
+      "key": "relief",
+      "req_lo": 0.11322202906012535,
+      "req_hi": 0.21314956247806552,
+      "got_lo": 0.1135220158845186,
+      "got_hi": 0.20924022160470487,
+      "gain": 0.9578761973424414,
+      "nmae_lo": 0.03998888229509734,
+      "nmae_hi": 0.05359992320888896
+    },
+    "hills/mean_slope_deg": {
+      "archetype": "hills",
+      "key": "mean_slope_deg",
+      "req_lo": 9.55837640762329,
+      "req_hi": 19.075925827026367,
+      "got_lo": 9.425807743358456,
+      "got_hi": 18.21682599285524,
+      "gain": 0.9236640507035205,
+      "nmae_lo": 0.07413073883316643,
+      "nmae_hi": 0.15047758283156748
+    },
+    "hills/water_fraction": {
+      "archetype": "hills",
+      "key": "water_fraction",
+      "req_lo": 0.0,
+      "req_hi": 0.19992675781250013,
+      "got_lo": 0.0223846435546875,
+      "got_hi": 0.086151123046875,
+      "gain": 0.3189492001465378,
+      "nmae_lo": 0.07395359086854408,
+      "nmae_hi": 0.4133133611540693
+    },
+    "hills/spectral_beta": {
+      "archetype": "hills",
+      "key": "spectral_beta",
+      "req_lo": 3.366626024246216,
+      "req_hi": 5.700758409500122,
+      "got_lo": 3.688908447573722,
+      "got_hi": 5.530840356800326,
+      "gain": 0.7891291517409963,
+      "nmae_lo": 0.33308601100873597,
+      "nmae_hi": 0.32663402034834216
+    },
+    "mountains/mean_elevation": {
+      "archetype": "mountains",
+      "key": "mean_elevation",
+      "req_lo": 0.2691762149333954,
+      "req_hi": 0.4083954781293869,
+      "got_lo": 0.26552084868581005,
+      "got_hi": 0.4071482893614302,
+      "gain": 1.01729773182493,
+      "nmae_lo": 0.03424333186954428,
+      "nmae_hi": 0.011755660995206424
+    },
+    "mountains/relief": {
+      "archetype": "mountains",
+      "key": "relief",
+      "req_lo": 0.2038636326789856,
+      "req_hi": 0.36273395717144014,
+      "got_lo": 0.1887271203100681,
+      "got_hi": 0.3689550802111625,
+      "gain": 1.1344343915509172,
+      "nmae_lo": 0.1351037619420877,
+      "nmae_hi": 0.10515741769900279
+    },
+    "mountains/mean_slope_deg": {
+      "archetype": "mountains",
+      "key": "mean_slope_deg",
+      "req_lo": 11.467068004608155,
+      "req_hi": 21.272303199768068,
+      "got_lo": 10.643254325827815,
+      "got_hi": 21.754931701903878,
+      "gain": 1.133239249738858,
+      "nmae_lo": 0.12569734344670538,
+      "nmae_hi": 0.0990577322750892
+    },
+    "mountains/water_fraction": {
+      "archetype": "mountains",
+      "key": "water_fraction",
+      "req_lo": 0.0,
+      "req_hi": 0.13615722656249996,
+      "got_lo": 0.0135650634765625,
+      "got_hi": 0.0776519775390625,
+      "gain": 0.47068316299085544,
+      "nmae_lo": 0.04481577524344628,
+      "nmae_hi": 0.3294892092139086
+    },
+    "mountains/spectral_beta": {
+      "archetype": "mountains",
+      "key": "spectral_beta",
+      "req_lo": 3.435312342643738,
+      "req_hi": 4.7767048358917235,
+      "got_lo": 3.8854268102910288,
+      "got_hi": 5.295363215534169,
+      "gain": 1.051099072299999,
+      "nmae_lo": 0.39615924983073697,
+      "nmae_hi": 0.47264624448083603
+    },
+    "ridges/mean_elevation": {
+      "archetype": "ridges",
+      "key": "mean_elevation",
+      "req_lo": 0.37825703620910645,
+      "req_hi": 0.5389386773109436,
+      "got_lo": 0.3800361151306788,
+      "got_hi": 0.5481778471512371,
+      "gain": 1.0464277739981076,
+      "nmae_lo": 0.016666343618442346,
+      "nmae_hi": 0.08655219138417364
+    },
+    "ridges/relief": {
+      "archetype": "ridges",
+      "key": "relief",
+      "req_lo": 0.26900033950805663,
+      "req_hi": 0.4329019129276276,
+      "got_lo": 0.24847571589052672,
+      "got_hi": 0.4719552824273705,
+      "gain": 1.3634986039136998,
+      "nmae_lo": 0.1831963530032127,
+      "nmae_hi": 0.34857812733429483
+    },
+    "ridges/mean_slope_deg": {
+      "archetype": "ridges",
+      "key": "mean_slope_deg",
+      "req_lo": 17.120816802978517,
+      "req_hi": 28.890974044799805,
+      "got_lo": 15.81582621877569,
+      "got_hi": 27.934323684937127,
+      "gain": 1.0295952056700177,
+      "nmae_lo": 0.19585915932130468,
+      "nmae_hi": 0.1478871127350755
+    },
+    "ridges/water_fraction": {
+      "archetype": "ridges",
+      "key": "water_fraction",
+      "req_lo": 0.0,
+      "req_hi": 0.019775390625,
+      "got_lo": 0.0,
+      "got_hi": 7.62939453125e-05,
+      "gain": 0.0038580246913580245,
+      "nmae_lo": 0.0,
+      "nmae_hi": 0.06508117642214752
+    },
+    "ridges/spectral_beta": {
+      "archetype": "ridges",
+      "key": "spectral_beta",
+      "req_lo": 3.6944693088531495,
+      "req_hi": 4.948417472839355,
+      "got_lo": 4.643561047405575,
+      "got_hi": 5.669259456147519,
+      "gain": 0.817975127042993,
+      "nmae_lo": 0.8353241190640986,
+      "nmae_hi": 0.6344346602465443
+    },
+    "islands/mean_elevation": {
+      "archetype": "islands",
+      "key": "mean_elevation",
+      "req_lo": 0.08917608633637429,
+      "req_hi": 0.18980705291032796,
+      "got_lo": 0.07626537245050713,
+      "got_hi": 0.18787478376361832,
+      "gain": 1.1090960875456708,
+      "nmae_lo": 0.12094707624948105,
+      "nmae_hi": 0.0197714475103182
+    },
+    "islands/relief": {
+      "archetype": "islands",
+      "key": "relief",
+      "req_lo": 0.2245129093527794,
+      "req_hi": 0.4120833039283753,
+      "got_lo": 0.21444367468357084,
+      "got_hi": 0.42465081755071876,
+      "gain": 1.1206840148882282,
+      "nmae_lo": 0.112037654304902,
+      "nmae_hi": 0.11994607629470364
+    },
+    "islands/mean_slope_deg": {
+      "archetype": "islands",
+      "key": "mean_slope_deg",
+      "req_lo": 6.57913670539856,
+      "req_hi": 13.257734966278077,
+      "got_lo": 5.667626638990315,
+      "got_hi": 11.706088037306309,
+      "gain": 0.904151015294155,
+      "nmae_lo": 0.14489075434112667,
+      "nmae_hi": 0.2637581006335207
+    },
+    "islands/water_fraction": {
+      "archetype": "islands",
+      "key": "water_fraction",
+      "req_lo": 0.6552490234375,
+      "req_hi": 0.916748046875,
+      "got_lo": 0.7969207763671875,
+      "got_hi": 0.9367523193359375,
+      "gain": 0.5347306507328915,
+      "nmae_lo": 0.46805010891484955,
+      "nmae_hi": 0.071130549908327
+    },
+    "islands/spectral_beta": {
+      "archetype": "islands",
+      "key": "spectral_beta",
+      "req_lo": 4.262948226928711,
+      "req_hi": 6.158076810836793,
+      "got_lo": 5.793241265629308,
+      "got_hi": 6.257971033574628,
+      "gain": 0.2452233436250363,
+      "nmae_lo": 1.346856823779938,
+      "nmae_hi": 0.22062926587917023
+    },
+    "mesas/mean_elevation": {
+      "archetype": "mesas",
+      "key": "mean_elevation",
+      "req_lo": 0.2829818606376648,
+      "req_hi": 0.40038748979568484,
+      "got_lo": 0.2790583367941508,
+      "got_hi": 0.40043861049935003,
+      "gain": 1.0338539521118664,
+      "nmae_lo": 0.03675542202105485,
+      "nmae_hi": 0.005539205678486407
+    },
+    "mesas/relief": {
+      "archetype": "mesas",
+      "key": "relief",
+      "req_lo": 0.12507042586803435,
+      "req_hi": 0.2355295866727829,
+      "got_lo": 0.12286932133138179,
+      "got_hi": 0.23016560468822717,
+      "gain": 0.9713660920030528,
+      "nmae_lo": 0.08004704590038501,
+      "nmae_hi": 0.07564879826672868
+    },
+    "mesas/mean_slope_deg": {
+      "archetype": "mesas",
+      "key": "mean_slope_deg",
+      "req_lo": 7.163211250305176,
+      "req_hi": 15.407007789611816,
+      "got_lo": 7.038292523012759,
+      "got_hi": 15.675196578046043,
+      "gain": 1.0476852520379776,
+      "nmae_lo": 0.09570725820776314,
+      "nmae_hi": 0.1074454467376244
+    },
+    "mesas/water_fraction": {
+      "archetype": "mesas",
+      "key": "water_fraction",
+      "req_lo": 0.0,
+      "req_hi": 0.07856445312500004,
+      "got_lo": 0.00732421875,
+      "got_hi": 0.044158935546875,
+      "gain": 0.46884711000621476,
+      "nmae_lo": 0.024197493944717898,
+      "nmae_hi": 0.21467210044622237
+    },
+    "mesas/spectral_beta": {
+      "archetype": "mesas",
+      "key": "spectral_beta",
+      "req_lo": 3.429587888717651,
+      "req_hi": 4.1274820327758786,
+      "got_lo": 3.4896849900972393,
+      "got_hi": 3.9682184478230376,
+      "gain": 0.6856820075078217,
+      "nmae_lo": 0.15342164837078115,
+      "nmae_hi": 0.1490123954445661
+    }
+  },
+  "notes": {
+    "single": "only one property known, archetype unknown; others_vs_natural_z = (generated mean - train mean among maps near the requested value)/std",
+    "pairs": "both properties known at the 5th/95th train percentile; train_support = train maps within 0.25 std of both values",
+    "gain": "(mean achieved at p90 request - at p10 request)/(p90 - p10); 1 = perfect"
+  }
+}

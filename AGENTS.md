@@ -4,20 +4,27 @@
 - Python venv lives outside OneDrive: `%USERPROFILE%\.venvs\nullscape` (torch 2.11+cu128; RTX 5060 sm_120 needs cu128 builds).
 - Run tools via `"$env:USERPROFILE\.venvs\nullscape\Scripts\python.exe"` / `nullscape.exe`.
 - Set `PYTHONUNBUFFERED=1` when redirecting training output to a log.
+- To force CPU use `CUDA_VISIBLE_DEVICES=-1`, not `""` (empty makes torch report a GPU with 0 devices).
 
 ## Verification
 - `python -m pytest` (full suite ~40-60 s, CPU). `-m "not slow"` skips end-to-end train/eval tests.
-- When a GPU job is running, run tests with `OMP_NUM_THREADS=2..4` to avoid slowing it.
+- When a GPU job is running, run tests with `OMP_NUM_THREADS=2..4` and `CUDA_VISIBLE_DEVICES=-1`.
+- Benchmark code paths: `NULLSCAPE_BENCH_DRY=1 python benchmarks/v1/run_v1_benchmark.py --stages ...` (CPU, tiny).
 
 ## GPU caveats (8 GB, Windows)
-- Exceeding physical VRAM silently spills to system RAM (WDDM) and slows training 3-15x instead of OOM.
-  Training caps itself with `train.cuda_memory_fraction` (default 0.72). Don't run a second GPU job next to training.
-- Throughput reference: diffusion64 config, batch 48, ~4.3-4.6 it/s.
+- Exceeding physical VRAM silently spills to system RAM (WDDM) and slows work 3-20x instead of OOM.
+  Training caps itself with `train.cuda_memory_fraction` (default 0.72); the benchmark perf stage caps at 0.6.
+  Don't run a second GPU job next to training or timing measurements.
+- Throughput: training diffusion64 batch 48 ~4.3 it/s. Sampling at batch 128: 5.5 maps/s (50 steps + guidance),
+  1.4 maps/s (200 steps + guidance). Guidance at batch 256 does not fit.
 
-## State (2026-09-25)
-- Dataset: `data/base64` (50k, 64x64). Main run: `runs/20260925-164759_diffusion64` (0-30k) +
-  continuation `runs/20260925-192102_diffusion64_cont` (30k-40k). Checkpoint snapshots: `checkpoints/step_*.pt`.
-- Artifacts: `artifacts/20260925-164759_diffusion64/index.md` (20k-40k). Model plateaued after ~30k
-  (overall ratio ~1.7x noise floor; heights ~0.97x; no memorization).
-- Next planned: `nullscape sampler-sweep` on the 40k checkpoint (val), then final `nullscape evaluate --split test`;
-  then choose between real DEM data vs game features (tiling/outpainting, engine import).
+## State (2026-09-26)
+- v1 is FROZEN: checkpoints under `runs/*/checkpoints/*.pt` and `data/base64/*` are read-only. Don't modify them.
+- Official v1 = checkpoint 30k (`runs/20260925-164759_diffusion64/checkpoints/step_0030000.pt`) +
+  50-step DDIM, quadratic spacing, guidance 2.0, eta 0.
+- Benchmark: `docs/V1_BENCHMARK.md`, `docs/V1_SUMMARY.md`, `docs/BENCHMARK_SCORECARD.md`,
+  `benchmarks/v1/results.json`, bugs in `benchmarks/v1/BUGS.md` (B1 unity_size upsamples valid sizes, B2 manifest
+  git "HEAD", B3 artifacts crash on tiny splits, B4 sidecar footprint off by one cell). Not fixed yet.
+- Compare future versions with `python benchmarks/scorecard.py v1=benchmarks/v1/results.json v2=benchmarks/v2/results.json`.
+- Next planned: fix B1-B4; v2 experiments (loss weighting + LR decay fine-tune; relative-height parameterization;
+  robust roughness condition; faster sampling). Game direction: Tamashika-like low-res neon FPS, likely Godot 4.

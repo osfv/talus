@@ -1,0 +1,37 @@
+[stage] sampler_val ...
+[sampler_val] s25_u_g1.5_e0: ratio 2.953 rapsd 8.640 92.0 ms/map
+[sampler_val] s25_q_g1.5_e0: ratio 2.446 rapsd 6.296 90.0 ms/map
+[sampler_val] s50_u_g1.5_e0: ratio 2.439 rapsd 6.699 173.1 ms/map
+[sampler_val] s50_q_g1.5_e0: ratio 2.129 rapsd 6.926 170.8 ms/map
+[sampler_val] s100_u_g1.5_e0: ratio 2.144 rapsd 6.401 348.4 ms/map
+[sampler_val] s100_q_g1.5_e0: ratio 2.029 rapsd 7.346 352.4 ms/map
+[sampler_val] s200_u_g1.5_e0: ratio 2.037 rapsd 6.868 716.1 ms/map
+[sampler_val] s200_q_g1.5_e0: ratio 2.002 rapsd 7.569 670.5 ms/map
+[sampler_val] s100_u_g1_e0: ratio 2.528 rapsd 5.658 176.9 ms/map
+[sampler_val] s100_u_g2_e0: ratio 1.946 rapsd 7.346 350.8 ms/map
+[sampler_val] s100_u_g3_e0: ratio 2.046 rapsd 9.392 352.9 ms/map
+[sampler_val] s100_q_g1_e0: ratio 2.377 rapsd 6.170 172.1 ms/map
+[sampler_val] s100_q_g2_e0: ratio 1.904 rapsd 8.520 346.3 ms/map
+[sampler_val] s100_q_g3_e0: ratio 2.405 rapsd 10.867 337.6 ms/map
+[sampler_val] s100_u_g1.5_e0.5: ratio 2.163 rapsd 6.284 343.6 ms/map
+[sampler_val] s100_u_g1.5_e1: ratio 2.630 rapsd 5.825 378.4 ms/map
+[sampler_val] s100_q_g1.5_e0.5: ratio 2.068 rapsd 7.318 372.6 ms/map
+[sampler_val] s100_q_g1.5_e1: ratio 2.173 rapsd 6.406 367.1 ms/map
+[sampler_val] s50_q_g1_e0: ratio 2.551 rapsd 5.838 90.5 ms/map
+[sampler_val] s50_q_g2_e0: ratio 1.951 rapsd 8.151 185.6 ms/map
+[stage] sampler_val done in 3206s
+[stage] perf ...
+[perf] steps 25 g 1.0 bs 1: 1.25 maps/s peak 184 MB
+[perf] steps 25 g 1.0 bs 32: 21.11 maps/s peak 457 MB
+[perf] steps 25 g 1.0 bs 128: 21.22 maps/s peak 1376 MB
+[perf] steps 25 g 1.0 bs 256: 21.09 maps/s peak 2599 MB
+[perf] steps 25 g 1.5 bs 1: 1.31 maps/s peak 186 MB
+[perf] steps 25 g 1.5 bs 32: 10.68 maps/s peak 761 MB
+[perf] steps 25 g 1.5 bs 128: 10.41 maps/s peak 2596 MB
+[perf] steps 25 g 1.5 bs 256: 0.26 maps/s peak 5039 MB
+[perf] steps 50 g 1.0 bs 1: 0.71 maps/s peak 184 MB
+[perf] steps 50 g 1.0 bs 32: 2.30 maps/s peak 457 MB
+[perf] steps 50 g 1.0 bs 128: 1.16 maps/s peak 1376 MB
+[perf] steps 50 g 1.0 bs 256: 0.88 maps/s peak 2599 MB
+[perf] steps 50 g 1.5 bs 1: 0.53 maps/s peak 186 MB
+[perf] steps 50 g 1.5 bs 32: 0.53 maps/s peak 761 MB

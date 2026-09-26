@@ -1,0 +1,159 @@
+{
+  "created_at": "2026-09-26T17:27:13",
+  "git": {
+    "commit": "54e63f5e206cbbe3a2e5b6107a461ac0265e4c85",
+    "status_porcelain": [
+      "?? artifacts/",
+      "?? benchmarks/scorecard.json",
+      "?? benchmarks/v1/artifacts_official/",
+      "?? benchmarks/v1/artifacts_test/",
+      "?? benchmarks/v1/dryrun/",
+      "?? benchmarks/v1/engineering/",
+      "?? benchmarks/v1/figures/",
+      "?? benchmarks/v1/generated/",
+      "?? benchmarks/v1/logs/",
+      "?? benchmarks/v1/raw/",
+      "?? benchmarks/v1/results.json",
+      "?? benchmarks/v1/tables.md",
+      "?? docs/BENCHMARK_SCORECARD.md",
+      "?? docs/V1_BENCHMARK.md",
+      "?? docs/figures/",
+      "?? reports/"
+    ]
+  },
+  "checkpoints": {
+    "20000": {
+      "path": "runs\\20260925-164759_diffusion64\\checkpoints\\step_0020000.pt",
+      "sha256": "8ca225435e173d72ebe8e39f4abcd5d2240169d0f07a3e0f0e98746aa95cb2a8",
+      "bytes": 371215821,
+      "step_in_file": 20000,
+      "read_only": true,
+      "dataset_config_sha256": "b1a4bd4f8ff288e2be7bcaa7cb988a8afcf59a6b4730c54ba45bced59a2f42fa",
+      "train_run_git": {
+        "commit": "fb30048d2cf0cec2f01936cd99b0010391d7bbbc",
+        "dirty": true
+      }
+    },
+    "25000": {
+      "path": "runs\\20260925-164759_diffusion64\\checkpoints\\step_0025000.pt",
+      "sha256": "89eaaefcb7d5e032900d5eddfc2090eb8fe9715bec4b95ba4adf6902b2d031d2",
+      "bytes": 371215757,
+      "step_in_file": 25000,
+      "read_only": true,
+      "dataset_config_sha256": "b1a4bd4f8ff288e2be7bcaa7cb988a8afcf59a6b4730c54ba45bced59a2f42fa",
+      "train_run_git": {
+        "commit": "fb30048d2cf0cec2f01936cd99b0010391d7bbbc",
+        "dirty": true
+      }
+    },
+    "30000": {
+      "path": "runs\\20260925-164759_diffusion64\\checkpoints\\step_0030000.pt",
+      "sha256": "1717b9f719cfb8a93f9279c7cc23bc5303cf68a09a39465c82565fcdf751cb30",
+      "bytes": 371215757,
+      "step_in_file": 30000,
+      "read_only": true,
+      "dataset_config_sha256": "b1a4bd4f8ff288e2be7bcaa7cb988a8afcf59a6b4730c54ba45bced59a2f42fa",
+      "train_run_git": {
+        "commit": "fb30048d2cf0cec2f01936cd99b0010391d7bbbc",
+        "dirty": true
+      }
+    },
+    "35000": {
+      "path": "runs\\20260925-192102_diffusion64_cont\\checkpoints\\step_0035000.pt",
+      "sha256": "d41a1332b7b2a9e70a3716f46d340a4f4b81d4a2f03b9ffc2155487050320722",
+      "bytes": 371217037,
+      "step_in_file": 35000,
+      "read_only": true,
+      "dataset_config_sha256": "b1a4bd4f8ff288e2be7bcaa7cb988a8afcf59a6b4730c54ba45bced59a2f42fa",
+      "train_run_git": {
+        "commit": "92454765b792dbe9aaf02dab0ed55243904c7b5d",
+        "dirty": false
+      }
+    },
+    "40000": {
+      "path": "runs\\20260925-192102_diffusion64_cont\\checkpoints\\step_0040000.pt",
+      "sha256": "b2fe8be7f7cb3abac8a59728976cbdd13f6a424b36890d1106eb1ad928345ad8",
+      "bytes": 371217037,
+      "step_in_file": 40000,
+      "read_only": true,
+      "dataset_config_sha256": "b1a4bd4f8ff288e2be7bcaa7cb988a8afcf59a6b4730c54ba45bced59a2f42fa",
+      "train_run_git": {
+        "commit": "92454765b792dbe9aaf02dab0ed55243904c7b5d",
+        "dirty": false
+      }
+    }
+  },
+  "dataset": {
+    "name": "base64",
+    "root": "data\\base64",
+    "n": 50000,
+    "splits": {
+      "train": 45000,
+      "val": 2500,
+      "test": 2500
+    },
+    "generator_version": "1.0.0",
+    "config_sha256": "b1a4bd4f8ff288e2be7bcaa7cb988a8afcf59a6b4730c54ba45bced59a2f42fa",
+    "config_sha256_recomputed": "b1a4bd4f8ff288e2be7bcaa7cb988a8afcf59a6b4730c54ba45bced59a2f42fa",
+    "manifest_sha256": "fb85e56c988a362561588009bda05f1f4b9fe39fe934cebcaa94a8e49f9af0e6",
+    "heights_sha256": "756b69cbb1e7968381e455b7121219e5a85089448d495655b9d6a82138a2ae23",
+    "world": {
+      "resolution": 64,
+      "extent_m": 4096.0,
+      "max_height_m": 1200.0,
+      "sea_level": 0.2,
+      "cell_size_m": 64.0
+    },
+    "archetype_counts": {
+      "plains": 8209,
+      "hills": 8297,
+      "mountains": 8430,
+      "ridges": 8365,
+      "islands": 8282,
+      "mesas": 8417
+    },
+    "build_git": {
+      "commit": "HEAD",
+      "dirty": false
+    }
+  },
+  "artifact_spec_test": {
+    "per_archetype": 2,
+    "n_eval": 1000,
+    "n_3d": 3,
+    "seed": 2026,
+    "steps": 200,
+    "spacing": "uniform",
+    "eta": 0.0,
+    "guidance": 1.5,
+    "batch_size": 128,
+    "split": "test"
+  },
+  "default_sampler": {
+    "steps": 200,
+    "spacing": "uniform",
+    "eta": 0.0,
+    "guidance": 1.5
+  },
+  "n_per_half": 1000,
+  "selection_rules": {
+    "checkpoint": "lowest VAL ratio_to_floor.metric_w1_mean with the default sampler; if the runner-up is within 0.05, the lower mean of the four headline ratios wins",
+    "sampler": "among configs whose VAL metric_w1_mean ratio is within 5% of the best config, the one with the lowest isolated seconds/map at batch 128; ties -> lower mean adherence nMAE",
+    "final_numbers": "TEST split, n=1000 maps per half (A conditions / B reference), noise floor = A vs B"
+  },
+  "environment": {
+    "python": "3.13.11",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "numpy": "2.5.3",
+    "git": {
+      "commit": "54e63f5e206cbbe3a2e5b6107a461ac0265e4c85",
+      "dirty": false
+    },
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "gpu": null,
+    "gpu_query": "NVIDIA GeForce RTX 5060, 616.56, 8151 MiB, 145.00 W",
+    "cpu": "Intel64 Family 6 Model 167 Stepping 1, GenuineIntel",
+    "torch_cudnn": 91900
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "checkpoint": 30000,
+  "reason": "lowest VAL metric_w1_mean ratio (3.164); runner-up 40000 within 0.05 but higher mean headline ratio (4.429 vs 4.359)",
+  "val_metric_w1_ratio": {
+    "20000": 3.5482459523821577,
+    "25000": 3.671813605813218,
+    "30000": 3.1638153404314875,
+    "35000": 3.4550972995199665,
+    "40000": 3.200926946273742
+  },
+  "val_mean_headline_ratio": {
+    "20000": 4.003505470892868,
+    "25000": 4.85485290406214,
+    "30000": 4.35900127827795,
+    "35000": 4.152179095339607,
+    "40000": 4.42913611500337
+  },
+  "rule": "lowest VAL ratio_to_floor.metric_w1_mean with the default sampler; if the runner-up is within 0.05, the lower mean of the four headline ratios wins"
+}

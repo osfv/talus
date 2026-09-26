@@ -1,0 +1,1587 @@
+{
+  "checkpoint": 30000,
+  "split": "val",
+  "n_per_half": 500,
+  "rows": {
+    "s25_u_g1.5_e0": {
+      "config": {
+        "steps": 25,
+        "spacing": "uniform",
+        "guidance": 1.5,
+        "eta": 0.0
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 2.952533581600328,
+          "rapsd_distance": 8.64024482568079,
+          "height_w1": 0.9631004258669533,
+          "slope_w1_deg": 6.026543121742275
+        },
+        "model": {
+          "metric_w1_mean": 0.22691837704852566,
+          "rapsd_distance": 0.35209968902683697,
+          "height_w1": 0.008116166870631278,
+          "slope_w1_deg": 1.4764618832815466
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.93,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.1513200861569851,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.0004424893841412134,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.003519034914357456,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 11.6417177328268,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 17.14672216441207,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 11.6417177328268,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.017191118205560865,
+          "relief": 0.08710645721879992,
+          "mean_slope_deg": 0.2395158177504836,
+          "water_fraction": 0.04170202365335498,
+          "spectral_beta": 1.0012521358472233
+        },
+        "adherence_r": {
+          "mean_elevation": 0.9998049731916815,
+          "relief": 0.9955740384361849,
+          "mean_slope_deg": 0.9884107719700698,
+          "water_fraction": 0.9950754893999437,
+          "spectral_beta": 0.07995080909953416
+        },
+        "adherence_nmae_mean": 0.2773535105350845,
+        "per_archetype_ratio": {
+          "plains": 2.5137191787303093,
+          "hills": 2.76608221233337,
+          "mountains": 2.9940544329691057,
+          "ridges": 2.5797224802339205,
+          "islands": 1.7105997245961444,
+          "mesas": 2.479196326067397
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.15006289995600802,
+          "rapsd_distance": 0.31134856494159396,
+          "height_w1": -0.0003109572917968026,
+          "slope_w1_deg": 1.2314687166436424
+        },
+        "rapsd_bias_decades": 0.34973352269775976
+      },
+      "inprocess_seconds_per_map": 0.09195159149169922
+    },
+    "s25_q_g1.5_e0": {
+      "config": {
+        "steps": 25,
+        "spacing": "quadratic",
+        "guidance": 1.5,
+        "eta": 0.0
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 2.446118047642518,
+          "rapsd_distance": 6.295700182978356,
+          "height_w1": 0.963716810169953,
+          "slope_w1_deg": 3.5320614980329084
+        },
+        "model": {
+          "metric_w1_mean": 0.18799756957862968,
+          "rapsd_distance": 0.25655685936633377,
+          "height_w1": 0.008121361217685044,
+          "slope_w1_deg": 0.8653309311664336
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.92,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.15133528543566485,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.0004603591382741779,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.004673988883913229,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 12.729440229848187,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 17.015608740894898,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 12.729440229848187,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.018400461658552626,
+          "relief": 0.08068496872125278,
+          "mean_slope_deg": 0.16116203424322154,
+          "water_fraction": 0.04149918973995167,
+          "spectral_beta": 0.767207521577367
+        },
+        "adherence_r": {
+          "mean_elevation": 0.9997885517904119,
+          "relief": 0.9953344204123655,
+          "mean_slope_deg": 0.9922422239481047,
+          "water_fraction": 0.9951127761124811,
+          "spectral_beta": 0.28352772980456076
+        },
+        "adherence_nmae_mean": 0.21379083518806913,
+        "per_archetype_ratio": {
+          "plains": 2.632662324667304,
+          "hills": 2.2329321721126916,
+          "mountains": 2.3853051982165328,
+          "ridges": 2.0164989399039395,
+          "islands": 1.5928442370781022,
+          "mesas": 1.9894609146548703
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.11114209248611202,
+          "rapsd_distance": 0.21580573528109076,
+          "height_w1": -0.0003057629447430366,
+          "slope_w1_deg": 0.6203377645285295
+        },
+        "rapsd_bias_decades": 0.2532997591268217
+      },
+      "inprocess_seconds_per_map": 0.08996172952651978
+    },
+    "s50_u_g1.5_e0": {
+      "config": {
+        "steps": 50,
+        "spacing": "uniform",
+        "guidance": 1.5,
+        "eta": 0.0
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 2.4388748668801203,
+          "rapsd_distance": 6.698545253662434,
+          "height_w1": 0.9220970493283931,
+          "slope_w1_deg": 3.659301816945869
+        },
+        "model": {
+          "metric_w1_mean": 0.18744089146546103,
+          "rapsd_distance": 0.272973248829312,
+          "height_w1": 0.007770626325421037,
+          "slope_w1_deg": 0.8965039398210638
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.926,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.1522132048854882,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.0004750766783380802,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.0038198613287209597,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 11.854597382551132,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 16.803329864724247,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 11.854597382551132,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.01662359837923267,
+          "relief": 0.07521850108740163,
+          "mean_slope_deg": 0.1652696478070318,
+          "water_fraction": 0.04231052539356493,
+          "spectral_beta": 0.8287494727123083
+        },
+        "adherence_r": {
+          "mean_elevation": 0.999793366294718,
+          "relief": 0.9955066315171097,
+          "mean_slope_deg": 0.9912467998582731,
+          "water_fraction": 0.9949080367868427,
+          "spectral_beta": 0.2643789386222204
+        },
+        "adherence_nmae_mean": 0.22563434907590785,
+        "per_archetype_ratio": {
+          "plains": 2.376048659317499,
+          "hills": 2.3845735395447596,
+          "mountains": 2.4116531249628936,
+          "ridges": 2.03159234931619,
+          "islands": 1.5930100521135766,
+          "mesas": 2.038101747728518
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.11058541437294338,
+          "rapsd_distance": 0.232222124744069,
+          "height_w1": -0.0006564978370070442,
+          "slope_w1_deg": 0.6515107731831598
+        },
+        "rapsd_bias_decades": 0.2699143205949225
+      },
+      "inprocess_seconds_per_map": 0.17306845426559447
+    },
+    "s50_q_g1.5_e0": {
+      "config": {
+        "steps": 50,
+        "spacing": "quadratic",
+        "guidance": 1.5,
+        "eta": 0.0
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 2.128742152407633,
+          "rapsd_distance": 6.926284345803171,
+          "height_w1": 0.9225157446050799,
+          "slope_w1_deg": 1.8144956757931476
+        },
+        "model": {
+          "metric_w1_mean": 0.16360549373237032,
+          "rapsd_distance": 0.2822538728324275,
+          "height_w1": 0.007774154722504317,
+          "slope_w1_deg": 0.44453904146516154
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.926,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.15238016066559018,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.0004789151008702653,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.004888203711058347,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 13.432544666067725,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 17.496357960457857,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 13.432544666067725,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.01707344463076549,
+          "relief": 0.07143320798561892,
+          "mean_slope_deg": 0.11535647043469137,
+          "water_fraction": 0.042158006869532985,
+          "spectral_beta": 0.6456400329348577
+        },
+        "adherence_r": {
+          "mean_elevation": 0.999786467411916,
+          "relief": 0.9954293025912764,
+          "mean_slope_deg": 0.9927583853906315,
+          "water_fraction": 0.9949615130171184,
+          "spectral_beta": 0.41926366177091606
+        },
+        "adherence_nmae_mean": 0.1783322325710933,
+        "per_archetype_ratio": {
+          "plains": 2.3497212394882787,
+          "hills": 1.9276275353197416,
+          "mountains": 1.893325483943987,
+          "ridges": 1.6634377217419973,
+          "islands": 1.513669533769426,
+          "mesas": 1.626479039955282
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.08675001663985267,
+          "rapsd_distance": 0.24150274874718447,
+          "height_w1": -0.0006529694399237639,
+          "slope_w1_deg": 0.19954587482725744
+        },
+        "rapsd_bias_decades": 0.2792966068800215
+      },
+      "inprocess_seconds_per_map": 0.17081146240234374
+    },
+    "s100_u_g1.5_e0": {
+      "config": {
+        "steps": 100,
+        "spacing": "uniform",
+        "guidance": 1.5,
+        "eta": 0.0
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 2.1444732633182375,
+          "rapsd_distance": 6.401470243288418,
+          "height_w1": 0.900526565269777,
+          "slope_w1_deg": 2.1003516353233564
+        },
+        "model": {
+          "metric_w1_mean": 0.16481451576661585,
+          "rapsd_distance": 0.2608671082186385,
+          "height_w1": 0.007588849177993833,
+          "slope_w1_deg": 0.5145717981930699
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.928,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.15274625942221007,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.00045310001509797095,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.0042958518493089615,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 12.474590813423927,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 16.86732570239334,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 12.474590813423927,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.01644314552761328,
+          "relief": 0.07205313275266734,
+          "mean_slope_deg": 0.12406510854104226,
+          "water_fraction": 0.042450465070254045,
+          "spectral_beta": 0.7097687956512607
+        },
+        "adherence_r": {
+          "mean_elevation": 0.9997884655777669,
+          "relief": 0.9955453995653609,
+          "mean_slope_deg": 0.9923777432276725,
+          "water_fraction": 0.994872205840235,
+          "spectral_beta": 0.3739002649785517
+        },
+        "adherence_nmae_mean": 0.19295612950856753,
+        "per_archetype_ratio": {
+          "plains": 2.3656909426684996,
+          "hills": 2.1064104406176396,
+          "mountains": 2.019793520666041,
+          "ridges": 1.7453069876171903,
+          "islands": 1.494897661125739,
+          "mesas": 1.7645402719013914
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.0879590386740982,
+          "rapsd_distance": 0.2201159841333955,
+          "height_w1": -0.0008382749844342476,
+          "slope_w1_deg": 0.26957863155516576
+        },
+        "rapsd_bias_decades": 0.2576644989829681
+      },
+      "inprocess_seconds_per_map": 0.34836076545715333
+    },
+    "s100_q_g1.5_e0": {
+      "config": {
+        "steps": 100,
+        "spacing": "quadratic",
+        "guidance": 1.5,
+        "eta": 0.0
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 2.029117571340008,
+          "rapsd_distance": 7.346363374779247,
+          "height_w1": 0.8986592506379588,
+          "slope_w1_deg": 1.2581348625947533
+        },
+        "model": {
+          "metric_w1_mean": 0.15594879902417616,
+          "rapsd_distance": 0.29937256546826,
+          "height_w1": 0.007573113085739315,
+          "slope_w1_deg": 0.3082344440458911
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.924,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.15281481932008867,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.00047702954878262396,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.005004070001019336,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 13.859289280852488,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 17.848074921956293,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 13.859289280852488,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.016596144350869993,
+          "relief": 0.07131603128317573,
+          "mean_slope_deg": 0.1023305203454505,
+          "water_fraction": 0.042582542967353885,
+          "spectral_beta": 0.618011435598009
+        },
+        "adherence_r": {
+          "mean_elevation": 0.9997837851492037,
+          "relief": 0.9954659210035489,
+          "mean_slope_deg": 0.99287514872014,
+          "water_fraction": 0.9948841149396763,
+          "spectral_beta": 0.44739363400537935
+        },
+        "adherence_nmae_mean": 0.17016733490897182,
+        "per_archetype_ratio": {
+          "plains": 2.388891811873971,
+          "hills": 1.8630781766463063,
+          "mountains": 1.7986440441688714,
+          "ridges": 1.5848874573758867,
+          "islands": 1.4447058727177504,
+          "mesas": 1.6293417863450004
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.07909332193165851,
+          "rapsd_distance": 0.258621441383017,
+          "height_w1": -0.0008540110766887656,
+          "slope_w1_deg": 0.06324127740798702
+        },
+        "rapsd_bias_decades": 0.2965860395245143
+      },
+      "inprocess_seconds_per_map": 0.3524208574295044
+    },
+    "s200_u_g1.5_e0": {
+      "config": {
+        "steps": 200,
+        "spacing": "uniform",
+        "guidance": 1.5,
+        "eta": 0.0
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 2.036575817674641,
+          "rapsd_distance": 6.8681153709124505,
+          "height_w1": 0.8889726491079976,
+          "slope_w1_deg": 1.28275869037575
+        },
+        "model": {
+          "metric_w1_mean": 0.15652200610450537,
+          "rapsd_distance": 0.2798834217186862,
+          "height_w1": 0.007491482891924679,
+          "slope_w1_deg": 0.3142671135887285
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.928,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.15303435977523885,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.0004656900209658944,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.004692422197231677,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 13.171726196555195,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 17.451092611862645,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 13.171726196555195,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.016436297927123505,
+          "relief": 0.07161512898053503,
+          "mean_slope_deg": 0.10609609704882839,
+          "water_fraction": 0.04275707447423581,
+          "spectral_beta": 0.6464861812267437
+        },
+        "adherence_r": {
+          "mean_elevation": 0.9997843333016042,
+          "relief": 0.995500512752727,
+          "mean_slope_deg": 0.9927272622024678,
+          "water_fraction": 0.9948484931054542,
+          "spectral_beta": 0.42931557622495836
+        },
+        "adherence_nmae_mean": 0.1766781559314933,
+        "per_archetype_ratio": {
+          "plains": 2.3197957824332467,
+          "hills": 1.943883572986453,
+          "mountains": 1.8503425649573595,
+          "ridges": 1.6333211344437146,
+          "islands": 1.4637758759928692,
+          "mesas": 1.6497300594152071
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.07966652901198772,
+          "rapsd_distance": 0.23913229763344318,
+          "height_w1": -0.0009356412705034019,
+          "slope_w1_deg": 0.0692739469508244
+        },
+        "rapsd_bias_decades": 0.27690084080542093
+      },
+      "inprocess_seconds_per_map": 0.7161473546028138
+    },
+    "s200_q_g1.5_e0": {
+      "config": {
+        "steps": 200,
+        "spacing": "quadratic",
+        "guidance": 1.5,
+        "eta": 0.0
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 2.001749475919119,
+          "rapsd_distance": 7.568995658956341,
+          "height_w1": 0.8873909067966852,
+          "slope_w1_deg": 0.987333282794993
+        },
+        "model": {
+          "metric_w1_mean": 0.15384541099346283,
+          "rapsd_distance": 0.3084450813063645,
+          "height_w1": 0.0074781533530727026,
+          "slope_w1_deg": 0.24188990747992994
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.926,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.15307410575196492,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.0004793017992238556,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.005098183700648409,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 14.09150350830208,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 18.201352757544225,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 14.09150350830208,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.01655929517285818,
+          "relief": 0.07139823633098973,
+          "mean_slope_deg": 0.09760664187525475,
+          "water_fraction": 0.042854560541142825,
+          "spectral_beta": 0.6045198519473524
+        },
+        "adherence_r": {
+          "mean_elevation": 0.9997829557315351,
+          "relief": 0.9955015822790181,
+          "mean_slope_deg": 0.9928843325921104,
+          "water_fraction": 0.9948427432362145,
+          "spectral_beta": 0.46218161281237047
+        },
+        "adherence_nmae_mean": 0.16658771717351956,
+        "per_archetype_ratio": {
+          "plains": 2.350834040137027,
+          "hills": 1.838243497684232,
+          "mountains": 1.7776432045344635,
+          "ridges": 1.5626957007062519,
+          "islands": 1.3998708669981632,
+          "mesas": 1.6355847593710864
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.07698993390094518,
+          "rapsd_distance": 0.2676939572211215,
+          "height_w1": -0.0009489708093553782,
+          "slope_w1_deg": -0.0031032591579741586
+        },
+        "rapsd_bias_decades": 0.3057412534609599
+      },
+      "inprocess_seconds_per_map": 0.6705337371826172
+    },
+    "s100_u_g1_e0": {
+      "config": {
+        "steps": 100,
+        "spacing": "uniform",
+        "guidance": 1.0,
+        "eta": 0.0
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 2.527836023362874,
+          "rapsd_distance": 5.6583293486090485,
+          "height_w1": 1.0553905345723402,
+          "slope_w1_deg": 3.313714627480817
+        },
+        "model": {
+          "metric_w1_mean": 0.19427804358973413,
+          "rapsd_distance": 0.2305832814059979,
+          "height_w1": 0.008893907075747848,
+          "slope_w1_deg": 0.8118374399241819
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.938,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.14930768484690934,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.0004097344322212882,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.00348656561704625,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 11.41453991723609,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 15.472424557752344,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 11.41453991723609,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.028895615380474148,
+          "relief": 0.09393599634020838,
+          "mean_slope_deg": 0.16045979480298153,
+          "water_fraction": 0.045456809585193145,
+          "spectral_beta": 0.7674873791610842
+        },
+        "adherence_r": {
+          "mean_elevation": 0.9991554834296853,
+          "relief": 0.9924880607285007,
+          "mean_slope_deg": 0.9891372651953646,
+          "water_fraction": 0.9943445604688196,
+          "spectral_beta": 0.33721740515175386
+        },
+        "adherence_nmae_mean": 0.21924711905398828,
+        "per_archetype_ratio": {
+          "plains": 2.358136232191163,
+          "hills": 2.0676290607129215,
+          "mountains": 2.3472010072333926,
+          "ridges": 2.0243347250529613,
+          "islands": 1.428423896317673,
+          "mesas": 2.205830643514685
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.11742256649721648,
+          "rapsd_distance": 0.1898321573207549,
+          "height_w1": 0.0004667829133197677,
+          "slope_w1_deg": 0.5668442732862777
+        },
+        "rapsd_bias_decades": 0.22695372997539992
+      },
+      "inprocess_seconds_per_map": 0.1768643274307251
+    },
+    "s100_u_g2_e0": {
+      "config": {
+        "steps": 100,
+        "spacing": "uniform",
+        "guidance": 2.0,
+        "eta": 0.0
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 1.9464650820750284,
+          "rapsd_distance": 7.346000917987976,
+          "height_w1": 0.8842654795538841,
+          "slope_w1_deg": 1.167535375008382
+        },
+        "model": {
+          "metric_w1_mean": 0.14959650252874931,
+          "rapsd_distance": 0.29935779494658304,
+          "height_w1": 0.007451814989633857,
+          "slope_w1_deg": 0.2860381886862439
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.914,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.15396050502922268,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.0004921509326811255,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.005214858202036757,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 13.865199503920214,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 18.61706555671176,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 13.865199503920214,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.01669534764198266,
+          "relief": 0.07413879871302222,
+          "mean_slope_deg": 0.11057633950704006,
+          "water_fraction": 0.0434237533834064,
+          "spectral_beta": 0.6680113015408872
+        },
+        "adherence_r": {
+          "mean_elevation": 0.9997127250737448,
+          "relief": 0.9953998777838636,
+          "mean_slope_deg": 0.9922053817676214,
+          "water_fraction": 0.9947516309705411,
+          "spectral_beta": 0.38758485830732026
+        },
+        "adherence_nmae_mean": 0.1825691081572677,
+        "per_archetype_ratio": {
+          "plains": 2.3774521413930683,
+          "hills": 2.1358166032629,
+          "mountains": 1.9178867567430888,
+          "ridges": 1.5779677392431337,
+          "islands": 1.519787397400287,
+          "mesas": 1.8017596697167844
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.07274102543623166,
+          "rapsd_distance": 0.25860667086134004,
+          "height_w1": -0.000975309172794224,
+          "slope_w1_deg": 0.04104502204833982
+        },
+        "rapsd_bias_decades": 0.2965711302218569
+      },
+      "inprocess_seconds_per_map": 0.35076088666915894
+    },
+    "s100_u_g3_e0": {
+      "config": {
+        "steps": 100,
+        "spacing": "uniform",
+        "guidance": 3.0,
+        "eta": 0.0
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 2.0464626964847206,
+          "rapsd_distance": 9.392054018800302,
+          "height_w1": 0.8817400339874752,
+          "slope_w1_deg": 1.3816895787115437
+        },
+        "model": {
+          "metric_w1_mean": 0.15728186689241982,
+          "rapsd_distance": 0.3827367587448284,
+          "height_w1": 0.00743053274627775,
+          "slope_w1_deg": 0.33850450520051445
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.908,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.1554299466539859,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.0005099069990588587,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.007348770307931561,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 17.395697195964626,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 22.289281997918835,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 17.395697195964626,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.018467219605198613,
+          "relief": 0.08327222167907138,
+          "mean_slope_deg": 0.12892614380486542,
+          "water_fraction": 0.04704331670630902,
+          "spectral_beta": 0.6365366067906132
+        },
+        "adherence_r": {
+          "mean_elevation": 0.9995610832932224,
+          "relief": 0.9941464347862172,
+          "mean_slope_deg": 0.9884165060814355,
+          "water_fraction": 0.9940624894380878,
+          "spectral_beta": 0.4034370521684385
+        },
+        "adherence_nmae_mean": 0.18284910171721153,
+        "per_archetype_ratio": {
+          "plains": 2.4384094356356405,
+          "hills": 2.1160058856756048,
+          "mountains": 2.2252692761671917,
+          "ridges": 1.5592943521426001,
+          "islands": 1.5368991414625308,
+          "mesas": 2.6831293617171506
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.08042638979990217,
+          "rapsd_distance": 0.34198563465958537,
+          "height_w1": -0.000996591416150331,
+          "slope_w1_deg": 0.09351133856261035
+        },
+        "rapsd_bias_decades": 0.3805611283096135
+      },
+      "inprocess_seconds_per_map": 0.35292439317703245
+    },
+    "s100_q_g1_e0": {
+      "config": {
+        "steps": 100,
+        "spacing": "quadratic",
+        "guidance": 1.0,
+        "eta": 0.0
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 2.3765146241341513,
+          "rapsd_distance": 6.169943945554967,
+          "height_w1": 1.059095040098009,
+          "slope_w1_deg": 2.661009328828633
+        },
+        "model": {
+          "metric_w1_mean": 0.18264816525755198,
+          "rapsd_distance": 0.2514321513304742,
+          "height_w1": 0.008925125403776765,
+          "slope_w1_deg": 0.6519291019253917
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.936,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.1492667768603162,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.0004365431119289076,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.003980633557796274,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 12.293787074832665,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 16.158168574401664,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 12.293787074832665,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.028892566527045065,
+          "relief": 0.0933132225512881,
+          "mean_slope_deg": 0.13693032813288664,
+          "water_fraction": 0.04521781148567915,
+          "spectral_beta": 0.6611322363975394
+        },
+        "adherence_r": {
+          "mean_elevation": 0.9991551277191774,
+          "relief": 0.9923603253261976,
+          "mean_slope_deg": 0.9899433060858679,
+          "water_fraction": 0.9944195130892548,
+          "spectral_beta": 0.4365338764561714
+        },
+        "adherence_nmae_mean": 0.19309723301888768,
+        "per_archetype_ratio": {
+          "plains": 2.362484997961976,
+          "hills": 1.7855157963867674,
+          "mountains": 2.083348434648749,
+          "ridges": 1.8261529440315638,
+          "islands": 1.3915575699002998,
+          "mesas": 1.8574059523984001
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.10579268816503433,
+          "rapsd_distance": 0.2106810272452312,
+          "height_w1": 0.0004980012413486837,
+          "slope_w1_deg": 0.40693593528748756
+        },
+        "rapsd_bias_decades": 0.2481077842560761
+      },
+      "inprocess_seconds_per_map": 0.17208458137512206
+    },
+    "s100_q_g2_e0": {
+      "config": {
+        "steps": 100,
+        "spacing": "quadratic",
+        "guidance": 2.0,
+        "eta": 0.0
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 1.9038717752311116,
+          "rapsd_distance": 8.51957821541364,
+          "height_w1": 0.8839672518125383,
+          "slope_w1_deg": 0.4590811838915199
+        },
+        "model": {
+          "metric_w1_mean": 0.1463229736102695,
+          "rapsd_distance": 0.34718238901877396,
+          "height_w1": 0.0074493017874285574,
+          "slope_w1_deg": 0.11247175298592052
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.914,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.15403713015960116,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.0005149993802426663,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.006196955182090253,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 15.873684811747244,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 19.986472424557753,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 15.873684811747244,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.016719992287765748,
+          "relief": 0.07448186453245731,
+          "mean_slope_deg": 0.09703457203702995,
+          "water_fraction": 0.04384042770163803,
+          "spectral_beta": 0.5941821711234316
+        },
+        "adherence_r": {
+          "mean_elevation": 0.9997026945581983,
+          "relief": 0.9953220940166412,
+          "mean_slope_deg": 0.9924446758314112,
+          "water_fraction": 0.994712821997344,
+          "spectral_beta": 0.4499475564962187
+        },
+        "adherence_nmae_mean": 0.16525180553646454,
+        "per_archetype_ratio": {
+          "plains": 2.4372839447499093,
+          "hills": 1.951038491691762,
+          "mountains": 1.863464618460205,
+          "ridges": 1.4800537791873816,
+          "islands": 1.4437897771836032,
+          "mesas": 1.9358714226465314
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.06946749651775184,
+          "rapsd_distance": 0.30643126493353096,
+          "height_w1": -0.0009778223749995233,
+          "slope_w1_deg": -0.13252141365198358
+        },
+        "rapsd_bias_decades": 0.3447824779923893
+      },
+      "inprocess_seconds_per_map": 0.3463368716239929
+    },
+    "s100_q_g3_e0": {
+      "config": {
+        "steps": 100,
+        "spacing": "quadratic",
+        "guidance": 3.0,
+        "eta": 0.0
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 2.4053338054102857,
+          "rapsd_distance": 10.866991703069203,
+          "height_w1": 0.8862115044004542,
+          "slope_w1_deg": 2.2622791774780016
+        },
+        "model": {
+          "metric_w1_mean": 0.18486307718397388,
+          "rapsd_distance": 0.4428421273359463,
+          "height_w1": 0.007468214382641019,
+          "slope_w1_deg": 0.554242939511591
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.902,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.15552108267935852,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.0005642165534762555,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.008991427473427908,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 20.09261704638764,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 24.289281997918835,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 20.09261704638764,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.01835194622078627,
+          "relief": 0.08589621126506966,
+          "mean_slope_deg": 0.1343989899308543,
+          "water_fraction": 0.047329485483358656,
+          "spectral_beta": 0.6199875446437481
+        },
+        "adherence_r": {
+          "mean_elevation": 0.9995455398072873,
+          "relief": 0.9939488546853942,
+          "mean_slope_deg": 0.9880630994477604,
+          "water_fraction": 0.9940618423445964,
+          "spectral_beta": 0.4417787753564986
+        },
+        "adherence_nmae_mean": 0.1811928355087634,
+        "per_archetype_ratio": {
+          "plains": 2.639792255215246,
+          "hills": 2.0071813733010075,
+          "mountains": 2.4511688072203706,
+          "ridges": 1.6319419112909035,
+          "islands": 1.5156968628791905,
+          "mesas": 3.172085817142421
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.10800760009145623,
+          "rapsd_distance": 0.4020910032507033,
+          "height_w1": -0.0009589097797870622,
+          "slope_w1_deg": 0.3092497728736869
+        },
+        "rapsd_bias_decades": 0.4409631454319234
+      },
+      "inprocess_seconds_per_map": 0.33760069227218625
+    },
+    "s100_u_g1.5_e0.5": {
+      "config": {
+        "steps": 100,
+        "spacing": "uniform",
+        "guidance": 1.5,
+        "eta": 0.5
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 2.1634335763614985,
+          "rapsd_distance": 6.284108880906545,
+          "height_w1": 0.9328670464362981,
+          "slope_w1_deg": 2.20002601223243
+        },
+        "model": {
+          "metric_w1_mean": 0.16627171967139812,
+          "rapsd_distance": 0.2560845007772843,
+          "height_w1": 0.007861386428289114,
+          "slope_w1_deg": 0.5389913394247834
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.916,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.15195271817898262,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.00040249894798003,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.0038867513937571978,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 11.477513364031903,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 15.453173777315296,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 11.477513364031903,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.020099639957009356,
+          "relief": 0.07392224770640676,
+          "mean_slope_deg": 0.12410648651790676,
+          "water_fraction": 0.03902744623708333,
+          "spectral_beta": 0.6849929853993098
+        },
+        "adherence_r": {
+          "mean_elevation": 0.9996422872441884,
+          "relief": 0.9951132328747875,
+          "mean_slope_deg": 0.9938464435455941,
+          "water_fraction": 0.996113930333487,
+          "spectral_beta": 0.44749935000653174
+        },
+        "adherence_nmae_mean": 0.1884297611635432,
+        "per_archetype_ratio": {
+          "plains": 2.386505940107311,
+          "hills": 2.0616988749327345,
+          "mountains": 2.247983544064788,
+          "ridges": 1.780862802825952,
+          "islands": 1.4607733622162018,
+          "mesas": 1.8568697987180842
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.08941624257888046,
+          "rapsd_distance": 0.21533337669204128,
+          "height_w1": -0.0005657377341389668,
+          "slope_w1_deg": 0.2939981727868793
+        },
+        "rapsd_bias_decades": 0.2528213152092601
+      },
+      "inprocess_seconds_per_map": 0.3435712957382202
+    },
+    "s100_u_g1.5_e1": {
+      "config": {
+        "steps": 100,
+        "spacing": "uniform",
+        "guidance": 1.5,
+        "eta": 1.0
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 2.6295551339990952,
+          "rapsd_distance": 5.825481186261771,
+          "height_w1": 1.004950797833209,
+          "slope_w1_deg": 3.735519203695594
+        },
+        "model": {
+          "metric_w1_mean": 0.20209571436720922,
+          "rapsd_distance": 0.23739490668342753,
+          "height_w1": 0.008468845151476565,
+          "slope_w1_deg": 0.9151766787538211
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.938,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.15111309814850465,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.00026041094271650266,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.0022380356071868093,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 8.74685977074285,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 12.21436004162331,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 8.74685977074285,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.023239185110308595,
+          "relief": 0.08128200997507598,
+          "mean_slope_deg": 0.1666396940945021,
+          "water_fraction": 0.03975859173888599,
+          "spectral_beta": 0.6638665942378635
+        },
+        "adherence_r": {
+          "mean_elevation": 0.9994915209564053,
+          "relief": 0.994421816852067,
+          "mean_slope_deg": 0.9938372050036011,
+          "water_fraction": 0.9955812916511761,
+          "spectral_beta": 0.6324927937826201
+        },
+        "adherence_nmae_mean": 0.19495721503132724,
+        "per_archetype_ratio": {
+          "plains": 1.6480664955539341,
+          "hills": 2.3970916990489273,
+          "mountains": 2.614639344991949,
+          "ridges": 2.0858039031713176,
+          "islands": 1.5627773937411433,
+          "mesas": 2.0179202055543537
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.12524023727469158,
+          "rapsd_distance": 0.19664378259818452,
+          "height_w1": 4.1720989048484036e-05,
+          "slope_w1_deg": 0.670183512115917
+        },
+        "rapsd_bias_decades": 0.2338710918540861
+      },
+      "inprocess_seconds_per_map": 0.37844048833847044
+    },
+    "s100_q_g1.5_e0.5": {
+      "config": {
+        "steps": 100,
+        "spacing": "quadratic",
+        "guidance": 1.5,
+        "eta": 0.5
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 2.0677518957375276,
+          "rapsd_distance": 7.317788727181848,
+          "height_w1": 0.9220005848105403,
+          "slope_w1_deg": 0.9599257998057932
+        },
+        "model": {
+          "metric_w1_mean": 0.15891805845793328,
+          "rapsd_distance": 0.29820811645829776,
+          "height_w1": 0.007769813406951725,
+          "slope_w1_deg": 0.23517526143280398
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.916,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.15223627806179083,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.0004379638637147216,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.004603169632236294,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 13.694190615504965,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 17.138397502601457,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 13.694190615504965,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.021118518132046803,
+          "relief": 0.07434731662299465,
+          "mean_slope_deg": 0.09969807546991392,
+          "water_fraction": 0.03947714002958991,
+          "spectral_beta": 0.5626366496009547
+        },
+        "adherence_r": {
+          "mean_elevation": 0.9996162249251475,
+          "relief": 0.9949258687936723,
+          "mean_slope_deg": 0.9941101269895379,
+          "water_fraction": 0.9961762774934896,
+          "spectral_beta": 0.5448926913645871
+        },
+        "adherence_nmae_mean": 0.1594555399711,
+        "per_archetype_ratio": {
+          "plains": 2.360073763873787,
+          "hills": 1.8287769169878938,
+          "mountains": 1.9586907641167155,
+          "ridges": 1.725981249785495,
+          "islands": 1.3127545198469341,
+          "mesas": 1.8809096095588271
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.08206258136541562,
+          "rapsd_distance": 0.25745699237305475,
+          "height_w1": -0.0006573107554763554,
+          "slope_w1_deg": -0.00981790520510012
+        },
+        "rapsd_bias_decades": 0.295410606795685
+      },
+      "inprocess_seconds_per_map": 0.3726123466491699
+    },
+    "s100_q_g1.5_e1": {
+      "config": {
+        "steps": 100,
+        "spacing": "quadratic",
+        "guidance": 1.5,
+        "eta": 1.0
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 2.17317376417434,
+          "rapsd_distance": 6.406001987024809,
+          "height_w1": 0.9785050226356182,
+          "slope_w1_deg": 1.7535325700906053
+        },
+        "model": {
+          "metric_w1_mean": 0.16702030645273455,
+          "rapsd_distance": 0.26105178186996725,
+          "height_w1": 0.00824598332028836,
+          "slope_w1_deg": 0.4296034971509535
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.924,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.15138717618707345,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.0003700485020528069,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.0036561977706056183,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 11.742705221188706,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 14.895421436004163,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 11.742705221188706,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.025535670613008262,
+          "relief": 0.07935371522835502,
+          "mean_slope_deg": 0.11052107533829338,
+          "water_fraction": 0.039181537117033136,
+          "spectral_beta": 0.5191283383032297
+        },
+        "adherence_r": {
+          "mean_elevation": 0.9994108032470758,
+          "relief": 0.9939613160550671,
+          "mean_slope_deg": 0.9947329126550323,
+          "water_fraction": 0.9961409763099676,
+          "spectral_beta": 0.6779912176437137
+        },
+        "adherence_nmae_mean": 0.15474406731998389,
+        "per_archetype_ratio": {
+          "plains": 1.9259872133150249,
+          "hills": 1.972870359256189,
+          "mountains": 2.0326967740248114,
+          "ridges": 1.7278693127845262,
+          "islands": 1.3866190443755129,
+          "mesas": 1.985605891065072
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.0901648293602169,
+          "rapsd_distance": 0.22030065778472424,
+          "height_w1": -0.00018114084213972058,
+          "slope_w1_deg": 0.18461033051304937
+        },
+        "rapsd_bias_decades": 0.2578514663585881
+      },
+      "inprocess_seconds_per_map": 0.36705330801010133
+    },
+    "s50_q_g1_e0": {
+      "config": {
+        "steps": 50,
+        "spacing": "quadratic",
+        "guidance": 1.0,
+        "eta": 0.0
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 2.5513134044354753,
+          "rapsd_distance": 5.838454302449737,
+          "height_w1": 1.102435436493714,
+          "slope_w1_deg": 3.360639328221579
+        },
+        "model": {
+          "metric_w1_mean": 0.1960824089129752,
+          "rapsd_distance": 0.23792357575098858,
+          "height_w1": 0.00929036030549556,
+          "slope_w1_deg": 0.8233336709522441
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.936,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.1484907691198677,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.0004414389838145606,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.003888261066825681,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 12.075094734129182,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 15.922476586888656,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 12.075094734129182,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.028520321703374277,
+          "relief": 0.09985715907859286,
+          "mean_slope_deg": 0.156460136331949,
+          "water_fraction": 0.045092023012250744,
+          "spectral_beta": 0.7019133753116163
+        },
+        "adherence_r": {
+          "mean_elevation": 0.9991725906467395,
+          "relief": 0.9922081863373292,
+          "mean_slope_deg": 0.9897972868046785,
+          "water_fraction": 0.994492839414674,
+          "spectral_beta": 0.3903070642230196
+        },
+        "adherence_nmae_mean": 0.20636860308755667,
+        "per_archetype_ratio": {
+          "plains": 2.371285517187118,
+          "hills": 1.9148767408645473,
+          "mountains": 2.32374502475377,
+          "ridges": 1.9836969988791833,
+          "islands": 1.4365708114315696,
+          "mesas": 2.0677585564448995
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.11922693182045756,
+          "rapsd_distance": 0.19717245166574557,
+          "height_w1": 0.0008632361430674796,
+          "slope_w1_deg": 0.5783405043143399
+        },
+        "rapsd_bias_decades": 0.23440770845670908
+      },
+      "inprocess_seconds_per_map": 0.09053988361358642
+    },
+    "s50_q_g2_e0": {
+      "config": {
+        "steps": 50,
+        "spacing": "quadratic",
+        "guidance": 2.0,
+        "eta": 0.0
+      },
+      "compact": {
+        "ratio": {
+          "metric_w1_mean": 1.951490213106473,
+          "rapsd_distance": 8.15096624446977,
+          "height_w1": 0.9040266343497412,
+          "slope_w1_deg": 0.7613221336092414
+        },
+        "model": {
+          "metric_w1_mean": 0.14998271137162844,
+          "rapsd_distance": 0.3321610368511657,
+          "height_w1": 0.007618344694711267,
+          "slope_w1_deg": 0.18651872034521488
+        },
+        "floor": {
+          "metric_w1_mean": 0.07685547709251765,
+          "rapsd_distance": 0.04075112408524301,
+          "height_w1": 0.00842712416242808,
+          "slope_w1_deg": 0.2449931666379041
+        },
+        "trav_pass_gen": 0.914,
+        "trav_pass_ref": 0.906,
+        "diversity_gen": 0.15367975511220924,
+        "diversity_ref": 0.16635825564422868,
+        "artifacts": {
+          "checkerboard_mean_gen": 0.0005076637365239837,
+          "checkerboard_mean_ref": 0.0005280913443507257,
+          "hf_energy_mean_gen": 0.006037621311347195,
+          "hf_energy_mean_ref": 0.005960702493898177,
+          "sink_density_mean_gen": 15.374335315446768,
+          "sink_density_mean_ref": 8.404012673342692
+        },
+        "peak_density": {
+          "gen": 19.569198751300725,
+          "ref": 12.054630593132154
+        },
+        "sink_density": {
+          "gen": 15.374335315446768,
+          "ref": 8.404012673342692
+        },
+        "adherence_nmae": {
+          "mean_elevation": 0.016997860218209065,
+          "relief": 0.07314948200954946,
+          "mean_slope_deg": 0.10101966481203695,
+          "water_fraction": 0.04318003821613885,
+          "spectral_beta": 0.6126943782068849
+        },
+        "adherence_r": {
+          "mean_elevation": 0.9996993044876461,
+          "relief": 0.995312246430981,
+          "mean_slope_deg": 0.9924741871423025,
+          "water_fraction": 0.9948222457358357,
+          "spectral_beta": 0.4321784066358641
+        },
+        "adherence_nmae_mean": 0.16940828469256383,
+        "per_archetype_ratio": {
+          "plains": 2.4062801916595262,
+          "hills": 1.973018894459304,
+          "mountains": 1.8453219190607582,
+          "ridges": 1.5081047883451109,
+          "islands": 1.4585638738048674,
+          "mesas": 1.8205516857647972
+        },
+        "excess_over_floor": {
+          "metric_w1_mean": 0.07312723427911079,
+          "rapsd_distance": 0.2914099127659227,
+          "height_w1": -0.000808779467716814,
+          "slope_w1_deg": -0.05847444629268922
+        },
+        "rapsd_bias_decades": 0.3296517864168653
+      },
+      "inprocess_seconds_per_map": 0.18557734727859498
+    }
+  }
+}

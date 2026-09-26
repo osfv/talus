@@ -1,0 +1,9 @@
+{
+  "after_open_dataset_mb": 33.4296875,
+  "after_load_checkpoint_mb": 1060.2109375,
+  "sample_128_official_seconds": 23.38930106163025,
+  "after_sampling_128_mb": 1935.44140625,
+  "train_bank_mb": 703.125,
+  "after_train_bank_mb": 4087.5390625,
+  "note": "peak working set of this process (Windows PeakWorkingSetSize), MB"
+}
