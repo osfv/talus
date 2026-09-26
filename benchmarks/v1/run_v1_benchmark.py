@@ -31,10 +31,14 @@ import time
 from dataclasses import asdict
 from pathlib import Path
 
+import os
+
 import numpy as np
 
+# NULLSCAPE_BENCH_DRY=1: CPU, tiny sizes, 3 sampler steps, outputs under benchmarks/v1/dryrun (code check only)
+DRY = os.environ.get("NULLSCAPE_BENCH_DRY") == "1"
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "benchmarks" / "v1"
+OUT = ROOT / "benchmarks" / "v1" / ("dryrun" if DRY else "")
 RAW = OUT / "raw"
 FIG = OUT / "figures"
 ART = OUT / "artifacts_test"
@@ -50,9 +54,23 @@ CKPTS = {
     40000: CONT / "step_0040000.pt",
 }
 DATASET = "base64"
-N_HALF = 1000
+N_HALF = 48 if DRY else 1000
 DEFAULT_SAMPLER = {"steps": 200, "spacing": "uniform", "eta": 0.0, "guidance": 1.5}
-BATCH = 128
+BATCH = 8 if DRY else 128
+DEVICE = "cpu" if DRY else "cuda"
+if DRY:
+    CKPTS = {30000: CKPTS[30000], 40000: CKPTS[40000]}
+
+
+def _dry_cfg(cfg: dict) -> dict:
+    return {**cfg, "steps": min(cfg["steps"], 3)} if DRY else cfg
+
+
+def _sync() -> None:
+    if DEVICE == "cuda":
+        import torch
+
+        torch.cuda.synchronize()
 
 # Selection rules (fixed before any benchmark result was seen)
 SELECTION_RULES = {
@@ -105,28 +123,33 @@ def cfg_name(c: dict) -> str:
     return f"s{c['steps']}_{c['spacing'][0]}_g{c['guidance']:g}_e{c['eta']:g}"
 
 
-def halves(st, split: str):
+def halves(st, split: str, n: int = N_HALF):
     from nullscape.eval.artifacts import ArtifactSpec, eval_halves
 
-    return eval_halves(st, ArtifactSpec(split=split, n_eval=N_HALF))
+    return eval_halves(st, ArtifactSpec(split=split, n_eval=n))
 
 
 def sampler_for(step: int):
     from nullscape.inference.sampler import TerrainSampler
 
-    return TerrainSampler.from_checkpoint(CKPTS[step], device="cuda")
+    return TerrainSampler.from_checkpoint(CKPTS[step], device=DEVICE)
 
 
 def conditional_gen(sampler, st, idx, cfg: dict, seed: int, batch: int = BATCH) -> tuple[np.ndarray, float]:
-    import torch
-
     k = len(st.condition_keys)
-    torch.cuda.synchronize()
+    _sync()
     t0 = time.time()
     g = sampler.sample(n=len(idx), seed=seed, cond_raw=st.conditions[idx], known=np.ones((len(idx), k), bool),
-                       labels=st.labels[idx], batch_size=batch, **cfg)
-    torch.cuda.synchronize()
+                       labels=st.labels[idx], batch_size=batch, **_dry_cfg(cfg))
+    _sync()
     return g, time.time() - t0
+
+
+def _empty_cache() -> None:
+    if DEVICE == "cuda":
+        import torch
+
+        torch.cuda.empty_cache()
 
 
 def compact(rep: dict) -> dict:
@@ -150,6 +173,10 @@ def compact(rep: dict) -> dict:
         out["per_archetype_ratio"] = {k: v["ratio"] for k, v in rep["per_archetype"].items()}
     if "memorization" in rep:
         out["memorization"] = rep["memorization"]
+    # n-independent view: distance in excess of the sampling-noise floor (same units as the distance)
+    out["excess_over_floor"] = {k: out["model"][k] - out["floor"][k] for k in out["model"]}
+    out["rapsd_bias_decades"] = float(np.sqrt(max(out["model"]["rapsd_distance"] ** 2 -
+                                                  out["floor"]["rapsd_distance"] ** 2, 0.0)))
     return out
 
 
@@ -194,13 +221,17 @@ def stage_provenance(args) -> None:
     })
 
 
-def stage_checkpoints_test(args) -> None:
-    import torch
+def test_spec():
+    from nullscape.eval.artifacts import ArtifactSpec
 
-    from nullscape.eval.artifacts import ArtifactSpec, generate_checkpoint_artifacts, step_dir_name
+    return ArtifactSpec(split="test", n_eval=N_HALF, batch_size=BATCH, **({"steps": 3, "n_3d": 1} if DRY else {}))
+
+
+def stage_checkpoints_test(args) -> None:
+    from nullscape.eval.artifacts import generate_checkpoint_artifacts, step_dir_name
 
     st = store()
-    spec = ArtifactSpec(split="test", n_eval=N_HALF, batch_size=BATCH)
+    spec = test_spec()
     bank = st.heights(st.split("train"))
     timing = {}
     for step in CKPTS:
@@ -209,11 +240,11 @@ def stage_checkpoints_test(args) -> None:
             continue
         t0 = time.time()
         s = sampler_for(step)
-        generate_checkpoint_artifacts(s, st, ART, step, spec, train_bank=bank, memorization_device="cuda",
+        generate_checkpoint_artifacts(s, st, ART, step, spec, train_bank=bank, memorization_device=DEVICE,
                                       save_generated=True)
         timing[step] = time.time() - t0
         del s
-        torch.cuda.empty_cache()
+        _empty_cache()
         print(f"[checkpoints_test] {step} done in {timing[step]:.0f}s", flush=True)
     reports = {str(s): json.loads((ART / step_dir_name(s) / "report.json").read_text())["modes"]["conditional"]
                for s in CKPTS}
@@ -222,8 +253,6 @@ def stage_checkpoints_test(args) -> None:
 
 
 def stage_checkpoints_val(args) -> None:
-    import torch
-
     from nullscape.eval.core import evaluate_generated
     from nullscape.metrics.distribution import metric_table
 
@@ -242,7 +271,7 @@ def stage_checkpoints_val(args) -> None:
                                  archetype_names=st.archetypes, tables={**tables, "gen": metric_table(gen, st.world)})
         out[str(step)] = {"compact": compact(rep), "sampling_seconds": secs, "report": rep}
         del s
-        torch.cuda.empty_cache()
+        _empty_cache()
         print(f"[checkpoints_val] {step}: ratio {rep['ratio_to_floor']}", flush=True)
     save_json("checkpoints_val", {"n_per_half": len(a), "sampler": DEFAULT_SAMPLER, "results": out})
 
@@ -275,9 +304,7 @@ def sampler_grid() -> list[dict]:
     return grid
 
 
-def _sampler_eval(split: str, configs: list[dict], name: str, fixed_visual: bool) -> None:
-    import torch
-
+def _sampler_eval(split: str, configs: list[dict], name: str, fixed_visual: bool, n: int = N_HALF) -> None:
     from nullscape.eval.artifacts import ArtifactSpec, fixed_indices
     from nullscape.eval.core import evaluate_generated
     from nullscape.metrics.distribution import metric_table
@@ -285,14 +312,13 @@ def _sampler_eval(split: str, configs: list[dict], name: str, fixed_visual: bool
     st = store()
     step = load_json("selection")["checkpoint"]
     s = sampler_for(step)
-    a, b = halves(st, split)
+    a, b = halves(st, split, n)
     ref_a, ref_b = st.heights(a), st.heights(b)
     tables = {"a": metric_table(ref_a, st.world), "b": metric_table(ref_b, st.world)}
     fx = fixed_indices(st, ArtifactSpec(split=split))
     rows, fixed = {}, {}
     for cfg in configs:
-        seed = 2027 if split == "val" else 2027  # eval-set noise seed shared by every config
-        gen, secs = conditional_gen(s, st, a, cfg, seed=seed)
+        gen, secs = conditional_gen(s, st, a, cfg, seed=2027)  # same noise seeds for every config
         rep = evaluate_generated(gen, ref_a, ref_b, st.world, requested_conds=st.conditions[a],
                                  gen_labels=st.labels[a], ref_a_labels=st.labels[a], ref_b_labels=st.labels[b],
                                  archetype_names=st.archetypes, tables={**tables, "gen": metric_table(gen, st.world)})
@@ -301,15 +327,20 @@ def _sampler_eval(split: str, configs: list[dict], name: str, fixed_visual: bool
             fixed[cfg_name(cfg)] = conditional_gen(s, st, fx, cfg, seed=2026)[0]
         print(f"[{name}] {cfg_name(cfg)}: ratio {rep['ratio_to_floor']['metric_w1_mean']:.3f} "
               f"rapsd {rep['ratio_to_floor']['rapsd_distance']:.3f} {secs / len(a) * 1000:.1f} ms/map", flush=True)
-        torch.cuda.empty_cache()
+        _empty_cache()
     save_json(name, {"checkpoint": step, "split": split, "n_per_half": len(a), "rows": rows})
     if fixed_visual:
         GEN.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(GEN / f"{name}_fixed.npz", indices=fx, **fixed)
 
 
+N_SWEEP = 8 if DRY else 500  # VAL sampler grid only ranks configs against each other; TEST confirmation uses N_HALF
+PERF_BATCHES = (1, 4) if DRY else (1, 32, 128, 256)
+COST_BATCH = 4 if DRY else 128
+
+
 def stage_sampler_val(args) -> None:
-    _sampler_eval("val", sampler_grid(), "sampler_val", fixed_visual=True)
+    _sampler_eval("val", sampler_grid(), "sampler_val", fixed_visual=True, n=N_SWEEP)
 
 
 def _peak_rss_mb() -> float | None:
@@ -355,18 +386,20 @@ def stage_perf(args) -> None:
     load_s = time.time() - t0
     fx = st.split("test")[:256]
     rows = []
+    gpu = DEVICE == "cuda"
     for steps, guidance in itertools.product((25, 50, 100, 200), (1.0, 1.5)):
-        for bs in (1, 32, 128, 256):
+        for bs in PERF_BATCHES:
             n = 4 if bs == 1 else bs
             cfg = {"steps": steps, "spacing": "uniform", "eta": 0.0, "guidance": guidance}
-            conditional_gen(s, st, fx[: min(n, 8)], {**cfg, "steps": 5}, seed=1, batch=bs)  # warm-up this shape
-            torch.cuda.reset_peak_memory_stats()
+            conditional_gen(s, st, fx[:bs], {**cfg, "steps": 2}, seed=1, batch=bs)  # warm-up this exact shape
+            if gpu:
+                torch.cuda.reset_peak_memory_stats()
             _, secs = conditional_gen(s, st, fx[:n], cfg, seed=7, batch=bs)
             rows.append({"steps": steps, "guidance": guidance, "cfg_doubles_batch": guidance != 1.0, "batch": bs,
                          "maps": n, "seconds": secs, "seconds_per_map": secs / n, "maps_per_second": n / secs,
                          "latency_seconds_per_batch": secs / max(1, n // bs),
-                         "peak_alloc_mb": torch.cuda.max_memory_allocated() / 2**20,
-                         "peak_reserved_mb": torch.cuda.max_memory_reserved() / 2**20,
+                         "peak_alloc_mb": torch.cuda.max_memory_allocated() / 2**20 if gpu else 0.0,
+                         "peak_reserved_mb": torch.cuda.max_memory_reserved() / 2**20 if gpu else 0.0,
                          "nvidia_smi_used_mb": _nvsmi_used_mb()})
             print(f"[perf] steps {steps} g {guidance} bs {bs}: {n / secs:.2f} maps/s "
                   f"peak {rows[-1]['peak_alloc_mb']:.0f} MB", flush=True)
@@ -396,7 +429,7 @@ def stage_perf(args) -> None:
                        "note": "cost is independent of spacing and eta; measured with uniform spacing, eta 0"})
 
 
-def iso_cost(perf: dict, cfg: dict, batch: int = 128) -> float:
+def iso_cost(perf: dict, cfg: dict, batch: int = COST_BATCH) -> float:
     g = 1.0 if cfg["guidance"] == 1.0 else 1.5
     for r in perf["rows"]:
         if r["steps"] == cfg["steps"] and r["guidance"] == g and r["batch"] == batch:
@@ -441,8 +474,6 @@ def stage_sampler_test(args) -> None:
 
 
 def stage_stress(args) -> None:
-    import torch
-
     from nullscape.metrics.quality import CONDITION_KEYS, compute_metrics
 
     st = store()
@@ -465,7 +496,8 @@ def stage_stress(args) -> None:
 
     def run(case_cond, case_known, labels, seed):
         n = len(case_cond)
-        maps = s.sample(n=n, seed=seed, cond_raw=case_cond, known=case_known, labels=labels, batch_size=BATCH, **cfg)
+        maps = s.sample(n=n, seed=seed, cond_raw=case_cond, known=case_known, labels=labels, batch_size=BATCH,
+                        **_dry_cfg(cfg))
         return maps, np.stack([[compute_metrics(h, st.world)[k] for k in keys] for h in maps])
 
     def near(j, v, width=0.1):
@@ -473,7 +505,7 @@ def stage_stress(args) -> None:
         return sel if sel.sum() >= 50 else np.argsort(np.abs(ctr[:, j] - v))[:200]
 
     single, seed = {}, 50_000
-    n1 = 64
+    n1, n2, n3 = (4, 2, 2) if DRY else (64, 32, 16)
     for j, k in enumerate(keys):
         for lvl, v in levels[k].items():
             c = np.tile(mean, (n1, 1)); c[:, j] = v
@@ -492,7 +524,7 @@ def stage_stress(args) -> None:
             print(f"[stress] single {k}/{lvl}: req {v:.3f} got {meas[:, j].mean():.3f} nMAE {single[f'{k}/{lvl}']['nmae']:.3f}",
                   flush=True)
 
-    pairs, n2 = {}, 32
+    pairs = {}
     for i, j in itertools.combinations(range(K), 2):
         for li, lj in itertools.product(("low", "high"), repeat=2):
             vi, vj = levels[keys[i]][li], levels[keys[j]][lj]
@@ -525,7 +557,7 @@ def stage_stress(args) -> None:
     unk = {k: float(np.abs(meas[~kn[:, j], j] - req[~kn[:, j], j]).mean() / std[j]) for j, k in enumerate(keys)}
 
     # within-archetype control gain: request the archetype's own p10 vs p90 with the label known
-    gain, n3 = {}, 16
+    gain = {}
     for c_id, arch in enumerate(st.archetypes):
         sel = ctr[ltr == c_id]
         m_arch = sel.mean(0)
@@ -548,7 +580,7 @@ def stage_stress(args) -> None:
                                    "nmae_hi": float(np.abs(res[1] - hi).mean() / std[j])}
         print(f"[stress] gain {arch}: " + " ".join(f"{k}={gain[f'{arch}/{k}']['gain']}" for k in keys), flush=True)
     del s
-    torch.cuda.empty_cache()
+    _empty_cache()
     save_json("stress", {"checkpoint": step, "sampler": cfg, "levels": levels, "train_std": dict(zip(keys, std)),
                          "single": single, "pairs": pairs, "partial_nmae_by_known_count": partial,
                          "partial_unknown_prop_nmae_vs_source_map": unk, "archetype_gain": gain,
@@ -630,11 +662,12 @@ def stage_analysis(args) -> None:
                                    "indices are shared across checkpoints (paired, same conditions/seeds)"}
 
     # 2) per-archetype failure modes (every checkpoint) + leave-one-archetype-out contributions
+    present = [(c, arch) for c, arch in enumerate(names) if (la == c).sum() >= 2 and (lb == c).sum() >= 2]
     arche = {}
     for s in CKPTS:
         g, t, L = gens[s], tg[s], Lg[s]
         per = {}
-        for c, arch in enumerate(names):
+        for c, arch in present:
             ga, gb_ = la == c, lb == c
             ia_, ib_ = np.flatnonzero(ga), np.flatnonzero(gb_)
             fr = np.sqrt(np.mean((La[ia_].mean(0) - Lb[ib_].mean(0)) ** 2))
@@ -662,7 +695,7 @@ def stage_analysis(args) -> None:
         full_r = np.sqrt(np.mean((L.mean(0) - Lb.mean(0)) ** 2))
         full_s = pooled_slope_w1(g, ref_b, world)
         loo = {}
-        for c, arch in enumerate(names):
+        for c, arch in present:
             ka, kb = la != c, lb != c
             loo[arch] = {
                 "rapsd_delta": float(full_r - np.sqrt(np.mean((L[ka].mean(0) - Lb[kb].mean(0)) ** 2))),
@@ -671,24 +704,24 @@ def stage_analysis(args) -> None:
         err = np.abs(np.stack([t[k] for k in keys], 1) - req) / bstd  # [n, K]
         fails_gen = 1 - t["trav_passed"]
         share = {}
-        for c, arch in enumerate(names):
+        pnames = [arch for _, arch in present]
+        excess = lambda k, cc: max(t[k][la == cc].sum() - tb[k][lb == cc].mean() * (la == cc).sum(), 0.0)  # noqa: E731
+        for c, arch in present:
             ga = la == c
             share[arch] = {
                 "adherence_error_share": float(err[ga].sum() / err.sum()),
                 "trav_failure_share_gen": float(fails_gen[ga].sum() / max(fails_gen.sum(), 1)),
                 "trav_excess_failure_rate": float(fails_gen[ga].mean() - (1 - tb["trav_passed"][lb == c]).mean()),
-                **{f"{k}_excess_share": float(max(t[k][ga].sum() - tb[k][lb == c].mean() * ga.sum(), 0) /
-                                              max(sum(max(t[k][la == cc].sum() - tb[k][lb == cc].mean() * (la == cc).sum(), 0)
-                                                      for cc in range(len(names))), 1e-12))
+                **{f"{k}_excess_share": float(excess(k, c) / max(sum(excess(k, cc) for cc, _ in present), 1e-12))
                    for k in ("checkerboard", "hf_energy", "peak_density", "sink_density")}}
         rank = {
-            "spectrum_error": sorted(names, key=lambda x: loo[x]["rapsd_delta"], reverse=True),
-            "slope_error": sorted(names, key=lambda x: loo[x]["slope_w1_delta_deg"], reverse=True),
-            "conditioning_error": sorted(names, key=lambda x: share[x]["adherence_error_share"], reverse=True),
-            "traversability_failures": sorted(names, key=lambda x: share[x]["trav_excess_failure_rate"], reverse=True),
-            "hf_energy_artifacts": sorted(names, key=lambda x: share[x]["hf_energy_excess_share"], reverse=True),
-            "sink_artifacts": sorted(names, key=lambda x: share[x]["sink_density_excess_share"], reverse=True),
-            "overall_metric_ratio": sorted(names, key=lambda x: per[x]["metric_w1_ratio"], reverse=True),
+            "spectrum_error": sorted(pnames, key=lambda x: loo[x]["rapsd_delta"], reverse=True),
+            "slope_error": sorted(pnames, key=lambda x: loo[x]["slope_w1_delta_deg"], reverse=True),
+            "conditioning_error": sorted(pnames, key=lambda x: share[x]["adherence_error_share"], reverse=True),
+            "traversability_failures": sorted(pnames, key=lambda x: share[x]["trav_excess_failure_rate"], reverse=True),
+            "hf_energy_artifacts": sorted(pnames, key=lambda x: share[x]["hf_energy_excess_share"], reverse=True),
+            "sink_artifacts": sorted(pnames, key=lambda x: share[x]["sink_density_excess_share"], reverse=True),
+            "overall_metric_ratio": sorted(pnames, key=lambda x: per[x]["metric_w1_ratio"], reverse=True),
         }
         arche[str(s)] = {"per_archetype": per, "leave_one_out": loo, "shares": share, "rankings": rank}
     result["archetypes"] = arche
@@ -718,13 +751,15 @@ def stage_analysis(args) -> None:
     # 4) memorization deep dive for the selected checkpoint (+ summary for all from the reports)
     sel = load_json("selection")["checkpoint"]
     bank = st.heights(st.split("train"))
-    gnn, gidx = nearest_neighbor_rmse(gens[sel], bank, device="cuda")
-    hnn, _ = nearest_neighbor_rmse(ref_a, bank, device="cuda")
+    gnn, gidx = nearest_neighbor_rmse(gens[sel], bank, device=DEVICE)
+    hnn, _ = nearest_neighbor_rmse(ref_a, bank, device=DEVICE)
     pct = lambda x: {f"p{p:g}": float(np.percentile(x, p)) for p in (0.1, 1, 5, 10, 50, 90)}  # noqa: E731
     per_arch_nn = {}
     rel = np.zeros(len(gnn))
     for c, arch in enumerate(names):
         m = la == c
+        if not m.any():
+            continue
         per_arch_nn[arch] = {"gen_median": float(np.median(gnn[m])), "heldout_median": float(np.median(hnn[m])),
                              "ratio": float(np.median(gnn[m]) / np.median(hnn[m])),
                              "frac_gen_below_heldout_p1": float((gnn[m] < np.percentile(hnn[m], 1)).mean())}
@@ -760,7 +795,66 @@ def stage_analysis(args) -> None:
     fig.savefig(FIG / "memorization_nn_hist.png", dpi=150)
     plt.close(fig)
 
-    # 5) checkpoint trend figure with bootstrap CIs
+    # 5) sensitivity: reference maps are uint16-quantized, generated maps are float. Re-score the selected
+    #    checkpoint after quantizing its output (what an engine export would contain).
+    from nullscape.data.storage import dequantize, quantize
+    from nullscape.eval.core import evaluate_generated
+
+    gq = dequantize(quantize(gens[sel]))
+    rep_q = evaluate_generated(gq, ref_a, ref_b, world, requested_conds=req,
+                               tables={"a": ta, "b": tb, "gen": metric_table(gq, world)})
+    rep_f = json.loads((ART / step_dir_name(sel) / "report.json").read_text())["modes"]["conditional"]
+    result["quantization_sensitivity"] = {
+        "checkpoint": sel, "float": rep_f["ratio_to_floor"], "uint16": rep_q["ratio_to_floor"],
+        "sink_density_gen_float": rep_f["artifacts"]["sink_density_mean_gen"],
+        "sink_density_gen_uint16": rep_q["artifacts"]["sink_density_mean_gen"],
+        "sink_density_ref": rep_f["artifacts"]["sink_density_mean_ref"],
+        "peak_density_gen_float": rep_f["metric_means"]["peak_density"]["gen"],
+        "peak_density_gen_uint16": rep_q["metric_means"]["peak_density"]["gen"],
+        "peak_density_ref": rep_f["metric_means"]["peak_density"]["ref"]}
+
+    # 6) where is the spectrum wrong? mean log10-power difference per radial frequency band
+    kk = np.arange(1, La.shape[1] + 1)
+    bands = {"k1-4 (map-scale shape, >1 km)": (1, 4), "k5-12 (valleys/ridges, 340-820 m)": (5, 12),
+             "k13-24 (hillslopes, 170-315 m)": (13, 24), "k25-32 (finest, 128-165 m)": (25, 32)}
+    spec = {}
+    for s in CKPTS:
+        d = Lg[s].mean(0) - Lb.mean(0)
+        spec[str(s)] = {"per_k_diff_decades": d.tolist(),
+                        "bands": {bn: {"mean_diff_decades": float(d[(kk >= lo) & (kk <= hi)].mean()),
+                                       "rms_diff_decades": float(np.sqrt((d[(kk >= lo) & (kk <= hi)] ** 2).mean()))}
+                                  for bn, (lo, hi) in bands.items()},
+                        "per_archetype_bands": {arch: {bn: float((Lg[s][la == c].mean(0) - Lb[lb == c].mean(0))
+                                                                  [(kk >= lo) & (kk <= hi)].mean())
+                                                       for bn, (lo, hi) in bands.items()}
+                                                for c, arch in present}}
+    df = La.mean(0) - Lb.mean(0)
+    spec["floor_A_minus_B"] = {"per_k_diff_decades": df.tolist(),
+                               "bands": {bn: {"mean_diff_decades": float(df[(kk >= lo) & (kk <= hi)].mean())}
+                                         for bn, (lo, hi) in bands.items()}}
+    result["spectrum_bands"] = spec
+    fig, axes = plt.subplots(1, 2, figsize=(11, 3.8))
+    for s in CKPTS:
+        axes[0].plot(kk, Lg[s].mean(0) - Lb.mean(0), label=f"{s // 1000}k")
+    axes[0].plot(kk, df, "k--", lw=1, label="floor (A - B)")
+    axes[0].axhline(0, color="k", lw=0.5)
+    axes[0].set_xscale("log")
+    axes[0].set_xlabel("radial frequency k (cycles / 4.1 km map)")
+    axes[0].set_ylabel("mean log10 power: learned - procedural")
+    axes[0].set_title("Spectrum error by frequency (TEST, all checkpoints)", fontsize=9)
+    axes[0].legend(fontsize=7)
+    for c, arch in present:
+        axes[1].plot(kk, Lg[sel][la == c].mean(0) - Lb[lb == c].mean(0), label=arch)
+    axes[1].axhline(0, color="k", lw=0.5)
+    axes[1].set_xscale("log")
+    axes[1].set_xlabel("radial frequency k")
+    axes[1].set_title(f"Spectrum error by archetype (step {sel})", fontsize=9)
+    axes[1].legend(fontsize=7)
+    fig.tight_layout()
+    fig.savefig(FIG / "spectrum_error_by_frequency.png", dpi=150)
+    plt.close(fig)
+
+    # 7) checkpoint trend figure with bootstrap CIs
     fig, axes = plt.subplots(1, 2, figsize=(10, 3.6))
     xs = list(CKPTS)
     for ax, m, title in ((axes[0], "w1", "metric_w1_mean / floor"), (axes[1], "rapsd", "RAPSD distance / floor")):
@@ -839,21 +933,22 @@ def stage_figures(args) -> None:
         K = len(keys)
         mat = np.full((K, K), np.nan)
         for v in sres["pairs"].values():
+            if v["train_support"] == 0:  # combination never occurs in training data: reported separately
+                continue
             i, j = keys.index(v["a"]), keys.index(v["b"])
-            ra = v["a_nmae"] / max(v["a_nmae_alone"], 1e-6)
-            rb = v["b_nmae"] / max(v["b_nmae_alone"], 1e-6)
-            mat[i, j] = np.nanmax([mat[i, j], ra])
-            mat[j, i] = np.nanmax([mat[j, i], rb])
-        fig, ax = plt.subplots(figsize=(5.5, 4.6))
-        im = ax.imshow(mat, cmap="magma_r", vmin=0.5, vmax=max(3.0, np.nanmax(mat)))
+            mat[i, j] = np.nanmax([mat[i, j], v["a_nmae"] - v["a_nmae_alone"]])
+            mat[j, i] = np.nanmax([mat[j, i], v["b_nmae"] - v["b_nmae_alone"]])
+        fig, ax = plt.subplots(figsize=(5.8, 4.6))
+        lim = max(0.5, float(np.nanmax(np.abs(mat)))) if np.isfinite(mat).any() else 0.5
+        im = ax.imshow(mat, cmap="RdBu_r", vmin=-lim, vmax=lim)
         ax.set_xticks(range(K), keys, rotation=40, ha="right", fontsize=7)
         ax.set_yticks(range(K), keys, fontsize=7)
         for i in range(K):
             for j in range(K):
                 if not np.isnan(mat[i, j]):
-                    ax.text(j, i, f"{mat[i, j]:.1f}", ha="center", va="center", fontsize=7, color="w")
-        plt.colorbar(im, ax=ax, label="worst nMAE(row | paired with col) / nMAE(row alone)")
-        ax.set_title("Conditioning interference (extreme p5/p95 pairs)", fontsize=9)
+                    ax.text(j, i, f"{mat[i, j]:+.2f}", ha="center", va="center", fontsize=7)
+        plt.colorbar(im, ax=ax, label="worst extra nMAE of row when paired with col (std units)")
+        ax.set_title("Conditioning interference (p5/p95 pairs seen in training data)", fontsize=9)
         fig.tight_layout()
         _save(fig, FIG / "stress_interference.png")
         gains = np.array([[sres["archetype_gain"][f"{a}/{k}"]["gain"] if sres["archetype_gain"][f"{a}/{k}"]["gain"]
@@ -874,11 +969,12 @@ def stage_figures(args) -> None:
         sel = str(load_json("selection")["checkpoint"])
         per = an["archetypes"][sel]["per_archetype"]
         cols = ["metric_w1_ratio", "rapsd_ratio", "slope_w1_ratio", "adherence_nmae_mean"]
-        mat = np.array([[per[a][c] for c in cols] for a in st.archetypes])
+        arch_rows = [a for a in st.archetypes if a in per]
+        mat = np.array([[per[a][c] for c in cols] for a in arch_rows])
         fig, ax = plt.subplots(figsize=(6.5, 4))
         im = ax.imshow(mat, cmap="magma_r")
         ax.set_xticks(range(len(cols)), cols, rotation=30, ha="right", fontsize=7)
-        ax.set_yticks(range(len(st.archetypes)), st.archetypes, fontsize=7)
+        ax.set_yticks(range(len(arch_rows)), arch_rows, fontsize=7)
         for i in range(mat.shape[0]):
             for j in range(mat.shape[1]):
                 ax.text(j, i, f"{mat[i, j]:.2f}", ha="center", va="center", fontsize=7, color="w")
@@ -913,9 +1009,14 @@ def stage_aggregate(args) -> None:
                  "sampler_test", "stress", "analysis", "training", "engineering"):
         if (RAW / f"{name}.json").exists():
             d = load_json(name)
-            if name == "checkpoints_val":
+            if name == "checkpoints_val":  # rebuild with the current compact() from the stored full reports
                 d = {"n_per_half": d["n_per_half"], "sampler": d["sampler"],
-                     "compact": {k: v["compact"] for k, v in d["results"].items()}}
+                     "compact": {k: compact(v["report"]) for k, v in d["results"].items()}}
+            if name == "checkpoints_test":
+                from nullscape.eval.artifacts import step_dir_name
+
+                d["compact"] = {str(s): compact(json.loads((ART / step_dir_name(s) / "report.json").read_text())
+                                                ["modes"]["conditional"]) for s in CKPTS}
             res[name] = d
     (OUT / "results.json").write_text(json.dumps(res, indent=2, default=_json_default), encoding="utf-8")
     print(f"[aggregate] -> {OUT / 'results.json'}")

@@ -1,7 +1,7 @@
 """Engineering benchmark for NULLSCAPE v1 (CPU only; never writes to data/ or runs/).
 
 Writes benchmarks/v1/raw/engineering.json and scratch outputs under benchmarks/v1/engineering/.
-Run with CUDA_VISIBLE_DEVICES="" so nothing touches the GPU while GPU benchmarks run.
+Run with CUDA_VISIBLE_DEVICES=-1 so nothing touches the GPU while GPU benchmarks run.
 """
 
 from __future__ import annotations
@@ -26,7 +26,8 @@ CKPT = ROOT / "runs" / "20260925-164759_diffusion64" / "checkpoints" / "step_003
 
 
 def cpu_env(**extra) -> dict:
-    env = {**os.environ, "CUDA_VISIBLE_DEVICES": "", "OMP_NUM_THREADS": "2", "PYTHONUNBUFFERED": "1", **extra}
+    # "-1", not "": with an empty value torch 2.11 on Windows reports is_available()=True with 0 devices
+    env = {**os.environ, "CUDA_VISIBLE_DEVICES": "-1", "OMP_NUM_THREADS": "2", "PYTHONUNBUFFERED": "1", **extra}
     return env
 
 
