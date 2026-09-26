@@ -372,6 +372,7 @@
         <div class="use reveal"><h3>Batch generation</h3><p>Generate a whole day's worth of maps in seconds on a desktop GPU and serve them, rather than running the model on every player's machine.</p></div>
         <div class="use reveal"><h3>A research baseline</h3><p>The frozen benchmark and scorecard exist so every future version gets measured the same way, with a column for exactly how much it improved.</p></div>
       </div>
+      <p class="prose reveal" style="margin-top:28px;color:var(--text-2)">Want to walk one? The repository includes a playable prototype, <a href="../../demo/nullscape-demo.html">demo/nullscape-demo.html</a>. It's a first-person daily run through 30 v1 maps, with a low-res neon look, a timer and a beacon route to follow.</p>
 <pre><span class="c"># generate 16 islands with lots of water, ready for Unity</span>
 nullscape sample --checkpoint runs/.../step_0030000.pt <span class="a">--archetype islands --prop water_fraction=0.6</span> \
   --steps 50 --spacing quadratic --guidance 2.0 --n 16 --formats png16,r16,obj --unity</pre>

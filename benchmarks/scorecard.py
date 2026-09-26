@@ -95,7 +95,8 @@ def delta(new, old):
 
 
 def main() -> None:
-    specs = sys.argv[1:] or ["v1=benchmarks/v1/results.json"]
+    flags = {a.split("=", 1)[0]: a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--")}
+    specs = [a for a in sys.argv[1:] if not a.startswith("--")] or ["v1=benchmarks/v1/results.json"]
     results = {s.split("=")[0]: json.loads((ROOT / s.split("=")[1]).read_text(encoding="utf-8")) for s in specs}
     cols: dict[str, dict] = {}
     for tag, r in results.items():
@@ -180,13 +181,14 @@ def main() -> None:
         ["NN-to-train median ratio", f"{c['memorization']['nn_median_ratio']:.3f}"] if "memorization" in c else None,
     ]
     lines += [""] + _table(["quantity", "value"], [e for e in extra if e])
-    out_md = ROOT / "docs" / "BENCHMARK_SCORECARD.md"
+    out_md = ROOT / flags.get("--out", "docs/BENCHMARK_SCORECARD.md")
     out_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    out_json = ROOT / "benchmarks" / "scorecard.json"
+    out_json = ROOT / flags.get("--json", str(Path("benchmarks") / "scorecard.json"))
     out_json.write_text(json.dumps({"headline": cur, "compared_to": prev, "scores": sc,
                                     "speed_maps_per_s": {k: v["speed"] for k, v in cols.items()},
                                     "definitions": {n: w for n, w, _ in BENCHMARKS}}, indent=2), encoding="utf-8")
-    _figure(sc, cur, prev, list(base_cols), names[:-1], ROOT / "docs" / "figures" / "benchmark_scorecard.png")
+    _figure(sc, cur, prev, list(base_cols), names[:-1],
+            ROOT / flags.get("--fig", str(Path("docs") / "figures" / "benchmark_scorecard.png")))
     print(f"wrote {out_md} and {out_json}")
 
 
