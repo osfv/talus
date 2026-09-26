@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Talus-2: flat ground, finally flat | NULLSCAPE</title>
+<meta name="description" content="Talus-2 changes how the NULLSCAPE terrain model sees height. Benchmark average 70.4 to 77.5, plains fixed, micro-relief now matches real terrain.">
+<meta name="color-scheme" content="dark">
+<style>
+  /* Palette is locked to the NULLSCAPE game look: magenta = primary accent, yellow = key numbers,
+     cyan = Talus-2 data. Neutrals are violet-greys. Dark only, by design of the pixel theme. */
+  :root {
+    --bg: #0b0812; --bg-2: #120d1c; --bg-3: #1a1328; --line: #2a2140;
+    --text: #efe9fb; --text-2: #b7aed0; --text-3: #7f769a;
+    --mag: #ff3d9a; --mag-deep: #7a0f4a; --yel: #ffe45e; --cyan: #36f1ff;
+    --notch: 8px;
+    --mono: "Cascadia Code", "Cascadia Mono", Consolas, "SF Mono", ui-monospace, monospace;
+    --display: "Bahnschrift Condensed", "Bahnschrift", "Segoe UI Variable Display", "Arial Narrow", sans-serif;
+    --body: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; background: var(--bg); }
+  body { margin: 0; color: var(--text); font: 17px/1.7 var(--body); -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--mag); color: var(--bg); }
+  a { color: var(--cyan); text-underline-offset: 3px; }
+  body::after { /* scanlines + vignette: fixed, non-interactive, never on scrolling containers */
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 50;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.16) 0 1px, transparent 1px 3px),
+                radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%);
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 28px; }
+  .mono { font-family: var(--mono); }
+  h1, h2, h3 { font-family: var(--display); text-transform: uppercase; line-height: 1; margin: 0; letter-spacing: 0.01em; }
+  h2 { font-size: clamp(2.1rem, 4.4vw, 3.4rem); font-weight: 700; text-shadow: 3px 3px 0 var(--mag-deep); margin-bottom: 18px; }
+  h3 { font-size: 1.35rem; font-weight: 700; letter-spacing: 0.02em; }
+  p { color: var(--text-2); margin: 0 0 16px; }
+  strong { color: var(--text); font-weight: 600; }
+  .prose { max-width: 62ch; }
+  .kicker { font: 600 0.78rem/1 var(--mono); letter-spacing: 0.22em; text-transform: uppercase; color: var(--yel); }
+  .pix { clip-path: polygon(var(--notch) 0, calc(100% - var(--notch)) 0, 100% var(--notch), 100% calc(100% - var(--notch)),
+         calc(100% - var(--notch)) 100%, var(--notch) 100%, 0 calc(100% - var(--notch)), 0 var(--notch)); }
+  canvas.tile { display: block; width: 100%; height: auto; aspect-ratio: 1; image-rendering: pixelated; }
+
+  /* top bar */
+  .bar { position: fixed; top: 0; left: 0; right: 0; z-index: 40; transition: background .3s var(--ease), border-color .3s var(--ease);
+         border-bottom: 1px solid transparent; }
+  .bar.solid { background: rgba(11, 8, 18, 0.86); border-color: var(--line); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .bar .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .logo { font: 700 1.05rem/1 var(--mono); letter-spacing: 0.16em; color: var(--text); text-decoration: none; }
+  .logo b { color: var(--mag); }
+  .bar nav { display: flex; gap: 28px; }
+  .bar nav a { font: 600 0.8rem/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-2); text-decoration: none; }
+  .bar nav a:hover { color: var(--yel); }
+
+  /* hero */
+  .hero { position: relative; min-height: min(92dvh, 980px); display: grid; align-items: end; overflow: hidden; }
+  #sky { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+  .hero::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background: linear-gradient(90deg, rgba(11,8,18,0.92) 0%, rgba(11,8,18,0.55) 42%, transparent 70%),
+                linear-gradient(0deg, var(--bg) 0%, transparent 28%); }
+  .hero .wrap { position: relative; z-index: 2; width: 100%; padding-top: 110px; padding-bottom: 76px; }
+  .hero h1 { font-size: clamp(4.4rem, 12vw, 9.5rem); font-weight: 700; margin: 18px 0 10px; color: var(--text);
+             text-shadow: 5px 5px 0 var(--mag), 10px 10px 0 var(--mag-deep); letter-spacing: 0.02em; }
+  .hero .sub { font: 700 clamp(1.4rem, 2.6vw, 2rem)/1.15 var(--display); text-transform: uppercase; color: var(--yel); margin-bottom: 18px; }
+  .hero .lede { font-size: 1.12rem; max-width: 44ch; color: var(--text-2); margin-bottom: 30px; }
+  .cta { display: flex; gap: 18px; flex-wrap: wrap; }
+  .btn { display: inline-block; font: 700 0.86rem/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none;
+         padding: 15px 22px; background: var(--mag); color: var(--bg); box-shadow: 5px 5px 0 var(--yel);
+         transition: transform .18s steps(3), box-shadow .18s steps(3); }
+  .btn:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--yel); }
+  .btn:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--yel); }
+  .btn.ghost { background: transparent; color: var(--text); box-shadow: inset 0 0 0 2px var(--text-2), 5px 5px 0 var(--line); }
+  .btn.ghost:hover { box-shadow: inset 0 0 0 2px var(--yel), 7px 7px 0 var(--line); }
+  .hud { position: absolute; z-index: 2; right: 28px; bottom: 26px; font: 600 0.72rem/1.5 var(--mono); letter-spacing: 0.14em; text-transform: uppercase;
+         color: var(--text-3); text-align: right; }
+  .hud b { color: var(--cyan); font-weight: 600; }
+
+  /* stats */
+  .stats { border-top: 2px solid var(--line); border-bottom: 2px solid var(--line); background: var(--bg-2); }
+  .stats .wrap { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .stat { padding: 28px 24px; border-left: 2px solid var(--line); }
+  .stat:first-child { border-left: 0; padding-left: 0; }
+  .stat .n { font: 700 clamp(2.2rem, 4.2vw, 3.2rem)/1 var(--mono); color: var(--yel); letter-spacing: -0.02em; }
+  .stat .n small { font-size: 0.42em; color: var(--text-3); margin-left: 6px; letter-spacing: 0; }
+  .stat .l { margin-top: 10px; font-size: 0.9rem; color: var(--text-2); }
+  .stat .was { font: 0.78rem var(--mono); color: var(--text-3); margin-top: 4px; }
+
+  section { padding: 110px 0 0; }
+  .split { display: grid; grid-template-columns: 1fr 1.05fr; gap: 64px; align-items: center; }
+
+  /* before/after slider */
+  .ba { position: relative; background: var(--bg-3); padding: 14px; user-select: none; }
+  .ba-stage { position: relative; aspect-ratio: 1; cursor: ew-resize; touch-action: none; }
+  .ba-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+  .ba-stage canvas.top { clip-path: inset(0 calc(100% - var(--x, 50%)) 0 0); }
+  .ba-handle { position: absolute; top: 0; bottom: 0; left: var(--x, 50%); width: 4px; margin-left: -2px; background: var(--yel);
+               box-shadow: 0 0 0 2px var(--bg); pointer-events: none; }
+  .ba-handle::after { content: ""; position: absolute; top: 50%; left: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; background: var(--yel);
+                      box-shadow: 0 0 0 3px var(--bg); }
+  .ba-labels { display: flex; justify-content: space-between; margin-top: 12px; font: 600 0.78rem/1 var(--mono); letter-spacing: 0.14em;
+               text-transform: uppercase; }
+  .ba-labels .l { color: var(--mag); } .ba-labels .r { color: var(--cyan); }
+  .ba input { position: absolute; inset: 14px 14px auto 14px; width: calc(100% - 28px); aspect-ratio: 1; opacity: 0; cursor: ew-resize; margin: 0; }
+  figcaption { font-size: 0.86rem; color: var(--text-3); margin-top: 12px; line-height: 1.5; }
+
+  /* fix: range bars */
+  .ranges { background: var(--bg-2); padding: 28px; margin-top: 8px; }
+  .ranges h3 { font-size: 1rem; color: var(--text-2); margin-bottom: 16px; font-family: var(--mono); letter-spacing: 0.1em; }
+  .rg { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 14px; margin: 10px 0; font: 0.82rem var(--mono); color: var(--text-2); }
+  .rg .track { position: relative; height: 18px; }
+  .rg .fill { position: absolute; top: 0; bottom: 0; left: var(--a); width: var(--w);
+              background: repeating-linear-gradient(90deg, var(--c) 0 6px, transparent 6px 8px);
+              transform-origin: left; transform: scaleX(0); transition: transform .9s steps(12); }
+  .in .rg .fill { transform: scaleX(1); }
+  .formula { font: 600 1.05rem/1.6 var(--mono); color: var(--text); background: var(--bg-3); padding: 18px 20px; margin: 20px 0 22px; border-left: 4px solid var(--mag); }
+  .formula span { color: var(--cyan); }
+
+  /* comparison grid */
+  .cmp { margin-top: 34px; display: grid; grid-template-columns: 110px repeat(6, 1fr); gap: 10px; align-items: center; }
+  .cmp .hd { font: 600 0.74rem/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); text-align: center; padding-bottom: 4px; }
+  .cmp .rl { font: 700 0.8rem/1.2 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-2); }
+  .cmp .rl.t2 { color: var(--cyan); }
+  .cmp .cell { background: var(--bg-3); padding: 5px; }
+  .cmp .cell.t2 { background: rgba(54, 241, 255, 0.14); }
+
+  /* scorecard */
+  .score { margin-top: 34px; background: var(--bg-2); }
+  .srow { display: grid; grid-template-columns: 1.2fr 2.3fr 0.7fr 0.7fr 0.8fr; gap: 14px; align-items: center; padding: 13px 22px;
+          border-top: 2px solid var(--bg); }
+  .srow.head { font: 600 0.72rem/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); border-top: 0; padding-top: 18px; }
+  .srow .nm b { display: block; font: 700 1.02rem/1.2 var(--display); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text); }
+  .srow .nm span { font-size: 0.8rem; color: var(--text-3); }
+  .bar2 { display: flex; align-items: center; gap: 12px; }
+  .bar2 i { display: block; height: 14px; width: calc(var(--v) * 1%);
+            background: repeating-linear-gradient(90deg, var(--cyan) 0 8px, transparent 8px 10px);
+            clip-path: inset(0 100% 0 0); transition: clip-path 1.1s steps(18); }
+  .in .bar2 i { clip-path: inset(0 0 0 0); }
+  .bar2 em { font: 700 1rem var(--mono); font-style: normal; color: var(--text); min-width: 4ch; }
+  .sc { font: 0.9rem var(--mono); color: var(--text-2); text-align: right; }
+  .sc.up { color: var(--yel); } .sc.down { color: var(--mag); }
+  .srow.total { background: var(--bg-3); }
+  .srow.total .nm b { color: var(--yel); }
+  .score-note { padding: 14px 22px 18px; font-size: 0.84rem; color: var(--text-3); }
+
+  /* findings bento: 5 cells */
+  .bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-top: 34px; }
+  .card { background: var(--bg-2); padding: 26px; position: relative; }
+  .card .big { font: 700 clamp(2rem, 3.6vw, 2.9rem)/1 var(--mono); color: var(--yel); letter-spacing: -0.02em; }
+  .card .big .arr { color: var(--mag); padding: 0 6px; }
+  .card h3 { margin: 14px 0 8px; }
+  .card p { margin: 0; font-size: 0.95rem; }
+  .c1 { grid-column: span 4; background: linear-gradient(135deg, rgba(255,61,154,0.18), transparent 55%), var(--bg-2); }
+  .c2 { grid-column: span 2; }
+  .c3 { grid-column: span 2; }
+  .c4 { grid-column: span 2; }
+  .c5 { grid-column: span 2; background: repeating-linear-gradient(45deg, rgba(255,228,94,0.06) 0 6px, transparent 6px 12px), var(--bg-2); }
+
+  /* spot the real one */
+  .game { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 30px; }
+  .round { background: var(--bg-2); padding: 14px; transition: background .25s steps(3); }
+  .round .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .round button { all: unset; cursor: pointer; display: block; background: var(--bg-3); padding: 4px; outline-offset: 3px; }
+  .round button:hover { background: var(--line); }
+  .round button:focus-visible { outline: 2px solid var(--yel); }
+  .round .meta { display: flex; justify-content: space-between; margin-top: 10px; font: 600 0.74rem/1.3 var(--mono); letter-spacing: 0.1em;
+                 text-transform: uppercase; color: var(--text-3); min-height: 1.3em; }
+  .round.right { background: rgba(54, 241, 255, 0.12); }
+  .round.wrong { background: rgba(255, 61, 154, 0.14); }
+  .round.done button { cursor: default; }
+  .tally { margin-top: 20px; font: 700 1.05rem var(--mono); color: var(--yel); min-height: 1.6em; }
+
+  /* limits + play */
+  .limits { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 56px; margin-top: 26px; }
+  .limit { padding: 20px 0 20px 34px; border-top: 2px solid var(--line); position: relative; }
+  .limit::before { content: ""; position: absolute; left: 0; top: 30px; width: 12px; height: 12px; background: var(--mag); box-shadow: 4px 4px 0 var(--mag-deep); }
+  .limit p { margin: 6px 0 0; font-size: 0.95rem; }
+  .play { margin-top: 110px; background: linear-gradient(120deg, rgba(255,61,154,0.22), rgba(54,241,255,0.10)), var(--bg-2); padding: 56px; display: grid;
+          grid-template-columns: 1fr auto; gap: 28px 40px; align-items: end; }
+  .play pre { grid-column: 1 / -1; }
+  .play p { max-width: 52ch; margin-bottom: 0; }
+  .play h2 { margin-bottom: 12px; }
+  pre { margin: 0; background: var(--bg); padding: 18px 20px; overflow-x: auto; font: 0.82rem/1.65 var(--mono); color: var(--text-2); }
+  pre b { color: var(--cyan); font-weight: 600; }
+  footer { margin-top: 90px; border-top: 2px solid var(--line); padding: 30px 0 56px; font: 0.8rem/1.6 var(--mono); color: var(--text-3); }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  footer a { color: var(--text-2); }
+
+  /* motion: text fades, visuals wipe in stepped pixels */
+  .rv { opacity: 0; transform: translateY(18px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
+  .rv.in { opacity: 1; transform: none; }
+  .wipe { clip-path: inset(0 100% 0 0); }
+  .wipe.in { animation: wipe .75s steps(10) forwards; }
+  @keyframes wipe { to { clip-path: inset(0 0 0 0); } }
+  .wipe.pix.in { animation-name: wipepix; }
+  @keyframes wipepix { from { clip-path: polygon(0 0, 0 0, 0 100%, 0 100%); }
+    to { clip-path: polygon(var(--notch) 0, calc(100% - var(--notch)) 0, 100% var(--notch), 100% calc(100% - var(--notch)),
+         calc(100% - var(--notch)) 100%, var(--notch) 100%, 0 calc(100% - var(--notch)), 0 var(--notch)); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .rv, .rv.in { opacity: 1; transform: none; transition: none; }
+    .wipe, .wipe.in { clip-path: none; animation: none; }
+    .wipe.pix, .wipe.pix.in { clip-path: polygon(var(--notch) 0, calc(100% - var(--notch)) 0, 100% var(--notch), 100% calc(100% - var(--notch)),
+         calc(100% - var(--notch)) 100%, var(--notch) 100%, 0 calc(100% - var(--notch)), 0 var(--notch)); }
+    .bar2 i, .in .bar2 i { clip-path: none; transition: none; }
+    .rg .fill { transform: none; transition: none; }
+    .btn { transition: none; }
+  }
+  @media (max-width: 900px) {
+    .split, .play, .limits { grid-template-columns: 1fr; }
+    .stats .wrap { grid-template-columns: repeat(2, 1fr); }
+    .stat { border-left: 0; padding-left: 0; border-top: 2px solid var(--line); }
+    .stat:nth-child(-n+2) { border-top: 0; }
+    .bar nav { display: none; }
+    .cmp { grid-template-columns: 70px repeat(3, 1fr); }
+    .cmp .hide-m { display: none; }
+    .srow { grid-template-columns: 1fr 1.3fr; }
+    .srow .sc { display: none; }
+    .bento { grid-template-columns: 1fr; }
+    .bento .card { grid-column: auto; }
+    .game { grid-template-columns: 1fr; }
+    .play { padding: 32px; }
+    .hud { display: none; }
+    section { padding-top: 80px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="bar" id="bar">
+  <div class="wrap">
+    <a class="logo" href="#top">NULL<b>SCAPE</b></a>
+    <nav aria-label="Sections">
+      <a href="#fix">The fix</a>
+      <a href="#compare">Compare</a>
+      <a href="#score">Scorecard</a>
+      <a href="#spot">Spot the real</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero">
+    <canvas id="sky" width="320" height="180" aria-label="Live pixel flyover of terrain generated by Talus-2"></canvas>
+    <div class="wrap">
+      <div class="kicker rv">NULLSCAPE release</div>
+      <h1 id="title" aria-label="Talus-2">TALUS-2</h1>
+      <div class="sub rv">Flat ground, finally flat.</div>
+      <p class="lede rv">One change to how our terrain model sees height lifted its benchmark average from 70.4 to 77.5.</p>
+      <div class="cta rv">
+        <a class="btn" href="#score">See the scorecard</a>
+        <a class="btn ghost" href="../../demo/nullscape-demo.html">Play the demo</a>
+      </div>
+    </div>
+    <div class="hud" aria-hidden="true">Live: <b id="hud-map">mountains</b><br>Talus-2 output, rendered in your browser</div>
+  </div>
+
+  <div class="stats rv">
+    <div class="wrap">
+      <div class="stat"><div class="n" data-count="77.5" data-dec="1">77.5</div><div class="l">benchmark average</div><div class="was">Talus-1: 67.0</div></div>
+      <div class="stat"><div class="n" data-count="1.77" data-dec="2">1.77<small>x</small></div><div class="l">realism gap to real terrain</div><div class="was">Talus-1: 2.90x</div></div>
+      <div class="stat"><div class="n" data-count="97.7" data-dec="1">97.7</div><div class="l">clean detail score</div><div class="was">Talus-1: 58.4</div></div>
+      <div class="stat"><div class="n" data-count="40" data-dec="0">40<small>min</small></div><div class="l">of training on one RTX 5060</div><div class="was">fine-tuned from Talus-1.1</div></div>
+    </div>
+  </div>
+
+  <section id="problem">
+    <div class="wrap split">
+      <div class="prose rv">
+        <h2>The grain on the plains</h2>
+        <p>Talus-1 made convincing mountains and islands. Its plains had a problem you could see: a fine, restless grain on ground that should be calm. The benchmark put numbers on it. Plains scored 3.98 times the real-vs-real noise floor, the worst of six terrain types, with 4.6 times too many tiny pits.</p>
+        <p>Drag the slider. Both sides come from the same seed and the same request. The shading is exaggerated so you can see the surface.</p>
+      </div>
+      <figure class="rv">
+        <div class="ba pix wipe" id="ba">
+          <div class="ba-stage" id="ba-stage">
+            <canvas id="ba-right" width="64" height="64"></canvas>
+            <canvas id="ba-left" class="top" width="64" height="64"></canvas>
+            <div class="ba-handle"></div>
+          </div>
+          <input type="range" min="0" max="100" value="50" id="ba-range" aria-label="Compare Talus-1 and Talus-2 plains">
+          <div class="ba-labels"><span class="l">Talus-1</span><span class="r">Talus-2</span></div>
+        </div>
+        <figcaption>Plains, seed 7, 64 x 64 cells covering 4 km. Every square is one cell of the heightmap.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="fix">
+    <div class="wrap split">
+      <div class="rv">
+        <div class="ranges pix">
+          <h3>Share of the model's value range each map uses</h3>
+          <div class="rg"><span>mountain</span><div class="track"><i class="fill" style="--a:18%;--w:52%;--c:var(--mag)"></i></div></div>
+          <div class="rg"><span>plain</span><div class="track"><i class="fill" style="--a:24%;--w:5%;--c:var(--mag)"></i></div></div>
+          <div class="rg" style="margin-top:22px"><span>mountain</span><div class="track"><i class="fill" style="--a:0%;--w:100%;--c:var(--cyan)"></i></div></div>
+          <div class="rg"><span>plain</span><div class="track"><i class="fill" style="--a:0%;--w:100%;--c:var(--cyan)"></i></div></div>
+          <figcaption style="margin-top:16px">Magenta: absolute heights (Talus-1). Cyan: relative heights (Talus-2).</figcaption>
+        </div>
+      </div>
+      <div class="prose rv">
+        <h2>The fix: relative heights</h2>
+        <p>Talus-1 saw every map on one global scale, from sea floor to 1,200 m. A plain spans about 5% of that scale. Tiny errors left over from denoising barely register on a mountain, but on a plain they are as tall as the terrain itself.</p>
+        <div class="formula">x = 2 (h <span>&minus;</span> mean) / relief</div>
+        <p>Talus-2 learns each map's <strong>shape</strong> at full scale instead. When you generate, the sampler lifts that shape to the elevation you asked for and stretches it to the relief you asked for. If you leave those open, it borrows them from one of the 16 most similar real training maps. The architecture and speed stay the same. Training took 40 minutes, starting from Talus-1.1.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="compare">
+    <div class="wrap">
+      <div class="prose rv">
+        <h2>Same seed, three generations</h2>
+        <p>Every column shares one starting noise and one terrain type. Watch the plains calm down, and notice how the big shapes stay put across versions.</p>
+      </div>
+      <div class="cmp wipe" id="cmp"></div>
+    </div>
+  </section>
+
+  <section id="score">
+    <div class="wrap">
+      <div class="prose rv">
+        <div class="kicker">NULLSCAPE-Bench</div>
+        <h2 style="margin-top:14px">The scorecard</h2>
+        <p>Scored on 2,000 held-out maps the model never saw. <strong>100 means indistinguishable from real procedural terrain.</strong> Same protocol, sampler and seeds for every version, so the differences come from the weights.</p>
+      </div>
+      <div class="score pix rv" id="scorecard" role="table" aria-label="NULLSCAPE-Bench scorecard"></div>
+    </div>
+  </section>
+
+  <section id="findings">
+    <div class="wrap">
+      <div class="prose rv"><h2>What moved</h2></div>
+      <div class="bento">
+        <div class="card pix c1 rv"><div class="big">3.98<span class="arr">&rarr;</span>1.23</div><h3>Plains, fixed</h3><p>The worst terrain type became one of the best. Its excess finest-scale power fell from +3.4 to +0.9 decades.</p></div>
+        <div class="card pix c2 rv"><div class="big">8.8</div><h3>Pits per 1,000 cells</h3><p>Real terrain has 8.4. Talus-1 had 14.6. Peaks match too: 11.6 against 11.9.</p></div>
+        <div class="card pix c3 rv"><div class="big">&minus;51%</div><h3>Roughness control error</h3><p>The roughness dial barely worked before. Now it follows requests twice as closely.</p></div>
+        <div class="card pix c4 rv"><div class="big">1.4%</div><h3>Still original</h3><p>Share of maps closer to the training set than 99% of real held-out maps. Talus-1 had 2.5%.</p></div>
+        <div class="card pix c5 rv"><div class="big">&minus;53%</div><h3>An honest correction</h3><p>The quick check during training showed an 87% spectrum gain. The full test run says 53%, from 28x to 13x the noise floor. We quote the test.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="spot">
+    <div class="wrap">
+      <div class="prose rv">
+        <h2>Spot the real map</h2>
+        <p>Each pair shares its terrain type and properties. One map came from our procedural generator, the other from Talus-2. Click the one you think is procedural.</p>
+      </div>
+      <div class="game" id="game"></div>
+      <div class="tally" id="tally" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section id="limits">
+    <div class="wrap">
+      <div class="prose rv"><h2>Where it still falls short</h2></div>
+      <div class="limits">
+        <div class="limit rv"><h3>Mountains and ridges</h3><p>Now the weakest types, at 1.9x and 2.2x the noise floor. They gave back part of Talus-1.1's fine detail.</p></div>
+        <div class="limit rv"><h3>The spectrum gap</h3><p>At 13x the real-vs-real floor, detail across scales remains the largest distance to real terrain.</p></div>
+        <div class="limit rv"><h3>Placement by design</h3><p>Mean elevation lands almost exactly because the sampler places each shape there. Relief, slope, water and roughness still come from the model.</p></div>
+        <div class="limit rv"><h3>One world</h3><p>Talus only knows our procedural generator. Real elevation data comes later.</p></div>
+      </div>
+      <div class="play pix rv">
+        <div>
+          <h2>Walk it yourself</h2>
+          <p>The daily-run demo now uses Talus-2 maps. Follow the cyan beacons across a world no one designed by hand.</p>
+        </div>
+        <a class="btn" href="../../demo/nullscape-demo.html">Play the demo</a>
+<pre><b>nullscape sample</b> --checkpoint runs/20260926-192753_talus2_relative/checkpoints/step_0010000.pt \
+  --archetype plains --n 16 --steps 50 --spacing quadratic --guidance 2.0 --formats png16,r16 --unity</pre>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Talus-2 report: docs/TALUS2.md. Scorecard: docs/TALUS2_SCORECARD.md. <a href="nullscape-v1.html">Read the Talus-1 post</a></span>
+    <span>NULLSCAPE, September 2026</span>
+  </div>
+</footer>
+
+<script>
+"use strict";
+const DATA = {{DATA}};
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const SEA = DATA.sea_level;
+
+function decode(b64) {
+  const bin = atob(b64), n = bin.length / 2, out = new Float32Array(n);
+  for (let i = 0; i < n; i++) out[i] = (bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8)) / 65535;
+  return out;
+}
+
+// ---------- neon terrain colouring (absolute height, same mapping for every version)
+const STOPS = [[0, [247, 215, 116]], [0.05, [62, 224, 137]], [0.3, [22, 163, 131]], [0.55, [255, 61, 154]], [0.8, [255, 154, 60]], [1, [255, 233, 176]]];
+function ramp(h) {
+  if (h < SEA) {
+    const t = Math.min(1, (SEA - h) / (SEA * 0.7));
+    return [54 + (26 - 54) * t, 198 + (20 - 198) * t, 255 + (70 - 255) * t];
+  }
+  const t = Math.min(1, (h - SEA) / (0.75 - SEA));
+  for (let k = 1; k < STOPS.length; k++) {
+    if (t <= STOPS[k][0]) {
+      const [t0, c0] = STOPS[k - 1], [t1, c1] = STOPS[k], f = (t - t0) / (t1 - t0);
+      return c0.map((v, i) => v + (c1[i] - v) * f);
+    }
+  }
+  return STOPS[STOPS.length - 1][1];
+}
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => v / 16 - 0.5);
+function shadeMap(h, n, exag) {                 // hillshade in [0, 1] from a heightmap (1 cell = 64 m, 1.0 = 1200 m)
+  const s = new Float32Array(n * n), k = exag * 1200 / 64 / 2, L = [-0.5, 0.707, -0.5], ln = Math.hypot(...L);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const xl = h[y * n + Math.max(0, x - 1)], xr = h[y * n + Math.min(n - 1, x + 1)];
+    const yu = h[Math.max(0, y - 1) * n + x], yd = h[Math.min(n - 1, y + 1) * n + x];
+    const nx = -(xr - xl) * k, nz = -(yd - yu) * k, len = Math.hypot(nx, 1, nz);
+    s[y * n + x] = Math.max(0, (nx * L[0] + L[1] + nz * L[2]) / (len * ln));
+  }
+  return s;
+}
+function paint(canvas, h, exag = 2.5) {
+  const n = Math.round(Math.sqrt(h.length)), ctx = canvas.getContext("2d"), img = ctx.createImageData(n, n), s = shadeMap(h, n, exag);
+  for (let i = 0; i < n * n; i++) {
+    const c = ramp(h[i]), b = BAYER[(Math.floor(i / n) % 4) * 4 + (i % n) % 4];
+    const lit = Math.round((0.28 + 0.9 * s[i]) * 6 + b) / 6;       // 6 dithered light bands
+    img.data.set([Math.min(255, c[0] * lit), Math.min(255, c[1] * lit), Math.min(255, c[2] * lit), 255], i * 4);
+  }
+  canvas.width = n; canvas.height = n; ctx.putImageData(img, 0, 0);
+}
+function tile(h, exag) { const c = document.createElement("canvas"); c.className = "tile"; paint(c, h, exag); return c; }
+
+// ---------- reveal, count-up, sticky bar
+const io = new IntersectionObserver((es) => es.forEach((e) => {
+  if (!e.isIntersecting) return;
+  e.target.classList.add("in");
+  e.target.querySelectorAll("[data-count]").forEach(countUp);
+  io.unobserve(e.target);
+}), { threshold: 0.15 });
+function observe(el) { reduce ? el.classList.add("in") : io.observe(el); }
+function countUp(el) {
+  if (reduce) return;
+  const target = +el.dataset.count, dec = +el.dataset.dec, small = el.querySelector("small"), suf = small ? small.outerHTML : "";
+  const t0 = performance.now();
+  const f = (t) => {
+    const p = Math.min(1, (t - t0) / 1300), v = target * (1 - Math.pow(1 - p, 4));
+    el.innerHTML = v.toFixed(dec) + suf;
+    if (p < 1) requestAnimationFrame(f);
+  };
+  requestAnimationFrame(f);
+}
+new IntersectionObserver(([e]) => document.getElementById("bar").classList.toggle("solid", !e.isIntersecting))
+  .observe(document.getElementById("title"));
+
+// ---------- title decode effect
+(function () {
+  const el = document.getElementById("title"), final = el.textContent;
+  if (reduce) return;
+  const glyphs = "#%&@$*+=?/\\<>";
+  let frame = 0;
+  const tick = () => {
+    frame++;
+    el.textContent = [...final].map((ch, i) => (frame > i * 3 + 6 ? ch : glyphs[(Math.random() * glyphs.length) | 0])).join("");
+    if (frame < final.length * 3 + 7) setTimeout(tick, 40); else el.textContent = final;
+  };
+  tick();
+})();
+
+// ---------- before / after
+(function () {
+  paint(document.getElementById("ba-left"), decode(DATA.plains.t1), 6);
+  paint(document.getElementById("ba-right"), decode(DATA.plains.t2), 6);
+  const stage = document.getElementById("ba-stage"), range = document.getElementById("ba-range"), box = document.getElementById("ba");
+  const set = (v) => { box.style.setProperty("--x", v + "%"); range.value = v; };
+  range.addEventListener("input", () => set(+range.value));
+  const drag = (e) => { const r = stage.getBoundingClientRect(); set(Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100))); };
+  stage.addEventListener("pointerdown", (e) => { stage.setPointerCapture(e.pointerId); drag(e); });
+  stage.addEventListener("pointermove", (e) => { if (stage.hasPointerCapture(e.pointerId)) drag(e); });
+  observe(box);
+  if (!reduce) {   // one gentle sweep when it first appears, to show it moves
+    const once = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return; once.disconnect();
+      const t0 = performance.now();
+      const f = (t) => { const p = Math.min(1, (t - t0) / 1600); set(50 + 28 * Math.sin(p * Math.PI * 2) * (1 - p)); if (p < 1) requestAnimationFrame(f); };
+      setTimeout(() => requestAnimationFrame(f), 700);
+    }, { threshold: 0.6 });
+    once.observe(stage);
+  }
+})();
+
+// ---------- comparison grid
+(function () {
+  const g = document.getElementById("cmp"), arch = DATA.compare.archetypes;
+  g.appendChild(document.createElement("div"));
+  arch.forEach((a, j) => { const d = document.createElement("div"); d.className = "hd" + (j > 2 ? " hide-m" : ""); d.textContent = a; g.appendChild(d); });
+  DATA.compare.models.forEach((m) => {
+    const t2 = m === "Talus-2", rl = document.createElement("div");
+    rl.className = "rl" + (t2 ? " t2" : ""); rl.textContent = m; g.appendChild(rl);
+    arch.forEach((a, j) => {
+      const c = document.createElement("div"); c.className = "cell" + (t2 ? " t2" : "") + (j > 2 ? " hide-m" : "");
+      c.appendChild(tile(decode(DATA.compare.maps[m][a]), 3)); g.appendChild(c);
+    });
+  });
+  observe(g);
+})();
+
+// ---------- scorecard
+(function () {
+  const s = document.getElementById("scorecard"), f = (v) => v.toFixed(1);
+  const row = (cls, html) => { const d = document.createElement("div"); d.className = "srow " + cls; d.setAttribute("role", "row"); d.innerHTML = html; s.appendChild(d); };
+  row("head", '<span role="columnheader">Benchmark</span><span role="columnheader">Talus-2</span><span class="sc" role="columnheader">Talus-1.1</span><span class="sc" role="columnheader">Talus-1</span><span class="sc" role="columnheader">vs Talus-1</span>');
+  DATA.score.rows.forEach((r) => {
+    const d = r.t2 - r.t1, cls = r.name === "Average" ? "total" : "";
+    row(cls, `<span class="nm" role="rowheader"><b>${r.name}</b><span>${r.desc}</span></span>` +
+      `<span class="bar2" role="cell"><i style="--v:${r.t2}"></i><em>${f(r.t2)}</em></span>` +
+      `<span class="sc" role="cell">${f(r.t11)}</span><span class="sc" role="cell">${f(r.t1)}</span>` +
+      `<span class="sc ${d >= 0.05 ? "up" : d <= -0.05 ? "down" : ""}" role="cell">${d >= 0 ? "+" : "&minus;"}${f(Math.abs(d))}</span>`);
+  });
+  const n = document.createElement("div"); n.className = "score-note";
+  n.textContent = "Sampler for every version: 50-step DDIM, quadratic spacing, guidance 2.0. Speed is unchanged at 5.5 maps per second. The average is withheld for anything that copies training maps.";
+  s.appendChild(n);
+  observe(s);
+})();
+
+// ---------- spot the real map
+(function () {
+  const g = document.getElementById("game"), tally = document.getElementById("tally");
+  let answered = 0, right = 0;
+  DATA.pairs.forEach((p, k) => {
+    const r = document.createElement("div"); r.className = "round pix rv";
+    const realFirst = p.real_first, pair = document.createElement("div"); pair.className = "pair";
+    const maps = realFirst ? [["real", p.real], ["model", p.model]] : [["model", p.model], ["real", p.real]];
+    const meta = document.createElement("div"); meta.className = "meta";
+    meta.innerHTML = `<span>${p.archetype}</span><span>pick one</span>`;
+    maps.forEach(([kind, b64], i) => {
+      const b = document.createElement("button"); b.type = "button";
+      b.setAttribute("aria-label", `${p.archetype}, map ${i ? "B" : "A"}`);
+      b.appendChild(tile(decode(b64), 2.5));
+      b.addEventListener("click", () => {
+        if (r.classList.contains("done")) return;
+        r.classList.add("done", kind === "real" ? "right" : "wrong");
+        meta.innerHTML = `<span>${kind === "real" ? "correct" : "that one was Talus-2"}</span><span>${realFirst ? "A" : "B"} was procedural</span>`;
+        answered++; if (kind === "real") right++;
+        tally.textContent = answered < DATA.pairs.length ? `${right} of ${answered} correct so far`
+          : `${right} of ${DATA.pairs.length} correct. ${right <= 3 ? "Talus-2 fooled you as often as a coin flip would." : "Sharp eyes."}`;
+      });
+      pair.appendChild(b);
+    });
+    r.appendChild(pair); r.appendChild(meta); g.appendChild(r);
+  });
+})();
+document.querySelectorAll(".rv").forEach(observe);
+
+// ---------- hero: voxel-space flyover over Talus-2 maps, dithered to a low-res neon palette
+(function () {
+  const cv = document.getElementById("sky"), ctx = cv.getContext("2d"), W = cv.width, H = cv.height;
+  const img = ctx.createImageData(W, H), px = new Uint32Array(img.data.buffer);
+  const T = 256, maps = DATA.hero.map((m) => ({ name: m.name, ...bake(decode(m.b64)) }));
+  function bake(h64) {                            // 64x64 -> 256x256 bilinear heights + baked colour
+    const n = 64, hh = new Float32Array(T * T), col = new Uint8Array(T * T * 3);
+    for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
+      const gx = x / (T - 1) * (n - 1), gy = y / (T - 1) * (n - 1), i = Math.min(n - 2, gx | 0), j = Math.min(n - 2, gy | 0), fx = gx - i, fy = gy - j;
+      hh[y * T + x] = (h64[j * n + i] * (1 - fx) + h64[j * n + i + 1] * fx) * (1 - fy) + (h64[(j + 1) * n + i] * (1 - fx) + h64[(j + 1) * n + i + 1] * fx) * fy;
+    }
+    for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
+      const i = y * T + x, dx = hh[y * T + Math.min(T - 1, x + 1)] - hh[y * T + Math.max(0, x - 1)];
+      const dy = hh[Math.min(T - 1, y + 1) * T + x] - hh[Math.max(0, y - 1) * T + x];
+      const lit = Math.max(0.25, Math.min(1.25, 0.85 - (dx * 0.8 + dy * 0.5) * 60));
+      const c = ramp(hh[i]);
+      col.set([Math.min(255, c[0] * lit), Math.min(255, c[1] * lit), Math.min(255, c[2] * lit)], i * 3);
+    }
+    return { h: hh, c: col };
+  }
+  const mir = (u) => { const m = ((u % (2 * T)) + 2 * T) % (2 * T); return m < T ? m : 2 * T - 1 - m; };   // seamless mirror tiling
+  let cur = 0, next = 1, blend = 0, t0 = performance.now(), camX = 60, camY = 60, ang = 0.6, camH = 0, visible = true;
+  const hud = document.getElementById("hud-map");
+  const ybuf = new Float32Array(W), FOG = [58, 18, 72], SKY_TOP = [16, 6, 34], SKY_LOW = [255, 64, 140];
+  const levels = 6;
+  function q(v, b) { return Math.max(0, Math.min(255, Math.round((v / 255) * levels + b) / levels * 255)); }
+  let SH = 0, SR = 0, SG = 0, SB = 0;           // sample() writes here: no allocations in the hot loop
+  function sample(x, y) {
+    const u = mir(x | 0), v = mir(y | 0), i = v * T + u;
+    const m = blend > 0 && (BAYER[(v % 4) * 4 + (u % 4)] + 0.5) < blend ? maps[next] : maps[cur];  // dithered dissolve
+    SH = m.h[i]; SR = m.c[i * 3]; SG = m.c[i * 3 + 1]; SB = m.c[i * 3 + 2];
+  }
+  function render(time) {
+    const horizon = H * 0.42, sinA = Math.sin(ang), cosA = Math.cos(ang);
+    sample(camX, camY);
+    camH += ((SH * 150 + 46) - camH) * 0.04;
+    for (let y = 0; y < H; y++) {                   // dithered sky gradient
+      const t = Math.min(1, y / horizon);
+      for (let x = 0; x < W; x++) {
+        const b = BAYER[(y % 4) * 4 + (x % 4)];
+        const r = q(SKY_TOP[0] + (SKY_LOW[0] - SKY_TOP[0]) * t * t, b), g = q(SKY_TOP[1] + (SKY_LOW[1] - SKY_TOP[1]) * t * t, b), bl = q(SKY_TOP[2] + (SKY_LOW[2] - SKY_TOP[2]) * t * t, b);
+        px[y * W + x] = 0xff000000 | (bl << 16) | (g << 8) | r;
+      }
+    }
+    const sunX = W * 0.72, sunY = horizon - 26;                      // pixel sun with banded cut-outs
+    for (let y = -16; y <= 16; y++) for (let x = -16; x <= 16; x++) {
+      if (x * x + y * y > 256 || (y > 2 && (y % 5 === 0 || y % 5 === 1))) continue;
+      const X = (sunX + x) | 0, Y = (sunY + y) | 0;
+      if (X >= 0 && X < W && Y >= 0 && Y < H) px[Y * W + X] = 0xff000000 | (94 << 16) | (228 << 8) | 255;
+    }
+    ybuf.fill(H);
+    let z = 1, dz = 1;
+    const far = 520;
+    while (z < far) {
+      const lx = -cosA * z - sinA * z, ly = sinA * z - cosA * z, rx = cosA * z - sinA * z, ry = -sinA * z - cosA * z;
+      const sx = (rx - lx) / W, sy = (ry - ly) / W;
+      let wx = camX + lx, wy = camY + ly;
+      const fog = Math.min(1, Math.pow(z / far, 1.4));
+      for (let i = 0; i < W; i++) {
+        sample(wx, wy);
+        const top = ((camH - SH * 150) / z) * 120 + horizon;
+        if (top < ybuf[i]) {
+          const t = Math.max(0, top | 0), R = SR + (FOG[0] - SR) * fog, G = SG + (FOG[1] - SG) * fog, B = SB + (FOG[2] - SB) * fog;
+          for (let y = t; y < ybuf[i]; y++) {
+            const bb = BAYER[(y % 4) * 4 + (i % 4)];
+            px[y * W + i] = 0xff000000 | (q(B, bb) << 16) | (q(G, bb) << 8) | q(R, bb);
+          }
+          ybuf[i] = top;
+        }
+        wx += sx; wy += sy;
+      }
+      z += dz; dz += 0.012;
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+  function loop(time) {
+    const dt = 1 / 60;
+    if (visible) {
+      ang = 0.6 + Math.sin(time / 7000) * 0.25;           // slow banking turn
+      camX -= Math.sin(ang) * 0.6; camY -= Math.cos(ang) * 0.6;   // fly forward along the view direction
+      const el = (time - t0) / 1000;
+      if (el > 12 && blend === 0) blend = 0.001;
+      if (blend > 0) { blend += dt / 1.6; if (blend >= 1) { cur = next; next = (next + 1) % maps.length; blend = 0; t0 = time; hud.textContent = maps[cur].name; } }
+      render(time);
+    }
+    requestAnimationFrame(loop);
+  }
+  hud.textContent = maps[0].name;
+  sample(camX, camY); camH = SH * 150 + 46;       // start above the ground, not inside it
+  if (reduce) { render(0); return; }
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(cv);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
