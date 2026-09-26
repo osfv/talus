@@ -25,6 +25,13 @@
 - Benchmark: `docs/V1_BENCHMARK.md`, `docs/V1_SUMMARY.md`, `docs/BENCHMARK_SCORECARD.md`,
   `benchmarks/v1/results.json`, bugs in `benchmarks/v1/BUGS.md` (B1 unity_size upsamples valid sizes, B2 manifest
   git "HEAD", B3 artifacts crash on tiny splits, B4 sidecar footprint off by one cell). Not fixed yet.
-- Compare future versions with `python benchmarks/scorecard.py v1=benchmarks/v1/results.json v2=benchmarks/v2/results.json`.
-- Next planned: fix B1-B4; v2 experiments (loss weighting + LR decay fine-tune; relative-height parameterization;
-  robust roughness condition; faster sampling). Game direction: Tamashika-like low-res neon FPS, likely Godot 4.
+- B1-B4 fixed (commit a813876). Trainer supports `train.init_from` (fine-tune) and `train.lr_schedule: cosine`.
+- v2 exp1 (no Min-SNR, cosine LR, 8k steps from v1 30k): `runs/20260926-181917_v2_exp1_nominsnr_cosine`,
+  scored in `docs/V2_EXP1.md` (TEST average 67.0 -> 70.4; slopes +46%; plains grain unchanged).
+- Score an experiment: `python benchmarks/v2/compare_exp.py --name X --ckpt label=path` (VAL), then
+  `python benchmarks/v2/score_test.py --name X --ckpt path` and
+  `python benchmarks/scorecard.py v1=benchmarks/v1/results.json X=benchmarks/v2/X/results.json --out=docs/X_SCORECARD.md --json=benchmarks/v2/X/scorecard.json --fig=docs/figures/X_scorecard.png`
+  (always pass --out/--json/--fig so the v1 scorecard is not overwritten).
+- Playable demo: `demo/nullscape-demo.html` (build: `python demo/build_demo.py`). Blog: `docs/blog/nullscape-v1.html`.
+- Next planned: v2 exp2 = relative-height parameterization (fixes plains grain), started from exp1;
+  robust roughness condition; faster sampling. Game direction: Tamashika-like low-res neon FPS.
