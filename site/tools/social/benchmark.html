@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Talus benchmark card</title>
+  <!-- 1600x900 social image. Numbers: docs/TALUS3_SCORECARD.md and benchmarks/v1, v2 results (TEST split). -->
+  <style>
+    @font-face { font-family: "Geist"; src: url("../../src/assets/fonts/geist-sans-400.woff2") format("woff2"); font-weight: 400; }
+    @font-face { font-family: "Geist"; src: url("../../src/assets/fonts/geist-sans-500.woff2") format("woff2"); font-weight: 500 700; }
+    @font-face { font-family: "Geist Mono"; src: url("../../src/assets/fonts/geist-mono-400.woff2") format("woff2"); font-weight: 400; }
+    html, body { margin: 0; background: #040404; }
+    .card { width: 1600px; height: 900px; box-sizing: border-box; padding: 72px 84px 64px; display: grid; grid-template-columns: 560px 1fr;
+      grid-template-rows: auto 1fr auto; column-gap: 96px; color: #f2f2f2; font-family: Geist, sans-serif; -webkit-font-smoothing: antialiased; }
+    header { grid-column: 1 / -1; margin-bottom: 44px; }
+    h1 { margin: 0; font-size: 60px; font-weight: 500; letter-spacing: -0.045em; line-height: 1.05; }
+    .lede { margin: 14px 0 0; font-size: 28px; color: #9a9a9a; letter-spacing: -0.01em; }
+    .avg .num { font-size: 196px; font-weight: 500; letter-spacing: -0.07em; line-height: 0.85; margin: 0 0 0 -8px; font-variant-numeric: tabular-nums; }
+    .avg .cap { margin: 18px 0 40px; font-size: 26px; color: #b3b3b3; }
+    .versions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; align-items: end; height: 230px; }
+    .v { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+    .v .col { width: 100%; background-color: #f2f2f2; }
+    .v .col.past { background-color: transparent; background-image: radial-gradient(#f2f2f2 1.6px, transparent 1.7px); background-size: 6px 6px; }
+    .v b { display: block; margin-top: 12px; font-size: 24px; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .v span { display: block; margin-top: 2px; font: 18px "Geist Mono", monospace; color: #8a8a8a; letter-spacing: 0.03em; }
+    .rows { display: grid; gap: 26px; align-content: start; }
+    .row { display: grid; grid-template-columns: 210px 1fr 96px; align-items: center; column-gap: 24px; }
+    .row .name { font-size: 28px; color: #d6d6d6; }
+    .row .val { font-size: 34px; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+    .bar { position: relative; height: 26px; border-left: 2px solid #3a3a3a; border-right: 2px solid #3a3a3a; }
+    .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: #f2f2f2; }
+    .bar u { position: absolute; top: -8px; bottom: -8px; width: 4px; margin-left: -2px; background: #8a8a8a; }
+    .row.weak .name, .row.weak .val { color: #9a9a9a; }
+    .legend { margin-top: 30px; display: flex; gap: 36px; font: 20px "Geist Mono", monospace; color: #8a8a8a; letter-spacing: 0.03em; }
+    .legend em { display: inline-block; vertical-align: -3px; margin-right: 10px; font-style: normal; }
+    .legend .k3 { width: 34px; height: 18px; background: #f2f2f2; }
+    .legend .k1 { width: 4px; height: 26px; background: #8a8a8a; vertical-align: -6px; }
+    footer { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: end; padding-top: 28px; border-top: 1px solid #262626;
+      font: 20px "Geist Mono", monospace; color: #8a8a8a; letter-spacing: 0.03em; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <header>
+      <h1>Talus-3 on held-out test maps</h1>
+      <p class="lede">Scores from 0 to 100. 100 means its maps can't be told apart from real procedural terrain.</p>
+    </header>
+    <section class="avg">
+      <p class="num">80.3</p>
+      <p class="cap">average of nine scores</p>
+      <div class="versions" id="versions"></div>
+    </section>
+    <section>
+      <div class="rows" id="rows"></div>
+      <div class="legend"><span><em class="k3"></em>Talus-3</span><span><em class="k1"></em>Talus-1, the first version</span></div>
+    </section>
+    <footer><span>1,000 test maps per half, compared with the same procedural generator's maps</span><span>talus.tersa.tech</span></footer>
+  </div>
+  <script>
+    const versions = [["Talus-1", 67.0], ["Talus-1.1", 70.4], ["Talus-2", 77.5], ["Talus-3", 80.3]];
+    document.getElementById("versions").innerHTML = versions.map(([n, v], i) =>
+      `<div class="v"><div class="col ${i < 3 ? "past" : ""}" style="height:${v}%"></div><b>${v.toFixed(1)}</b><span>${n}</span></div>`).join("");
+    const rows = [["Playability", 99.9, 98.4], ["Clean detail", 99.4, 58.4], ["Originality", 99.1, 100], ["Control", 92.1, 81.8],
+                  ["Realism", 66.2, 34.4], ["Spectrum", 11.0, 3.6, true]];
+    document.getElementById("rows").innerHTML = rows.map(([n, v, t1, weak]) =>
+      `<div class="row ${weak ? "weak" : ""}"><span class="name">${n}</span><span class="bar"><i style="width:${v}%"></i><u style="left:${t1}%"></u></span><span class="val">${v.toFixed(1)}</span></div>`).join("");
+  </script>
+</body>
+</html>
