@@ -13,7 +13,8 @@ const browser = arg("browser", "C:/Program Files (x86)/Microsoft/Edge/Applicatio
 mkdirSync(out, { recursive: true });
 const port = 9300 + Math.floor(Math.random() * 500);
 const proc = spawn(browser, ["--headless=new", `--remote-debugging-port=${port}`, `--user-data-dir=${join(tmpdir(), `talus-cdp-${port}`)}`,
-  "--enable-unsafe-webgpu", "--no-first-run", "--disable-extensions", `--window-size=${width},${height}`, "about:blank"], { stdio: "ignore" });
+  "--enable-unsafe-webgpu", "--no-first-run", "--disable-extensions", `--window-size=${width},${height}`,
+  ...(arg("hostmap") ? [`--host-resolver-rules=MAP ${arg("hostmap")}`] : []), "about:blank"], { stdio: "ignore" });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let target;
 for (let i = 0; i < 50 && !target; i++) {
