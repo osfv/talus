@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Talus video frames</title>
+  <meta name="robots" content="noindex" />
+  <style>
+    @font-face { font-family: "Geist"; src: url("../assets/fonts/geist-sans-400.woff2") format("woff2"); font-weight: 400; }
+    @font-face { font-family: "Geist"; src: url("../assets/fonts/geist-sans-500.woff2") format("woff2"); font-weight: 500 700; }
+    @font-face { font-family: "Geist Mono"; src: url("../assets/fonts/geist-mono-400.woff2") format("woff2"); font-weight: 400; }
+    html, body { margin: 0; background: #040404; overflow: hidden; }
+    #frame { position: relative; width: 1080px; height: 1080px; color: #f2f2f2; font-family: Geist, sans-serif; -webkit-font-smoothing: antialiased; }
+    canvas { position: absolute; inset: 0; width: 1080px; height: 1080px; image-rendering: pixelated; }
+    .stack { position: absolute; left: 72px; top: 64px; right: 72px; }
+    #title { margin: 0; font-size: 92px; font-weight: 500; letter-spacing: -0.055em; line-height: 1; }
+    #sub { margin: 18px 0 0; font-size: 34px; line-height: 1.3; color: #b3b3b3; max-width: 27ch; letter-spacing: -0.01em; }
+    #sub2 { margin: 14px 0 0; font-size: 26px; line-height: 1.35; color: #8a8a8a; max-width: 34ch; }
+    .mono { position: absolute; margin: 0; font-family: "Geist Mono", monospace; letter-spacing: 0.04em; font-size: 26px; background: #040404; padding: 2px 8px; }
+    #label { left: 64px; bottom: 60px; color: #d6d6d6; }
+    #step { left: 64px; bottom: 102px; color: #8a8a8a; }
+    #url { right: 64px; bottom: 60px; color: #8a8a8a; }
+    #step:empty, #label:empty { display: none; }
+  </style>
+</head>
+<body>
+  <div id="frame">
+    <canvas id="c" width="1080" height="1080"></canvas>
+    <div class="stack"><h1 id="title"></h1><p id="sub"></p><p id="sub2"></p></div>
+    <p class="mono" id="step"></p>
+    <p class="mono" id="label"></p>
+    <p class="mono" id="url">talus.tersa.tech</p>
+  </div>
+  <script type="module" src="video.js"></script>
+</body>
+</html>

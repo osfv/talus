@@ -92,15 +92,16 @@ function mul(a, b) {
 }
 
 export class TerrainView {
-  constructor(canvas, { noise, world, exaggeration = 2.2, autoRotate = true, texels = 480 }) {
+  constructor(canvas, { noise, world, exaggeration = 2.2, autoRotate = true, texels = 480, target = [0, 0.05, 0], dist = 1.85 }) {
     this.canvas = canvas;
     this.world = world;
     this.N = world.resolution;
     this.exaggeration = exaggeration;
     this.texels = texels;
+    this.target = target;
     this.reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     this.autoRotate = autoRotate && !this.reduce;
-    this.yaw = -0.75; this.pitch = 0.62; this.dist = 1.85;
+    this.yaw = -0.75; this.pitch = 0.62; this.dist = dist;
     this.mix = 1; this.morph = null; this.visible = true; this.dirty = true;
     const gl = canvas.getContext("webgl2", { antialias: false, alpha: false, preserveDrawingBuffer: true });
     if (!gl) throw new Error("WebGL2 is not available");
@@ -241,7 +242,7 @@ export class TerrainView {
     const k = (world.max_height_m / world.extent_m) * this.exaggeration;
     const eye = [Math.cos(this.yaw) * Math.cos(this.pitch) * this.dist, Math.sin(this.pitch) * this.dist, Math.sin(this.yaw) * Math.cos(this.pitch) * this.dist];
     const aspect = w / h, fov = aspect < 1 ? 0.62 / aspect ** 0.5 : 0.62;
-    gl.uniformMatrix4fv(u.uMVP, false, mul(perspective(fov, aspect, 0.1, 10), lookAt(eye, [0, 0.05, 0])));
+    gl.uniformMatrix4fv(u.uMVP, false, mul(perspective(fov, aspect, 0.1, 10), lookAt(eye, this.target)));
     gl.uniform1f(u.uMix, this.mix);
     gl.uniform1f(u.uK, k);
     gl.uniform1f(u.uSea, world.sea_level);

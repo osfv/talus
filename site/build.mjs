@@ -30,5 +30,6 @@ const files = {
 };
 writeFileSync(new URL("build.json", dist), JSON.stringify({ model: meta.name, version: meta.version, files }, null, 1));
 writeFileSync(new URL("CNAME", dist), "talus.tersa.tech\n");
+if (process.argv.includes("--video")) cpSync(new URL("tools/video/", root), new URL("video/", dist), { recursive: true });  // local only
 const total = Object.values(files).reduce((a, f) => a + f.bytes, 0);
 console.log(`dist/ built; first-run download ${(total / 1e6).toFixed(1)} MB`);

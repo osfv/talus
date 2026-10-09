@@ -112,8 +112,9 @@ export class TalusSampler {
     return out;
   }
 
-  // Returns heights [R*R] in [0, 1]. onStep(i, n, previewHeights) sees the predicted clean map after every
-  // step; return false from it (or abort `signal`) to stop early.
+  // Returns heights [R*R] in [0, 1]. onStep(i, n, previewHeights, noisyHeights) sees the predicted clean map
+  // and the current noisy sample (both decoded to heights) after every step; return false from it (or abort
+  // `signal`) to stop early.
   async sample({ archetype = null, properties = {}, seed = 0, steps = null, guidance = null, noise = null,
                  conditions = null, onStep = null, signal = null } = {}) {
     const { ort, meta, K, R } = this, P = R * R;
@@ -129,7 +130,7 @@ export class TalusSampler {
     for (let j = 0; j < K; j++) knownIn[j] = c.known[j];
     label[0] = c.label;
     if (guided) { cond.set(c.z, K); label[1] = this.unknownLabel; }
-    const x0 = new Float32Array(P), preview = new Float32Array(P);
+    const x0 = new Float32Array(P), preview = new Float32Array(P), noisy = new Float32Array(P);
     for (let i = 0; i < ts.length; i++) {
       if (signal?.aborted) throw new DOMException("Generation stopped", "AbortError");
       const a = ab[ts[i]], aPrev = i + 1 < ts.length ? ab[ts[i + 1]] : 1;
@@ -150,7 +151,8 @@ export class TalusSampler {
         x[p] = sap * x0p + sbp * eps;
       }
       out.v.dispose?.();
-      if (onStep && (await onStep(i + 1, ts.length, this.decode(x0, c.mean, c.relief, preview))) === false) break;
+      if (onStep && (await onStep(i + 1, ts.length, this.decode(x0, c.mean, c.relief, preview),
+                                  this.decode(x, c.mean, c.relief, noisy))) === false) break;
     }
     return { heights: this.decode(x, c.mean, c.relief, new Float32Array(P)), conditions: c, steps: ts.length };
   }
