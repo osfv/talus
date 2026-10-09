@@ -58,7 +58,13 @@ def speed(perf: dict | None, cfg: dict, batch: int = 128) -> float | None:
         return None
     g = 1.0 if cfg["guidance"] == 1.0 else 1.5  # any guidance != 1 costs the same (batch doubled)
     for r in perf["rows"]:
-        if r["steps"] == cfg["steps"] and r["guidance"] == g and r["batch"] == batch and not r.get("oom"):
+        if "guidance_interval" in r:
+            matches = all(r.get(k) == cfg.get(k) for k in ("steps", "guidance", "spacing", "eta"))
+            matches &= tuple(r["guidance_interval"]) == tuple(cfg.get("guidance_interval", (0.0, 1.0)))
+        else:
+            matches = r["steps"] == cfg["steps"] and r["guidance"] == g
+            matches &= tuple(cfg.get("guidance_interval", (0.0, 1.0))) == (0.0, 1.0)
+        if matches and r["batch"] == batch and not r.get("oom"):
             return r["maps_per_second"]
     return None
 

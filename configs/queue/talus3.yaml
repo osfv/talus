@@ -1,0 +1,24 @@
+# Talus-3 screening queue: nullscape queue --plan configs/queue/talus3.yaml
+# Preflights both recipes, evaluates Talus-2 once, then trains, evaluates on VAL and builds a comparison page
+# for each experiment in order. Rerun the same command to continue after Ctrl+C or a crash.
+# The queue never selects a winner or touches TEST.
+name: talus3
+baseline:
+  name: Talus-2
+  checkpoint: talus-2
+checkpoint: last          # final weights; "best" uses the in-training VAL selection instead
+evaluation:
+  split: val
+  n: 500                  # maps per half
+  seed: 7                 # halves/noise differ from the in-training eval (seed 3)
+  batch_size: 64
+  modes: conditional
+  gameplay_n: 128
+  memorization: true
+  gpu_memory_fraction: 0.6
+  sampling: {steps: 50, spacing: quadratic, guidance: 2.0, eta: 0.0, guidance_interval: [0.0, 1.0]}
+experiments:
+  - name: talus3-control
+    config: configs/train/talus3_control.yaml
+  - name: talus3-rugged
+    config: configs/train/talus3_rugged.yaml

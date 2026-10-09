@@ -1,11 +1,14 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "nullscape"
-version = "0.1.0"
-description = "Learned terrain generation research for the NULLSCAPE game"
+version = "0.3.0"
+description = "Talus: a conditional diffusion model for game terrain heightmaps, plus its data and benchmark code"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
     "numpy>=1.26",
@@ -19,13 +22,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "tifffile>=2026.9.15"]
+earth = ["tifffile>=2026.9.15"]  # real-terrain datasets (nullscape.data.earth)
 
 [project.scripts]
 nullscape = "nullscape.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+nullscape = ["eval/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

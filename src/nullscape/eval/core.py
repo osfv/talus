@@ -19,6 +19,8 @@ import numpy as np
 from nullscape.metrics.distribution import (
     compare_sets,
     metric_table,
+    mean_log_rapsd,
+    pooled_slope_w1,
     nearest_neighbor_rmse,
     normalized_w1,
 )
@@ -93,6 +95,47 @@ def memorization(
         "nn_median_ratio": float(np.median(g) / (np.median(h) + 1e-12)),
         "frac_gen_below_heldout_p01": float((g < p1).mean()),
     }
+
+
+def spectral_band_errors(gen: np.ndarray, ref: np.ndarray) -> dict[str, float]:
+    k, gl = mean_log_rapsd(gen)
+    _, rl = mean_log_rapsd(ref)
+    f = k / (gen.shape[-1] / 2)
+    bands = {"low": (0, 0.125), "mid": (0.125, 0.375), "fine": (0.375, 0.75), "finest": (0.75, 1.0)}
+    return {name: float((gl - rl)[(f > lo) & (f <= hi)].mean())
+            for name, (lo, hi) in bands.items() if ((f > lo) & (f <= hi)).any()}
+
+
+def summarize_repeats(rows: list[dict[str, float]]) -> dict:
+    if not rows:
+        raise ValueError("at least one repeat is required")
+    result = {}
+    for key in set.intersection(*(set(r) for r in rows)):
+        values = np.asarray([r[key] for r in rows], dtype=float)
+        values = values[np.isfinite(values)]
+        if len(values):
+            result[key] = {"n": len(values), "mean": float(values.mean()),
+                           "std": float(values.std(ddof=1)) if len(values) > 1 else 0.0,
+                           "min": float(values.min()), "max": float(values.max())}
+    return result
+
+
+def gameplay_summary(maps: np.ndarray, world: WorldSpec, *, limit: int = 128, start=None, goal=None,
+                     combat_radius_m: float = 32.0) -> dict:
+    from nullscape.metrics.traversability import gameplay_metrics
+
+    if limit < 1 or not len(maps):
+        raise ValueError("gameplay limit and map count must be positive")
+    rows = [gameplay_metrics(h, world, start=start, goal=goal, combat_radius_m=combat_radius_m) for h in maps[:limit]]
+    reachable = [row for row in rows if row["spawn_goal_reachable"]]
+    route_keys = [k for k in rows[0] if k.startswith("route_")]
+    means = {k: float(np.mean([row[k] for row in rows])) for k in rows[0] if k not in route_keys}
+    means.update({k: float(np.mean([row[k] for row in reachable])) if reachable else None for k in route_keys})
+    return {"n": len(rows), "reachable_n": len(reachable), "means": means,
+            "start": list(start) if start is not None else [world.resolution // 2, 0],
+            "goal": list(goal) if goal is not None else [world.resolution // 2, world.resolution - 1],
+            "combat_radius_m": combat_radius_m, "combat_max_slope_deg": 10.0,
+            "route_statistics": "conditional on reachable endpoints; not a measure of player enjoyment"}
 
 
 def evaluate_generated(
@@ -172,6 +215,12 @@ def evaluate_generated(
                 "ratio": m / (f + 1e-12),
                 "n_gen": int(g_sel.sum()),
                 "n_ref": int(b_sel.sum()),
+                "spectrum_band_error_decades": spectral_band_errors(gen[g_sel], ref_b[b_sel]),
+                "slope_w1_deg": pooled_slope_w1(gen[g_sel], ref_b[b_sel], world),
+                "sink_density_gen": float(gt["sink_density"][g_sel].mean()),
+                "sink_density_ref": float(bt["sink_density"][b_sel].mean()),
+                "peak_density_gen": float(gt["peak_density"][g_sel].mean()),
+                "peak_density_ref": float(bt["peak_density"][b_sel].mean()),
             }
         report["per_archetype"] = per
 

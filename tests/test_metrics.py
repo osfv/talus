@@ -133,3 +133,28 @@ def test_set_distances_zero_on_identical_sets_and_grow_with_shift():
     assert same["metric_w1_mean"] == 0.0 and same["height_w1"] < 1e-3
     assert diff["metric_w1"]["spectral_beta"] > 1.0
     assert diff["rapsd_distance"] > 0.2
+
+
+def test_shortest_path_rejects_unwalkable_identical_endpoints():
+    r = analyze(np.full((64, 64), 0.1), W)
+    assert shortest_path(r, (2, 2), (2, 2)) is None
+    with pytest.raises(ValueError):
+        shortest_path(r, (-1, 2), (2, 2))
+
+
+def test_gameplay_metrics_distinguish_open_and_disconnected_maps():
+    from nullscape.metrics.traversability import gameplay_metrics
+
+    flat = np.full((64, 64), 0.3)
+    good = gameplay_metrics(flat, W)
+    assert good["spawn_goal_reachable"] == 1.0
+    assert good["route_stretch"] == pytest.approx(1.0)
+    assert good["route_length_m"] == pytest.approx(63 * W.cell_size_m)
+    assert good["combat_space_fraction"] > 0.8
+    cliff = flat.copy()
+    cliff[:, 32:] = 0.9
+    bad = gameplay_metrics(cliff, W)
+    assert bad["spawn_goal_reachable"] == 0.0
+    assert bad["route_length_m"] == 0.0
+    water = gameplay_metrics(np.zeros_like(flat), W)
+    assert water["combat_space_fraction"] == 0.0 and water["spawn_goal_reachable"] == 0.0

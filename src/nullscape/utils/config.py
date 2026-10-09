@@ -13,7 +13,10 @@ import yaml
 
 def load_config(path: str | Path, overrides: Iterable[str] = ()) -> dict[str, Any]:
     with open(path, encoding="utf-8") as f:
-        cfg = yaml.safe_load(f) or {}
+        cfg = yaml.safe_load(f)
+    cfg = {} if cfg is None else cfg
+    if not isinstance(cfg, dict):
+        raise ValueError(f"{path}: configuration must be a mapping, not {type(cfg).__name__}")
     return apply_overrides(cfg, overrides)
 
 

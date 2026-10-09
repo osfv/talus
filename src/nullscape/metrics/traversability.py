@@ -13,6 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 import numpy as np
+from scipy.ndimage import distance_transform_edt
 from scipy.sparse import coo_matrix, csr_matrix
 from scipy.sparse.csgraph import connected_components, dijkstra
 
@@ -135,11 +136,21 @@ def analyze(h: np.ndarray, world: WorldSpec, agent: AgentSpec = AgentSpec()) -> 
     )
 
 
-def shortest_path(result: TraversabilityResult, start: tuple[int, int], goal: tuple[int, int]) -> list[tuple[int, int]] | None:
+def shortest_path(result: TraversabilityResult, start: tuple[int, int], goal: tuple[int, int],
+                  *, distance_weighted: bool = False) -> list[tuple[int, int]] | None:
     """Fewest-steps walkable path between two cells, or None if unreachable."""
     rows, cols = result.walkable.shape
+    if any(not (0 <= p[0] < rows and 0 <= p[1] < cols) for p in (start, goal)):
+        raise ValueError("path endpoints must be inside the map")
+    if not result.walkable[start] or not result.walkable[goal]:
+        return None
     s, g = start[0] * cols + start[1], goal[0] * cols + goal[1]
-    _, pred = dijkstra(result.graph, indices=s, unweighted=True, return_predecessors=True)
+    graph = result.graph
+    if distance_weighted:
+        edges = graph.tocoo(copy=True)
+        edges.data = np.hypot(edges.row // cols - edges.col // cols, edges.row % cols - edges.col % cols)
+        graph = edges.tocsr()
+    _, pred = dijkstra(graph, indices=s, unweighted=not distance_weighted, return_predecessors=True)
     if s != g and pred[g] < 0:
         return None
     path = [g]
@@ -159,3 +170,35 @@ def longest_route(result: TraversabilityResult) -> list[tuple[int, int]] | None:
     dist = dijkstra(result.graph, indices=a, unweighted=True)
     b = int(cells[np.argmax(dist[cells])])
     return shortest_path(result, (a // cols, a % cols), (b // cols, b % cols))
+
+
+def gameplay_metrics(h: np.ndarray, world: WorldSpec, agent: AgentSpec = AgentSpec(), *,
+                     start: tuple[int, int] | None = None, goal: tuple[int, int] | None = None,
+                     combat_radius_m: float = 32.0, combat_slope_deg: float = 10.0) -> dict[str, float]:
+    if not np.isfinite(combat_radius_m) or combat_radius_m <= 0:
+        raise ValueError("combat_radius_m must be finite and positive")
+    if not np.isfinite(combat_slope_deg) or not 0 <= combat_slope_deg <= 90:
+        raise ValueError("combat_slope_deg must be between 0 and 90")
+    result = analyze(h, world, agent)
+    r, cell = world.resolution, world.cell_size_m
+    start = (r // 2, 0) if start is None else tuple(start)
+    goal = (r // 2, r - 1) if goal is None else tuple(goal)
+    path = shortest_path(result, start, goal, distance_weighted=True)
+    clearance = distance_transform_edt(np.pad(result.walkable, 1))[1:-1, 1:-1] * cell
+    flat = result.largest_component & (slope_degrees(h, world) <= combat_slope_deg)
+    flat_clearance = distance_transform_edt(np.pad(flat, 1))[1:-1, 1:-1] * cell
+    combat = flat & (flat_clearance >= combat_radius_m)
+    length, stretch, width, bottleneck = 0.0, 0.0, 0.0, 0.0
+    if path:
+        p = np.asarray(path)
+        length = float(np.linalg.norm(np.diff(p, axis=0), axis=1).sum() * cell)
+        direct = float(np.linalg.norm(np.asarray(goal) - start) * cell)
+        stretch = length / direct if direct else 1.0
+        widths = 2 * clearance[p[:, 0], p[:, 1]]
+        width = float(widths.min())
+        interior = widths[1:-1] if len(widths) > 2 else widths
+        bottleneck = float((interior < 4 * cell).mean())
+    return {"spawn_goal_reachable": float(path is not None), "route_length_m": length,
+            "route_stretch": stretch, "route_min_width_m": width, "route_bottleneck_fraction": bottleneck,
+            "combat_space_fraction": float(combat.mean()),
+            "combat_space_m2": float(combat.sum() * cell ** 2)}

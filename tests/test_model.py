@@ -1,3 +1,6 @@
+import pickle
+from copy import deepcopy
+
 import numpy as np
 import pytest
 import torch
@@ -182,7 +185,9 @@ def test_ema_tracks_and_state_roundtrip():
 @pytest.fixture(scope="module")
 def sampler() -> TerrainSampler:
     g = torch.Generator().manual_seed(7)
-    model = UNet(TINY)
+    with torch.random.fork_rng(devices=[]):
+        torch.manual_seed(7)
+        model = UNet(TINY)
     # residual branches and the out conv are zero-init, which severs every path
     # (including conditioning) to the output; perturb all params slightly so the
     # randomly initialized model actually responds to inputs and conditions
@@ -233,7 +238,7 @@ def test_sampler_conditioning_errors_and_guidance(sampler):
 
 
 def test_checkpoint_roundtrip(sampler, tmp_path):
-    model = sampler.model
+    model = deepcopy(sampler.model)
     diffusion = sampler.diffusion
     ema = EMA(model, decay=0.9, warmup_steps=0)
     w_ema = model.out[-1].weight.detach().clone()  # shadow == current weights
@@ -255,6 +260,38 @@ def test_checkpoint_roundtrip(sampler, tmp_path):
     assert torch.equal(s_ema.model.out[-1].weight, w_ema)
     assert torch.equal(s_raw.model.out[-1].weight, w_raw)
     assert s_ema.checkpoint_info["step"] == 7
+
+
+def test_release_checkpoint_loads_without_pickle_and_samples_identically(sampler, tmp_path):
+    from nullscape.utils.checkpoint import export_release, file_sha256, load_checkpoint
+
+    model = deepcopy(sampler.model)
+    cfg = {"_diffusion_config": sampler.diffusion.cfg.to_dict(), "name": "tiny",
+           "train": {"init_from": str(tmp_path / "private" / "parent.pt"), "artifacts_dir": None}}
+    source = tmp_path / "ck.pt"
+    state = {"version": 1, "rng": {"numpy": np.random.get_state()}}
+    save_checkpoint(source, model, EMA(model), torch.optim.AdamW(model.parameters()), 5, cfg,
+                    {**DATASET_META, "root": str(tmp_path / "private" / "data")}, {"training_state": state})
+    with pytest.raises(pickle.UnpicklingError):
+        torch.load(source, map_location="cpu", weights_only=True)  # numpy RNG state needs the allowlist
+    assert load_checkpoint(source)["training_state"]["rng"]["numpy"][1].dtype == np.uint32
+
+    out = tmp_path / "release" / "tiny-1.pt"
+    info = export_release(source, out, name="Tiny", version="1.0.0", license="Apache-2.0")
+    assert info["sha256"] == file_sha256(out) and info["source"]["sha256"] == file_sha256(source)
+    ck = torch.load(out, map_location="cpu", weights_only=True)
+    assert not {"model", "optimizer", "training_state"} & set(ck)
+    assert "root" not in ck["dataset"] and ck["train_config"]["train"]["init_from"] == "parent.pt"
+    assert "private" not in repr({k: v for k, v in ck.items() if k != "ema"})
+
+    a = TerrainSampler.from_checkpoint(source, device="cpu").sample(n=2, seed=3, steps=3, archetype="hills")
+    released = TerrainSampler.from_checkpoint(out, device="cpu")
+    assert np.array_equal(a, released.sample(n=2, seed=3, steps=3, archetype="hills"))
+    assert released.checkpoint_info["release"] == "Tiny 1.0.0"
+    with pytest.raises(ValueError, match="EMA weights only"):
+        TerrainSampler.from_checkpoint(out, device="cpu", use_ema=False)
+    with pytest.raises(FileExistsError):
+        export_release(source, out, name="Tiny", version="1.0.0", license="Apache-2.0")
 
 
 def test_tensor_batcher():
@@ -317,3 +354,139 @@ def test_relative_sampler_places_and_fills(sampler):
     with pytest.raises(ValueError):
         TerrainSampler(sampler.model, sampler.diffusion, {**meta, "prior_bank": None}, device="cpu").sample(
             n=1, seed=0, steps=2)
+
+
+@pytest.mark.parametrize("label", [C, 2])
+@pytest.mark.parametrize("water_known", [False, True])
+def test_relative_prior_ties_cover_eligible_bank(sampler, label, water_known):
+    from nullscape.models import heightparam
+
+    bank = np.zeros((64 * C, K), dtype=np.float32)
+    bank[:, 0] = np.linspace(0.1, 0.7, len(bank))
+    bank[:, 1] = 0.1
+    labels = np.repeat(np.arange(C), 64)
+    meta = {**DATASET_META, "height_param": heightparam.spec("relative"),
+            "prior_bank": {"conditions": bank, "labels": labels}}
+    rs = TerrainSampler(sampler.model, sampler.diffusion, meta, device="cpu")
+    raw = np.zeros((512, K), dtype=np.float32)
+    known = np.zeros_like(raw, dtype=bool)
+    known[:, 3] = water_known
+    lab = np.full(len(raw), label)
+    seeds = list(range(len(raw)))
+    filled, filled_known = rs._fill_placement(raw, known, lab, seeds)
+    assert len(np.unique(filled[:, 0])) > 32
+    chosen = np.searchsorted(bank[:, 0], filled[:, 0])
+    assert set(labels[chosen]) == (set(range(C)) if label == C else {label})
+    parts = [rs._fill_placement(raw[i:i + 64], known[i:i + 64], lab[i:i + 64], seeds[i:i + 64])[0]
+             for i in range(0, len(raw), 64)]
+    assert np.array_equal(filled, np.concatenate(parts))
+    assert filled_known[:, :2].all() and not known[:, :2].any()
+    assert np.array_equal(raw, np.zeros_like(raw))
+
+
+def test_sampling_defaults_and_overrides(sampler):
+    official = sampler.resolve_sampling()
+    assert official["steps"] == 50 and official["spacing"] == "quadratic"
+    assert official["guidance"] == 2.0 and official["eta"] == 0.0
+    meta = {**DATASET_META, "sampling": {"steps": 7, "guidance": 1.25, "spacing": "uniform"}}
+    s = TerrainSampler(sampler.model, sampler.diffusion, meta, device="cpu")
+    assert s.resolve_sampling()["steps"] == 7
+    assert s.resolve_sampling(steps=4, eta=0.3)["eta"] == 0.3
+    assert s.resolve_sampling(steps=4)["guidance"] == 1.25
+    a = s.sample(n=1, seed=19)
+    b = s.sample(n=1, seed=19, steps=7, guidance=1.25, spacing="uniform", eta=0.0)
+    assert np.array_equal(a, b)
+
+
+def test_checkpoint_sampling_preset_roundtrip(sampler, tmp_path):
+    cfg = {"_diffusion_config": sampler.diffusion.cfg.to_dict(), "train": {},
+           "sampling": {"steps": 5, "guidance": 1.3, "spacing": "uniform"}}
+    path = tmp_path / "preset.pt"
+    save_checkpoint(path, sampler.model, EMA(sampler.model), torch.optim.AdamW(sampler.model.parameters()),
+                    1, cfg, DATASET_META)
+    loaded = TerrainSampler.from_checkpoint(path, device="cpu")
+    assert loaded.resolve_sampling()["steps"] == 5
+    assert loaded.resolve_sampling()["guidance"] == 1.3
+
+
+def test_guidance_interval_uses_normalized_noise_time(sampler, monkeypatch):
+    calls = []
+
+    def guided(model, x, t, cond, known, label, guidance):
+        calls.append((int(t[0]), guidance))
+        return torch.zeros_like(x)
+
+    monkeypatch.setattr(sampler.diffusion, "_guided_v", guided)
+    sampler.sample(n=1, steps=5, spacing="uniform", guidance=3.0, guidance_interval=(0.2, 0.8))
+    assert [g for _, g in calls] == [1.0, 3.0, 3.0, 3.0, 1.0]
+    assert calls[0][0] == 31 and calls[-1][0] == 0
+
+
+def test_guidance_full_interval_is_compatible(sampler):
+    kw = dict(n=2, steps=5, seed=15, archetype="ridges", guidance=2.0)
+    assert np.array_equal(sampler.sample(**kw), sampler.sample(**kw, guidance_interval=(0.0, 1.0)))
+    for interval in [(-0.1, 0.8), (0.9, 0.2), (0.0, float("nan")), (0.0, 1.1)]:
+        with pytest.raises(ValueError):
+            sampler.sample(**kw, guidance_interval=interval)
+
+
+def test_weighted_diffusion_loss(sampler):
+    x, t, cond, known, label = _tiny_inputs()
+    t = t % sampler.diffusion.cfg.timesteps
+    noise = torch.randn_like(x)
+    d = sampler.diffusion
+    pieces = [d.loss(sampler.model, x[i:i + 1], cond[i:i + 1], label[i:i + 1],
+                     t=t[i:i + 1], noise=noise[i:i + 1], drop=False) for i in range(2)]
+    got = d.loss(sampler.model, x, cond, label, t=t, noise=noise, drop=False,
+                 sample_weight=torch.tensor([1.0, 3.0]))
+    assert torch.allclose(got, (pieces[0] + 3 * pieces[1]) / 4, atol=1e-5)
+    plain = d.loss(sampler.model, x, cond, label, t=t, noise=noise, drop=False)
+    equal = d.loss(sampler.model, x, cond, label, t=t, noise=noise, drop=False,
+                   sample_weight=torch.ones(2))
+    assert torch.equal(plain, equal)
+
+
+@pytest.mark.parametrize("relative", [False, True])
+@pytest.mark.parametrize("eta", [0.0, 0.5])
+def test_inpainting_preserves_heights_and_batch_invariance(sampler, relative, eta):
+    from nullscape.models import heightparam
+
+    meta = {**DATASET_META, "height_param": heightparam.spec("relative" if relative else "absolute")}
+    s = TerrainSampler(sampler.model, sampler.diffusion, meta, device="cpu")
+    reference = np.linspace(0.1, 0.8, 256, dtype=np.float32).reshape(16, 16)
+    mask = np.zeros((16, 16), dtype=bool)
+    mask[:, :4] = True
+    kw = dict(n=2, seed=3, steps=4, eta=eta, reference=reference, preserve_mask=mask,
+              properties={"mean_elevation": 0.4, "relief": 0.3})
+    a = s.sample(**kw, batch_size=2)
+    b = s.sample(**kw, batch_size=1)
+    assert np.array_equal(a[:, mask], np.broadcast_to(reference[mask], a[:, mask].shape))
+    assert np.allclose(a, b, atol=1e-5)
+    assert not np.array_equal(a[0, ~mask], a[1, ~mask])
+    full = s.sample(**{**kw, "preserve_mask": np.ones_like(mask)})
+    assert np.array_equal(full, np.broadcast_to(reference, full.shape))
+
+
+def test_inpainting_empty_mask_is_identity(sampler):
+    kw = dict(n=2, steps=4, seed=9)
+    plain = sampler.sample(**kw)
+    edited = sampler.sample(**kw, reference=np.ones((16, 16), np.float32),
+                            preserve_mask=np.zeros((16, 16), bool))
+    assert np.array_equal(plain, edited)
+    with pytest.raises(ValueError):
+        sampler.sample(**kw, reference=np.ones((16, 16)))
+    with pytest.raises(ValueError):
+        sampler.sample(**kw, reference=np.ones((8, 8)), preserve_mask=np.ones((8, 8)))
+
+
+def test_sampling_benchmark_measures_current_sampler(sampler):
+    from nullscape.eval.performance import benchmark_sampler
+
+    report = benchmark_sampler(sampler, batches=[1, 2], repeats=2, warmup=1, sampling={"steps": 3})
+    assert report["device"] == "cpu" and len(report["rows"]) == 2
+    for row in report["rows"]:
+        assert row["steps"] == 3 and row["spacing"] == "quadratic"
+        assert row["maps_per_second"] > 0 and len(row["batch_seconds"]) == 2
+        assert row["latency_seconds_per_batch"] > 0 and not row["oom"]
+    with pytest.raises(ValueError):
+        benchmark_sampler(sampler, batches=[0], repeats=1)

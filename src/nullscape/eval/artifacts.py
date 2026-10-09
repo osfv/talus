@@ -57,10 +57,11 @@ class ArtifactSpec:
     guidance: float = 1.5
     batch_size: int = 32        # small: artifacts may run next to a training job on the same GPU
     split: str = "val"
+    guidance_interval: tuple[float, float] = (0.0, 1.0)
 
     def sampler_kwargs(self) -> dict[str, Any]:
         return {"steps": self.steps, "spacing": self.spacing, "eta": self.eta, "guidance": self.guidance,
-                "batch_size": self.batch_size}
+                "batch_size": self.batch_size, "guidance_interval": self.guidance_interval}
 
 
 def step_dir_name(step: int) -> str:
@@ -85,7 +86,8 @@ def _check_spec(root: Path, spec: ArtifactSpec) -> None:
     path = root / "spec.json"
     if path.exists():
         saved = json.loads(path.read_text(encoding="utf-8"))
-        if saved != asdict(spec):
+        saved.setdefault("guidance_interval", [0.0, 1.0])
+        if saved != json.loads(json.dumps(asdict(spec))):
             raise ValueError(f"{path} has a different ArtifactSpec; checkpoints would not be comparable. "
                              f"saved={saved} requested={asdict(spec)}")
     else:
@@ -279,6 +281,6 @@ def refresh_run_figures(root: str | Path, store: TerrainStore) -> None:
 
 
 def checkpoint_step(path: str | Path) -> int:
-    import torch
+    from nullscape.utils.checkpoint import load_checkpoint
 
-    return int(torch.load(path, map_location="cpu", weights_only=False)["step"])
+    return int(load_checkpoint(path)["step"])

@@ -1,0 +1,52 @@
+# Talus-3.1 candidate: continue Talus-3 rugged (12k, 2x mountains/ridges) with EQUAL loss weights, to keep
+# its slope/ridge gains while plains recover. Short, low-LR polish (Talus-3 degraded early at 5e-5).
+# Matched with talus31_control_longer.yaml (same recipe, starts from Talus-3 control).
+name: talus31_rugged_balanced
+seed: 4
+dataset: base64
+model:
+  base_channels: 64
+  channel_mults: [1, 2, 3, 4]
+  num_res_blocks: 2
+  attention_resolutions: [16, 8]
+  dropout: 0.1
+diffusion:
+  timesteps: 1000
+  min_snr_gamma: null
+  p_drop_property: 0.15
+  p_drop_label: 0.15
+  p_drop_all: 0.10
+sampling:
+  steps: 50
+  spacing: quadratic
+  guidance: 2.0
+  guidance_interval: [0.0, 1.0]
+  eta: 0.0
+train:
+  init_from: runs/20260927-200553_talus3_rugged/checkpoints/last.pt
+  height_param: relative
+  archetype_loss_weights: {}
+  batch_size: 40
+  lr: 2.0e-5
+  lr_schedule: cosine
+  min_lr_ratio: 0.1
+  warmup_steps: 200
+  max_steps: 5000
+  grad_clip: 1.0
+  ema_decay: 0.9995
+  bf16: true
+  cuda_memory_fraction: 0.66
+  data_on_gpu: false
+  sample_batch_size: 16
+  log_every: 100
+  val_every: 1000
+  sample_every: 2500
+  eval_every: 5000
+  eval_samples: 500
+  eval_steps: 50
+  eval_spacing: quadratic
+  eval_guidance: 2.0
+  eval_guidance_interval: [0.0, 1.0]
+  checkpoint_every: 2500
+  recovery_every: 1000
+  keep_checkpoints: true

@@ -60,3 +60,64 @@ def test_memorization_flags_copies(ref):
     assert m["gen_nn_rmse_median"] < 1e-3 and m["frac_gen_below_heldout_p01"] == 1.0
     m2 = memorization(held, held, train)
     assert m2["nn_median_ratio"] == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize("mode,label_known", [("property:water_fraction", False),
+                                              ("label+property:relief", True)])
+def test_partial_mode_masks_only_requested_property(mode, label_known):
+    from types import SimpleNamespace
+
+    from nullscape.eval.cli import _mode_inputs
+
+    st = SimpleNamespace(condition_keys=list(CONDITION_KEYS), conditions=np.arange(30).reshape(6, 5),
+                         labels=np.arange(6))
+    inputs = _mode_inputs(mode, st, np.array([1, 3]))
+    j = list(CONDITION_KEYS).index(mode.split(":")[1])
+    assert inputs["known"].sum() == 2 and inputs["known"][:, j].all()
+    assert np.array_equal(inputs["cond_raw"][:, j], st.conditions[[1, 3], j])
+    assert np.all(inputs["cond_raw"][~inputs["known"]] == 0)
+    assert np.array_equal(inputs["labels"], [1, 3] if label_known else [-1, -1])
+
+
+def test_repeat_summary_reports_seed_variation():
+    from nullscape.eval.core import summarize_repeats
+
+    summary = summarize_repeats([{"x": 1.0}, {"x": 3.0}, {"x": 5.0}])
+    assert summary["x"] == {"n": 3, "mean": 3.0, "std": 2.0, "min": 1.0, "max": 5.0}
+
+
+def test_spectral_bands_identical_are_zero(ref):
+    from nullscape.eval.core import spectral_band_errors
+
+    maps, *_ = ref
+    assert all(v == 0 for v in spectral_band_errors(maps, maps).values())
+
+
+def test_scorecard_speed_matches_guidance_interval():
+    from benchmarks.scorecard import speed
+
+    cfg = {"steps": 50, "guidance": 2.0, "spacing": "quadratic", "eta": 0.0, "guidance_interval": [0.05, 0.8]}
+    row = {**cfg, "batch": 128, "maps_per_second": 7.0, "oom": False}
+    assert speed({"rows": [row]}, cfg) == 7.0
+    assert speed({"rows": [row]}, {**cfg, "guidance_interval": [0.0, 1.0]}) is None
+    assert speed(None, cfg) is None
+
+
+def test_artifact_interval_spec_roundtrip_and_legacy(tmp_path):
+    import json
+    from dataclasses import asdict
+
+    from nullscape.eval.artifacts import ArtifactSpec, _check_spec
+
+    limited = ArtifactSpec(guidance_interval=(0.05, 0.8))
+    _check_spec(tmp_path / "limited", limited)
+    _check_spec(tmp_path / "limited", limited)
+    with pytest.raises(ValueError):
+        _check_spec(tmp_path / "limited", ArtifactSpec())
+    legacy = tmp_path / "legacy"
+    legacy.mkdir()
+    old = asdict(ArtifactSpec())
+    old.pop("guidance_interval")
+    (legacy / "spec.json").write_text(json.dumps(old))
+    _check_spec(legacy, ArtifactSpec())
+    assert "guidance_interval" not in json.loads((legacy / "spec.json").read_text())

@@ -11,7 +11,10 @@
 from __future__ import annotations
 
 import json
+import os
 import platform
+import tempfile
+from contextlib import contextmanager
 import subprocess
 import sys
 import time
@@ -21,7 +24,7 @@ from typing import Any
 import numpy as np
 
 from nullscape.utils.config import dump_config
-from nullscape.utils.paths import REPO_ROOT, runs_root
+from nullscape.utils.paths import REPO_ROOT, runs_root, unique_directory
 
 
 def git_info(repo: Path = REPO_ROOT) -> dict[str, Any]:
@@ -56,11 +59,31 @@ def environment_info() -> dict[str, Any]:
     return info
 
 
+@contextmanager
+def atomic_file(path: str | Path):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    try:
+        with os.fdopen(fd, "wb") as file:
+            yield file
+            file.flush()
+            os.fsync(file.fileno())
+        os.replace(temporary, path)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+
+
+def atomic_json(path: str | Path, value: Any) -> None:
+    encoded = json.dumps(value, indent=2, allow_nan=False).encode("utf-8")
+    with atomic_file(path) as file:
+        file.write(encoded)
+
+
 class RunDir:
     def __init__(self, name: str, config: dict[str, Any], root: Path | None = None, tensorboard: bool = True):
         stamp = time.strftime("%Y%m%d-%H%M%S")
-        self.path = Path(root or runs_root()) / f"{stamp}_{name}"
-        self.path.mkdir(parents=True, exist_ok=False)
+        self.path = unique_directory(root or runs_root(), f"{stamp}_{name}")
         for sub in ("checkpoints", "samples", "eval"):
             (self.path / sub).mkdir()
         dump_config(config, self.path / "config.yaml")

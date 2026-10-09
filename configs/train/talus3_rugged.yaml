@@ -1,0 +1,48 @@
+name: talus3_rugged
+seed: 3
+dataset: base64
+model:
+  base_channels: 64
+  channel_mults: [1, 2, 3, 4]
+  num_res_blocks: 2
+  attention_resolutions: [16, 8]
+  dropout: 0.1
+diffusion:
+  timesteps: 1000
+  min_snr_gamma: null
+  p_drop_property: 0.15
+  p_drop_label: 0.15
+  p_drop_all: 0.10
+sampling:
+  steps: 50
+  spacing: quadratic
+  guidance: 2.0
+  guidance_interval: [0.0, 1.0]
+  eta: 0.0
+train:
+  init_from: runs/20260926-192753_talus2_relative/checkpoints/step_0010000.pt
+  height_param: relative
+  archetype_loss_weights: {mountains: 2.0, ridges: 2.0}
+  batch_size: 40
+  lr: 5.0e-5
+  lr_schedule: cosine
+  min_lr_ratio: 0.1
+  warmup_steps: 300
+  max_steps: 12000
+  grad_clip: 1.0
+  ema_decay: 0.9995
+  bf16: true
+  cuda_memory_fraction: 0.66
+  data_on_gpu: false
+  sample_batch_size: 16
+  log_every: 100
+  val_every: 1000
+  sample_every: 3000
+  eval_every: 3000
+  eval_samples: 500
+  eval_steps: 50
+  eval_spacing: quadratic
+  eval_guidance: 2.0
+  eval_guidance_interval: [0.0, 1.0]
+  checkpoint_every: 3000
+  keep_checkpoints: true

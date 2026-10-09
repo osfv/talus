@@ -41,6 +41,8 @@ def main() -> None:
     ap.add_argument("--ckpt", action="append", required=True, help="one or more checkpoints (label=path or path)")
     ap.add_argument("--n", type=int, default=500)
     ap.add_argument("--guidance", type=float, default=None, help="override the official sampler's guidance")
+    ap.add_argument("--guidance-interval", type=float, nargs=2, default=None)
+    ap.add_argument("--steps", type=int, default=None)
     args = ap.parse_args()
 
     from nullscape.eval.core import evaluate_generated
@@ -49,8 +51,7 @@ def main() -> None:
 
     st = B.store()
     cfg = dict(B.load_json("pareto")["recommended_config"])
-    if args.guidance is not None:
-        cfg["guidance"] = args.guidance
+    cfg.update({k: getattr(args, k) for k in ("guidance", "guidance_interval", "steps") if getattr(args, k) is not None})
     a, b = B.halves(st, "val", args.n)
     ref_a, ref_b = st.heights(a), st.heights(b)
     tables = {"a": metric_table(ref_a, st.world), "b": metric_table(ref_b, st.world)}

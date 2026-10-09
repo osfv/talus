@@ -1,0 +1,20 @@
+# Talus-4 candidate: 256 x 256 cells at the native 30 m (7.7 km windows), same 1500 tiles and geographic split
+# blocks as earth64.yaml (shared download and matching held-out regions). Up to 32 windows per tile (about
+# 48k maps, about 6.3 GB of heights). Build time at this resolution has not been measured yet.
+#   python -m nullscape.data.earth build --config configs/dataset/earth256.yaml --max-gb 70 --workers 4
+name: earth256
+seed: 20260927
+source:
+  sample_tiles: 1500
+  lat_range: [-60, 72]
+world:
+  resolution: 256
+  extent_m: 7680.0
+  max_height_m: 9500.0
+datum_offset_m: 500.0
+sea_threshold_m: 0.5
+windows_per_tile: 32
+filters: {max_water_fraction: 0.9, min_relief_m: 1.0, max_clipped_fraction: 0.001}
+splits:
+  fractions: {train: 0.9, val: 0.05, test: 0.05}
+  block_deg: 5

@@ -64,6 +64,7 @@ def _cmd_export(args: argparse.Namespace) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="nullscape", description="NULLSCAPE learned terrain toolkit")
+    p.add_argument("--debug", action="store_true", help="show tracebacks for input and runtime errors")
     sub = p.add_subparsers(dest="command", required=True)
 
     g = sub.add_parser("gen-dataset", help="generate a procedural heightmap dataset")
@@ -99,12 +100,55 @@ def build_parser() -> argparse.ArgumentParser:
     except ImportError as exc:  # model stack not available
         if "nullscape.cli_model" not in str(exc):
             raise
+    for command in sub.choices.values():
+        command.add_argument("--debug", action="store_true", default=argparse.SUPPRESS,
+                             help="show full tracebacks")
     return p
 
 
+def _validate_args(args: argparse.Namespace) -> None:
+    minimums = {"n": 1, "batch_size": 1, "steps": 2, "repeats": 1, "warmup": 1,
+                "seed": 0, "gameplay_n": 0, "n_3d": 1, "limit": 0}
+    for name, minimum in minimums.items():
+        value = getattr(args, name, None)
+        if value is not None and value < minimum:
+            raise ValueError(f"--{name.replace('_', '-')} must be >= {minimum}")
+    if args.command == "compare" and args.seeds < 1:
+        raise ValueError("--seeds must be positive")
+    if args.command == "sampler-sweep" and args.split != "val":
+        raise ValueError("sampler selection must use validation data, not TEST")
+    if hasattr(args, "gpu_memory_fraction") and not 0 < args.gpu_memory_fraction <= 1:
+        raise ValueError("--gpu-memory-fraction must be in (0,1]")
+
+
 def main(argv: list[str] | None = None) -> None:
-    args = build_parser().parse_args(argv)
-    args.func(args)
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    try:
+        _validate_args(args)
+        if args.command in ("evaluate", "compare", "sampler-sweep", "benchmark-sampling", "comparison-report"):
+            from nullscape.utils.paths import prepare_output_dir
+
+            args.out = str(prepare_output_dir(args.out))
+        args.func(args)
+    except KeyboardInterrupt as exc:
+        if args.debug:
+            raise
+        parser.exit(130, f"nullscape: {str(exc) or 'Interrupted; the last complete checkpoint is unchanged.'}\n")
+    except (ValueError, FileNotFoundError, FileExistsError, NotADirectoryError, PermissionError) as exc:
+        if args.debug:
+            raise
+        parser.exit(2, f"nullscape: error: {exc}\nUse --debug for a traceback.\n")
+    except RuntimeError as exc:
+        import torch
+
+        if args.debug or not isinstance(exc, torch.OutOfMemoryError):
+            raise
+        hint = ("--set train.sample_batch_size=16 or a slightly higher train.cuda_memory_fraction (these keep "
+                "--resume valid; changing train.batch_size does not)") if args.command == "train" else \
+            "--batch-size 32 or --device cpu"
+        parser.exit(2, f"nullscape: error: GPU memory limit exceeded. Try {hint}; close competing GPU jobs.\n"
+                       "Use --debug for a traceback.\n")
 
 
 if __name__ == "__main__":

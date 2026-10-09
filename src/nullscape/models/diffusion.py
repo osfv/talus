@@ -67,7 +67,7 @@ class GaussianDiffusion(nn.Module):
 
     def loss(self, model: nn.Module, x0: torch.Tensor, cond: torch.Tensor, label: torch.Tensor,
              known: torch.Tensor | None = None, t: torch.Tensor | None = None, noise: torch.Tensor | None = None,
-             drop: bool = True) -> torch.Tensor:
+             drop: bool = True, sample_weight: torch.Tensor | None = None) -> torch.Tensor:
         """Weighted v-prediction MSE. Pass fixed ``t``/``noise`` and ``drop=False`` for a low-variance validation loss."""
         b = x0.shape[0]
         known = torch.ones_like(cond, dtype=torch.bool) if known is None else known
@@ -83,6 +83,10 @@ class GaussianDiffusion(nn.Module):
         if self.cfg.min_snr_gamma is not None:
             snr = (ab / (1 - ab)).view(-1)
             mse = mse * snr.clamp(max=self.cfg.min_snr_gamma) / (snr + 1)
+        if sample_weight is not None:
+            if sample_weight.shape != (b,):
+                raise ValueError("sample_weight must have shape [batch]")
+            return (mse * sample_weight).sum() / sample_weight.sum().clamp_min(1e-12)
         return mse.mean()
 
     def _guided_v(self, model, x, t, cond, known, label, guidance: float) -> torch.Tensor:
@@ -110,18 +114,37 @@ class GaussianDiffusion(nn.Module):
         clip_range: float = 1.0,
         autocast_dtype: torch.dtype | None = None,
         spacing: str = "uniform",
+        guidance_interval: tuple[float, float] = (0.0, 1.0),
+        reference: torch.Tensor | None = None,
+        preserve_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """DDIM sampling. ``noise_fn(k)`` returns the k-th standard-normal tensor [B, C, H, W]
         (k = 0 is the initial noise; k >= 1 are per-step noises used when eta > 0)."""
         device = cond.device
-        ts = timestep_schedule(self.cfg.timesteps, steps, spacing).to(device)
+        lo, hi = guidance_interval
+        if not 0 <= lo <= hi <= 1:
+            raise ValueError("guidance_interval must satisfy 0 <= min <= max <= 1")
+        ts = timestep_schedule(self.cfg.timesteps, steps, spacing)
+        scales = [guidance if lo <= t / (self.cfg.timesteps - 1) <= hi else 1.0 for t in ts.tolist()]
+        ts = ts.to(device)
         x = noise_fn(0).to(device)
+        if (reference is None) != (preserve_mask is None):
+            raise ValueError("reference and preserve_mask must be provided together")
+        if reference is not None:
+            if reference.shape != x.shape or preserve_mask.shape != x.shape:
+                raise ValueError("reference and preserve_mask must match the noise shape")
+            reference = reference.to(device=device, dtype=x.dtype)
+            preserve_mask = preserve_mask.to(device=device, dtype=torch.bool)
+        initial_noise = x
         for i, t_cur in enumerate(ts):
             t = t_cur.repeat(x.shape[0])
             ab = self.alphas_cumprod[t_cur]
             ab_prev = self.alphas_cumprod[ts[i + 1]] if i + 1 < len(ts) else torch.tensor(1.0, device=device)
+            if reference is not None:
+                fixed = ab.sqrt() * reference + (1 - ab).sqrt() * initial_noise
+                x = torch.where(preserve_mask, fixed, x)
             with torch.autocast(device.type, dtype=autocast_dtype, enabled=autocast_dtype is not None):
-                v = self._guided_v(model, x, t, cond, known, label, guidance)
+                v = self._guided_v(model, x, t, cond, known, label, scales[i])
             x0 = ab.sqrt() * x - (1 - ab).sqrt() * v
             if clip_x0:
                 x0 = x0.clamp(-clip_range, clip_range)
@@ -130,7 +153,7 @@ class GaussianDiffusion(nn.Module):
             x = ab_prev.sqrt() * x0 + (1 - ab_prev - sigma**2).clamp(min=0).sqrt() * eps
             if eta > 0 and i + 1 < len(ts):
                 x = x + sigma * noise_fn(i + 1).to(device)
-        return x
+        return torch.where(preserve_mask, reference, x) if reference is not None else x
 
 
 SPACINGS = ("uniform", "quadratic")

@@ -1,0 +1,23 @@
+# Talus-3.1 screening: nullscape queue --plan configs/queue/talus31.yaml
+# Baseline is the Talus-3 VAL winner (control). Same evaluation maps/seeds as configs/queue/talus3.yaml,
+# so numbers are comparable with that queue too. VAL only; TEST is scored separately after choosing.
+name: talus31
+baseline:
+  name: Talus-3 control
+  checkpoint: runs/20260927-184009_talus3_control/checkpoints/last.pt
+checkpoint: last
+evaluation:
+  split: val
+  n: 500
+  seed: 7
+  batch_size: 64
+  modes: conditional
+  gameplay_n: 128
+  memorization: true
+  gpu_memory_fraction: 0.6
+  sampling: {steps: 50, spacing: quadratic, guidance: 2.0, eta: 0.0, guidance_interval: [0.0, 1.0]}
+experiments:
+  - name: talus31-rugged-balanced
+    config: configs/train/talus31_rugged_balanced.yaml
+  - name: talus31-control-longer
+    config: configs/train/talus31_control_longer.yaml
