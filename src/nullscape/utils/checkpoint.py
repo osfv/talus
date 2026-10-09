@@ -4,7 +4,7 @@ Every checkpoint loads with ``torch.load(weights_only=True)``, which rebuilds te
 containers but cannot import or call anything else from the file. Training checkpoints also hold numpy RNG
 state and torch's version string, so those types are allowlisted. Release checkpoints need no allowlist:
 they keep the EMA weights, configs and dataset statistics, and drop the optimizer, raw weights, training
-state and local paths.
+state and local paths (the dataset folder becomes its name, e.g. ``base64``).
 """
 
 from __future__ import annotations
@@ -51,7 +51,9 @@ def _portable_path(value: str | None) -> str | None:
 def release_payload(ck: dict[str, Any], *, name: str, version: str, license: str,
                     source: str | Path) -> dict[str, Any]:
     payload = {k: v for k, v in ck.items() if k not in RELEASE_DROP}
-    payload["dataset"] = {k: v for k, v in ck["dataset"].items() if k != "root"}
+    payload["dataset"] = dict(ck["dataset"])
+    if payload["dataset"].get("root"):  # a dataset name resolves under NULLSCAPE_DATA_ROOT on any machine
+        payload["dataset"]["root"] = Path(payload["dataset"]["root"]).name
     train_config = dict(ck.get("train_config", {}))
     if "train" in train_config:
         train = dict(train_config["train"])

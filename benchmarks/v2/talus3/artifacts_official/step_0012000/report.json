@@ -1,0 +1,399 @@
+{
+  "checkpoint": {
+    "path": "checkpoints\\talus-3.pt",
+    "step": 12000,
+    "use_ema": true,
+    "release": "Talus-3 3.0.0"
+  },
+  "dataset": "base64",
+  "split": "test",
+  "n_per_half": 1000,
+  "spec": {
+    "per_archetype": 2,
+    "n_eval": 1000,
+    "n_3d": 3,
+    "seed": 2026,
+    "steps": 50,
+    "spacing": "quadratic",
+    "eta": 0.0,
+    "guidance": 2.0,
+    "batch_size": 128,
+    "split": "test",
+    "guidance_interval": [
+      0.0,
+      1.0
+    ]
+  },
+  "steps": 50,
+  "spacing": "quadratic",
+  "eta": 0.0,
+  "guidance": 2.0,
+  "guidance_interval": [
+    0.0,
+    1.0
+  ],
+  "modes": {
+    "conditional": {
+      "n": 1000,
+      "model_vs_ref": {
+        "metric_w1": {
+          "mean_elevation": 0.08262757263798633,
+          "std_elevation": 0.02706952786122647,
+          "min_elevation": 0.08288930235387394,
+          "max_elevation": 0.1154524918489523,
+          "relief": 0.05238683312945501,
+          "skewness": 0.07329282804863496,
+          "kurtosis": 0.04407773947595286,
+          "hypsometric_integral": 0.07634737106902233,
+          "water_fraction": 0.04981374656058304,
+          "mean_slope_deg": 0.0790137951117499,
+          "p90_slope_deg": 0.0547228878518179,
+          "p99_slope_deg": 0.0407369594274814,
+          "ruggedness_m": 0.08370750396127077,
+          "curvature_std": 0.1209246019468334,
+          "spectral_beta": 0.17346134215254252,
+          "hf_energy": 0.09321235067102521,
+          "checkerboard": 0.0931211490076619,
+          "peak_density": 0.11843805330985346,
+          "sink_density": 0.048382442259793046,
+          "trav_walkable_land_fraction": 0.03927784080739489,
+          "trav_largest_component_fraction": 0.04875340845562852,
+          "trav_connectivity_probability": 0.04540237471324015
+        },
+        "metric_w1_mean": 0.07468691466645365,
+        "rapsd_distance": 0.09367328050559383,
+        "height_w1": 0.008460800583120435,
+        "slope_w1_deg": 0.4135549922223098,
+        "trav_pass_rate_gen": 0.916,
+        "trav_pass_rate_ref": 0.917,
+        "diversity_gen": 0.15784544883856566,
+        "diversity_ref": 0.16622501769356535
+      },
+      "noise_floor": {
+        "metric_w1": {
+          "mean_elevation": 0.0827347178603936,
+          "std_elevation": 0.041981823078557495,
+          "min_elevation": 0.09923899646848423,
+          "max_elevation": 0.08578526729875847,
+          "relief": 0.04171984165339416,
+          "skewness": 0.03285858257446103,
+          "kurtosis": 0.036988290345708726,
+          "hypsometric_integral": 0.021334601799683838,
+          "water_fraction": 0.04767873011524023,
+          "mean_slope_deg": 0.06200705200253292,
+          "p90_slope_deg": 0.031547194646790656,
+          "p99_slope_deg": 0.024566252590243948,
+          "ruggedness_m": 0.05501710425591899,
+          "curvature_std": 0.03386208843724549,
+          "spectral_beta": 0.03844128888394317,
+          "hf_energy": 0.03161645696000515,
+          "checkerboard": 0.09082976410395191,
+          "peak_density": 0.033997031291642006,
+          "sink_density": 0.02740274133187333,
+          "trav_walkable_land_fraction": 0.037160673049980976,
+          "trav_largest_component_fraction": 0.06492053372017528,
+          "trav_connectivity_probability": 0.06679747724357239
+        },
+        "metric_w1_mean": 0.04947665953238901,
+        "rapsd_distance": 0.010271501138799504,
+        "height_w1": 0.008387429354982451,
+        "slope_w1_deg": 0.2502576799823949,
+        "trav_pass_rate_gen": 0.907,
+        "trav_pass_rate_ref": 0.917,
+        "diversity_gen": 0.15771810105897002,
+        "diversity_ref": 0.16622501769356535
+      },
+      "ratio_to_floor": {
+        "metric_w1_mean": 1.5095383433485776,
+        "rapsd_distance": 9.11972643829374,
+        "height_w1": 1.0087477609675066,
+        "slope_w1_deg": 1.6525166869993761
+      },
+      "artifacts": {
+        "checkerboard_mean_gen": 0.000493486527243834,
+        "checkerboard_mean_ref": 0.0005345857332836487,
+        "hf_energy_mean_gen": 0.005797908088945641,
+        "hf_energy_mean_ref": 0.006164188915399277,
+        "sink_density_mean_gen": 8.512441504327311,
+        "sink_density_mean_ref": 8.402998449157211
+      },
+      "metric_means": {
+        "mean_elevation": {
+          "gen": 0.30213649798914866,
+          "ref": 0.31087470036522336
+        },
+        "std_elevation": {
+          "gen": 0.05956804930028961,
+          "ref": 0.059988614132663653
+        },
+        "min_elevation": {
+          "gen": 0.18722747081145644,
+          "ref": 0.19292210280522704
+        },
+        "max_elevation": {
+          "gen": 0.47495175957679747,
+          "ref": 0.4893613486289978
+        },
+        "relief": {
+          "gen": 0.22577201582156117,
+          "ref": 0.2306299562798813
+        },
+        "skewness": {
+          "gen": 0.4019526343642785,
+          "ref": 0.4403324810571728
+        },
+        "kurtosis": {
+          "gen": 0.46614169928331206,
+          "ref": 0.5203665464305373
+        },
+        "hypsometric_integral": {
+          "gen": 0.42364271987213603,
+          "ref": 0.4189902058662254
+        },
+        "water_fraction": {
+          "gen": 0.1739970703125,
+          "ref": 0.1602421875
+        },
+        "mean_slope_deg": {
+          "gen": 12.708704411266124,
+          "ref": 13.171224815449463
+        },
+        "p90_slope_deg": {
+          "gen": 25.453958745915255,
+          "ref": 26.010424920640745
+        },
+        "p99_slope_deg": {
+          "gen": 33.723654953475325,
+          "ref": 34.158467479035096
+        },
+        "ruggedness_m": {
+          "gen": 41.15685393398015,
+          "ref": 43.01286378226108
+        },
+        "curvature_std": {
+          "gen": 0.2916109288437027,
+          "ref": 0.3157525766733779
+        },
+        "spectral_beta": {
+          "gen": 4.9325161091729735,
+          "ref": 4.7451641800023205
+        },
+        "hf_energy": {
+          "gen": 0.005797908088945641,
+          "ref": 0.006164188915399277
+        },
+        "checkerboard": {
+          "gen": 0.000493486527243834,
+          "ref": 0.0005345857332836487
+        },
+        "peak_density": {
+          "gen": 11.23309053069719,
+          "ref": 11.931061394380853
+        },
+        "sink_density": {
+          "gen": 8.512441504327311,
+          "ref": 8.402998449157211
+        },
+        "trav_walkable_land_fraction": {
+          "gen": 0.8962504681985668,
+          "ref": 0.8924127244975172
+        },
+        "trav_largest_component_fraction": {
+          "gen": 0.9493965212383549,
+          "ref": 0.9555023991641372
+        },
+        "trav_connectivity_probability": {
+          "gen": 0.9291487614183288,
+          "ref": 0.9366221776815986
+        },
+        "trav_passed": {
+          "gen": 0.916,
+          "ref": 0.917
+        }
+      },
+      "condition_adherence": {
+        "mean_elevation": {
+          "mae": 0.0002409346787198956,
+          "pearson_r": 0.9999947842892386,
+          "n": 1000,
+          "nmae": 0.002177794017455137
+        },
+        "relief": {
+          "mae": 0.004801845023781066,
+          "pearson_r": 0.9982412888897078,
+          "n": 1000,
+          "nmae": 0.04221292885148023
+        },
+        "mean_slope_deg": {
+          "mae": 0.35002295922429766,
+          "pearson_r": 0.9980464012004472,
+          "n": 1000,
+          "nmae": 0.05121196830840345
+        },
+        "water_fraction": {
+          "mae": 0.0129013671875,
+          "pearson_r": 0.9964059841901656,
+          "n": 1000,
+          "nmae": 0.04216006828821841
+        },
+        "spectral_beta": {
+          "mae": 0.2888645969343888,
+          "pearson_r": 0.9657395938101929,
+          "n": 1000,
+          "nmae": 0.2564143808889928
+        }
+      },
+      "condition_adherence_random_baseline": {
+        "mean_elevation": {
+          "mae": 0.1235164543773999,
+          "pearson_r": -0.005716837095401585,
+          "n": 1000,
+          "nmae": 1.1164577753171705
+        },
+        "relief": {
+          "mae": 0.13059683662261812,
+          "pearson_r": -0.0076923019097811475,
+          "n": 1000,
+          "nmae": 1.148074322531555
+        },
+        "mean_slope_deg": {
+          "mae": 7.386406122241687,
+          "pearson_r": 0.05319920661835302,
+          "n": 1000,
+          "nmae": 1.080707382977236
+        },
+        "water_fraction": {
+          "mae": 0.27455859375,
+          "pearson_r": -0.04267192716269371,
+          "n": 1000,
+          "nmae": 0.8972234410034086
+        },
+        "spectral_beta": {
+          "mae": 1.1757641274585398,
+          "pearson_r": 0.06845015237188873,
+          "n": 1000,
+          "nmae": 1.043682175016572
+        }
+      },
+      "per_archetype": {
+        "plains": {
+          "metric_w1_mean": 0.13449059760952156,
+          "noise_floor": 0.11485839624749214,
+          "ratio": 1.1709252610366927,
+          "n_gen": 158,
+          "n_ref": 158,
+          "spectrum_band_error_decades": {
+            "low": -0.024221564078681833,
+            "mid": -0.08183873718306064,
+            "fine": -0.2256632885837503,
+            "finest": 0.8363697562163244
+          },
+          "slope_w1_deg": 0.13210017526393106,
+          "sink_density_gen": 5.886432655766727,
+          "sink_density_ref": 6.004246644747157,
+          "peak_density_gen": 6.082140175713589,
+          "peak_density_ref": 6.394973590273843
+        },
+        "hills": {
+          "metric_w1_mean": 0.1498851753011,
+          "noise_floor": 0.12890413438780166,
+          "ratio": 1.1627646856462737,
+          "n_gen": 171,
+          "n_ref": 172,
+          "spectrum_band_error_decades": {
+            "low": -0.019984340926791577,
+            "mid": -0.020353670683086723,
+            "fine": -0.13535454749562428,
+            "finest": -0.27695968345523037
+          },
+          "slope_w1_deg": 0.5071826416829008,
+          "sink_density_gen": 11.525905799138965,
+          "sink_density_ref": 12.605730447491792,
+          "peak_density_gen": 15.205591154438299,
+          "peak_density_ref": 15.905185973912834
+        },
+        "mountains": {
+          "metric_w1_mean": 0.22492388306903346,
+          "noise_floor": 0.13118416893213747,
+          "ratio": 1.7145657505645644,
+          "n_gen": 170,
+          "n_ref": 169,
+          "spectrum_band_error_decades": {
+            "low": -0.09988306869231622,
+            "mid": -0.0953426776966589,
+            "fine": -0.2528408993521691,
+            "finest": -0.4440779997975105
+          },
+          "slope_w1_deg": 1.1198895087142058,
+          "sink_density_gen": 10.076948879370848,
+          "sink_density_ref": 7.668863259905394,
+          "peak_density_gen": 10.422660219134478,
+          "peak_density_ref": 11.708094994735513
+        },
+        "ridges": {
+          "metric_w1_mean": 0.18346782411116258,
+          "noise_floor": 0.10219424061221781,
+          "ratio": 1.795285360606054,
+          "n_gen": 156,
+          "n_ref": 177,
+          "spectrum_band_error_decades": {
+            "low": -0.005146131458615921,
+            "mid": -0.02160729895386845,
+            "fine": -0.11690446173147362,
+            "finest": -0.2446312175053325
+          },
+          "slope_w1_deg": 0.4143661636488047,
+          "sink_density_gen": 9.481376645742799,
+          "sink_density_ref": 7.872393684460675,
+          "peak_density_gen": 11.73990768163505,
+          "peak_density_ref": 11.634537940116521
+        },
+        "islands": {
+          "metric_w1_mean": 0.16074442473772282,
+          "noise_floor": 0.13308696638120254,
+          "ratio": 1.207814928143248,
+          "n_gen": 187,
+          "n_ref": 170,
+          "spectrum_band_error_decades": {
+            "low": 0.06963441279808241,
+            "mid": 0.012255328742432892,
+            "fine": -0.059670099435355804,
+            "finest": 0.06529053524760653
+          },
+          "slope_w1_deg": 0.5740858737682979,
+          "sink_density_gen": 2.044635076352148,
+          "sink_density_ref": 1.7153053254280577,
+          "peak_density_gen": 9.383329530847435,
+          "peak_density_ref": 9.57489135092122
+        },
+        "mesas": {
+          "metric_w1_mean": 0.22245889527383483,
+          "noise_floor": 0.15561672912891727,
+          "ratio": 1.4295307228062484,
+          "n_gen": 158,
+          "n_ref": 154,
+          "spectrum_band_error_decades": {
+            "low": 0.06207031054084444,
+            "mid": 0.06394262630158654,
+            "fine": 0.032194490375649115,
+            "finest": -0.026486613703624706
+          },
+          "slope_w1_deg": 0.6977831670020588,
+          "sink_density_gen": 12.891977389598944,
+          "sink_density_ref": 14.968106259235391,
+          "peak_density_gen": 14.645543276386675,
+          "peak_density_ref": 16.35877130153925
+        }
+      },
+      "memorization": {
+        "gen_nn_rmse_median": 0.04278761148452759,
+        "gen_nn_rmse_p05": 0.010271359235048294,
+        "heldout_nn_rmse_median": 0.043159838765859604,
+        "heldout_nn_rmse_p05": 0.010546863079071045,
+        "nn_median_ratio": 0.9913756251335144,
+        "frac_gen_below_heldout_p01": 0.011
+      },
+      "sampling_ms_per_map": 172.4287760257721
+    }
+  }
+}

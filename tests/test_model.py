@@ -281,7 +281,7 @@ def test_release_checkpoint_loads_without_pickle_and_samples_identically(sampler
     assert info["sha256"] == file_sha256(out) and info["source"]["sha256"] == file_sha256(source)
     ck = torch.load(out, map_location="cpu", weights_only=True)
     assert not {"model", "optimizer", "training_state"} & set(ck)
-    assert "root" not in ck["dataset"] and ck["train_config"]["train"]["init_from"] == "parent.pt"
+    assert ck["dataset"]["root"] == "data" and ck["train_config"]["train"]["init_from"] == "parent.pt"
     assert "private" not in repr({k: v for k, v in ck.items() if k != "ema"})
 
     a = TerrainSampler.from_checkpoint(source, device="cpu").sample(n=2, seed=3, steps=3, archetype="hills")

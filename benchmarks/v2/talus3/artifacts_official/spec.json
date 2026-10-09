@@ -1,0 +1,16 @@
+{
+  "per_archetype": 2,
+  "n_eval": 1000,
+  "n_3d": 3,
+  "seed": 2026,
+  "steps": 50,
+  "spacing": "quadratic",
+  "eta": 0.0,
+  "guidance": 2.0,
+  "batch_size": 128,
+  "split": "test",
+  "guidance_interval": [
+    0.0,
+    1.0
+  ]
+}
