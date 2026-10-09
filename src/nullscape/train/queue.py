@@ -56,8 +56,13 @@ def load_plan(path: str | Path) -> dict:
     if set(baseline) != {"name", "checkpoint"}:
         raise ValueError("baseline needs exactly name and checkpoint")
     evaluation = {**EVALUATION_DEFAULTS, **(raw.get("evaluation") or {})}
-    if set(evaluation) - set(EVALUATION_DEFAULTS):
-        raise ValueError(f"unknown evaluation keys: {', '.join(sorted(set(evaluation) - set(EVALUATION_DEFAULTS)))}")
+    unknown = set(evaluation) - set(EVALUATION_DEFAULTS) - {"dataset"}
+    if unknown:
+        raise ValueError(f"unknown evaluation keys: {', '.join(sorted(unknown))}")
+    if evaluation.get("dataset") is None:  # default: each checkpoint's training dataset; kept out of older plans
+        evaluation.pop("dataset", None)
+    elif not isinstance(evaluation["dataset"], str) or not evaluation["dataset"]:
+        raise ValueError("evaluation.dataset must be a dataset name or folder")
     if evaluation["split"] != "val":
         raise ValueError("the queue screens on VAL only; score TEST separately after choosing a checkpoint")
     modes = [m.strip() for m in str(evaluation["modes"]).split(",") if m.strip()]
@@ -224,6 +229,8 @@ class Queue:
                 "--guidance-interval", *(str(v) for v in s["guidance_interval"]), "--out", str(out)]
         if ev["device"]:
             args += ["--device", ev["device"]]
+        if ev.get("dataset"):
+            args += ["--dataset", ev["dataset"]]
         if not ev["memorization"]:
             args.append("--no-memorization")
         return args

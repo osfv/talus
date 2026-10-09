@@ -107,9 +107,22 @@ def test_queue_runs_stages_in_order_and_skips_completed_work(tmp_path):
     assert "does not select" in (out / "summary.md").read_text()
     snapshot = yaml.safe_load((out / "configs" / "b.yaml").read_text())
     assert snapshot["train"]["lr"] == pytest.approx(1e-4)
+    assert all("--dataset" not in c for c in runner.calls if c[0] == "evaluate")
     runner.calls.clear()
     run_queue(_write_plan(tmp_path), out, runner=runner)
     assert runner.calls == []
+
+
+def test_evaluation_dataset_is_optional_and_passed_to_every_evaluation(tmp_path):
+    from nullscape.train.queue import load_plan, run_queue
+
+    assert "dataset" not in load_plan(_write_plan(tmp_path))["evaluation"]  # older queue folders stay valid
+    runner = FakeRunner(tmp_path)
+    run_queue(_write_plan(tmp_path, evaluation={"n": 4, "seed": 1, "dataset": "base64"}), tmp_path / "q", runner=runner)
+    evaluations = [c for c in runner.calls if c[0] == "evaluate"]
+    assert len(evaluations) == 3 and all(_arg(c, "--dataset") == "base64" for c in evaluations)
+    with pytest.raises(ValueError):
+        load_plan(_write_plan(tmp_path, evaluation={"dataset": 5}))
 
 
 def test_failure_stops_queue_and_retry_is_explicit(tmp_path):

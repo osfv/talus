@@ -1,0 +1,21 @@
+# Fresh maps from the same generator as base64 (identical world, generator and agent settings; new
+# seed), for the Talus-3.1 overfitting test. VAL/TEST decisions keep using base64's splits.
+name: base64_fresh
+seed: 20261009
+n: 100000
+world:
+  resolution: 64
+  extent_m: 4096.0
+  max_height_m: 1200.0
+  sea_level: 0.2
+generator:
+  supersample: 2
+  blend_probability: 0.25
+  thermal_iters: 5
+  erosion: true
+  archetype_weights: {plains: 1.0, hills: 1.0, mountains: 1.0, ridges: 1.0, islands: 1.0, mesas: 1.0}
+splits: {train: 0.96, val: 0.02, test: 0.02}
+agent:
+  max_slope_deg: 35.0
+  water_passable: false
+  connectivity: 8

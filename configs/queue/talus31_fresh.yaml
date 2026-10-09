@@ -1,0 +1,23 @@
+# Talus-3.1 overfitting test: nullscape queue --plan configs/queue/talus31_fresh.yaml
+# Same baseline, VAL maps and seeds as configs/queue/talus31.yaml, so the numbers line up with
+# talus31-control-longer (same recipe on base64). evaluation.dataset pins every evaluation to base64 VAL;
+# the memorization check therefore compares against base64's training maps, not base64_fresh's.
+name: talus31_fresh
+baseline:
+  name: Talus-3
+  checkpoint: runs/20260927-184009_talus3_control/checkpoints/last.pt
+checkpoint: last
+evaluation:
+  dataset: base64
+  split: val
+  n: 500
+  seed: 7
+  batch_size: 64
+  modes: conditional
+  gameplay_n: 128
+  memorization: true
+  gpu_memory_fraction: 0.6
+  sampling: {steps: 50, spacing: quadratic, guidance: 2.0, eta: 0.0, guidance_interval: [0.0, 1.0]}
+experiments:
+  - name: talus31-fresh
+    config: configs/train/talus31_fresh.yaml
