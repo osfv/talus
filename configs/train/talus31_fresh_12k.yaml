@@ -1,0 +1,52 @@
+# Talus-3.1 step-count test: talus31_fresh.yaml with 12,000 steps (Talus-3's length) instead of 5,000. Same LR,
+# warmup, cosine floor, seed, data and batch; only the schedule length (and the snapshot cadence) changes.
+# Screen on base64 VAL: configs/queue/talus31_fresh12k.yaml.
+name: talus31_fresh_12k
+seed: 4
+dataset: base64_fresh
+model:
+  base_channels: 64
+  channel_mults: [1, 2, 3, 4]
+  num_res_blocks: 2
+  attention_resolutions: [16, 8]
+  dropout: 0.1
+diffusion:
+  timesteps: 1000
+  min_snr_gamma: null
+  p_drop_property: 0.15
+  p_drop_label: 0.15
+  p_drop_all: 0.10
+sampling:
+  steps: 50
+  spacing: quadratic
+  guidance: 2.0
+  guidance_interval: [0.0, 1.0]
+  eta: 0.0
+train:
+  init_from: runs/20260927-184009_talus3_control/checkpoints/last.pt
+  height_param: relative
+  archetype_loss_weights: {}
+  batch_size: 40
+  lr: 2.0e-5
+  lr_schedule: cosine
+  min_lr_ratio: 0.1
+  warmup_steps: 200
+  max_steps: 12000
+  grad_clip: 1.0
+  ema_decay: 0.9995
+  bf16: true
+  cuda_memory_fraction: 0.66
+  data_on_gpu: false
+  sample_batch_size: 16
+  log_every: 100
+  val_every: 1000
+  sample_every: 3000
+  eval_every: 6000
+  eval_samples: 500
+  eval_steps: 50
+  eval_spacing: quadratic
+  eval_guidance: 2.0
+  eval_guidance_interval: [0.0, 1.0]
+  checkpoint_every: 3000
+  recovery_every: 1000
+  keep_checkpoints: true
