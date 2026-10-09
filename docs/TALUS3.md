@@ -117,12 +117,27 @@ both scored worse than Talus-3 on VAL (seed 7):
 | NN-to-train median ratio | 0.977 | 0.956 | 0.955 |
 
 Both moved closer to their training maps. Across Talus-1 to Talus-3, the model has seen each of
-base64's 45,000 training maps about 60 times, so the next experiment (`configs/queue/talus31_fresh.yaml`) repeats the second recipe
-on 96,000 freshly generated maps (`configs/dataset/base64_fresh.yaml`) and screens it on the same VAL
-maps. If fresh data fixes the regression, Talus-3.1 trains on it.
+base64's 45,000 training maps about 60 times. So a third run (`configs/queue/talus31_fresh.yaml`) repeated
+the second recipe on 96,000 freshly generated maps from the same generator
+(`configs/dataset/base64_fresh.yaml`), scored on the same VAL maps:
+
+| | Talus-3 | same recipe, base64 | **same recipe, fresh maps** |
+|---|---|---|---|
+| metric W1 ratio | **1.182** | 1.270 | 1.242 |
+| spectrum ratio | **1.828** | 2.121 | 1.980 |
+| slopes ratio | 1.341 | 1.409 | **1.288** |
+| control nMAE | **0.077** | 0.083 | 0.079 |
+| mountains / ridges / plains | 1.163 / 1.417 / **1.359** | 1.217 / 1.460 / 1.446 | **1.120 / 1.412** / 1.392 |
+
+Fresh maps beat the same recipe on old maps in every column, so repeated epochs explain part of the
+regression. They still trail Talus-3 on overall realism and spectrum. The remaining suspect is the restart
+itself: each continuation begins with a fresh optimizer and warms the learning rate back up to 2e-5, four
+times the rate Talus-3 ended on. These are single-seed VAL screens; nothing here was scored on TEST, and
+Talus-3 stays the release.
 
 ## Next
 
-- **Talus-3.1:** the fresh-data test above.
+- **Talus-3.1:** continue on fresh maps without the restart: a low constant learning rate near where
+  Talus-3 ended, for longer than 5,000 steps.
 - **Spectrum:** the finest-band errors in mountains and plains.
 - **Talus-4:** real terrain from Copernicus GLO-30 ([`EARTH_DATA.md`](EARTH_DATA.md)).

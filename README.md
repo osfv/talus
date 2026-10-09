@@ -130,9 +130,9 @@ Talus-3 samples 5.8 maps/s at batch 128 on an RTX 5060 (8 GB), or one map in 1.3
 
 ## Roadmap
 
-- **Talus-3.1**: two short continuations on the same data scored worse than Talus-3 and moved closer
-  to the training maps. The next test continues on 96,000 freshly generated maps
-  ([docs/TALUS3.md](docs/TALUS3.md#talus-31-so-far)).
+- **Talus-3.1**: three short continuations of Talus-3 have not beaten it yet. Fresh training maps helped
+  compared with more passes over the old ones, so the next run keeps fresh maps and drops the learning-rate
+  restart ([docs/TALUS3.md](docs/TALUS3.md#talus-31-so-far)).
 - **Talus-4**: training on real terrain from the Copernicus GLO-30 elevation model
   ([docs/EARTH_DATA.md](docs/EARTH_DATA.md)).
 - Larger maps (128x128) and a distilled few-step sampler.
