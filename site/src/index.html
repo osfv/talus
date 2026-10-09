@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Talus: game terrain, generated in your browser</title>
+  <meta name="description" content="Talus is a 23M-parameter diffusion model that draws 4 km heightmaps for games. Generate one in your browser and export it to Unity, Unreal, Godot or Blender." />
+  <meta name="theme-color" content="#040404" />
+  <link rel="canonical" href="https://talus.tersa.tech/" />
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Talus by Tersa" />
+  <meta property="og:url" content="https://talus.tersa.tech/" />
+  <meta property="og:title" content="Talus: terrain from noise" />
+  <meta property="og:description" content="A small diffusion model for game heightmaps. It runs in your browser." />
+  <meta property="og:image" content="https://talus.tersa.tech/assets/og.png" />
+  <meta property="og:image:alt" content="A ridged mountain block rendered in white pixels on black" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://talus.tersa.tech/assets/og.png" />
+  <link rel="preload" href="assets/fonts/geist-sans-400.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/geist-sans-500.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/geist-mono-400.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="css/site.css" />
+  <script>document.documentElement.classList.add("js"); setTimeout(() => { if (!window.talusReady) document.documentElement.classList.remove("js"); }, 3000);</script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <a class="skip" href="#generate">Skip to the generator</a>
+
+  <header>
+    <a class="brand" href="./" aria-label="Talus home"><span class="wordmark">Talus</span></a>
+    <nav aria-label="Main">
+      <a href="#how">How it works</a>
+      <a href="#use">Engines</a>
+      <a href="https://github.com/osfv/talus" target="_blank" rel="noopener">GitHub</a>
+      <a class="tersa" href="https://tersa.tech/" aria-label="Tersa"><img src="assets/tersa-mark-white.png" width="20" height="20" alt="" /><span>Tersa</span></a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy reveal">
+        <h1>Terrain from noise.</h1>
+        <p class="lede">Talus is a small diffusion model that draws 4&nbsp;km heightmaps for games, right here in your browser.</p>
+        <div class="ctas">
+          <a class="btn primary" href="#generate" data-generate>Generate terrain</a>
+          <a class="btn" href="https://github.com/osfv/talus" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </div>
+      <figure class="hero-view reveal">
+        <canvas id="hero-canvas" role="img" aria-label="A Talus-3 map rendered as a 1-bit block diagram"></canvas>
+        <figcaption class="mono" id="hero-caption" aria-live="polite">Talus-3 output</figcaption>
+      </figure>
+    </section>
+
+    <section class="gen" id="generate" aria-labelledby="gen-title">
+      <div class="gen-head reveal">
+        <h2 id="gen-title">Make a map</h2>
+        <p>Pick a terrain type, set what matters to you and leave the rest on Auto.</p>
+      </div>
+      <div class="gen-grid">
+        <div class="stage reveal">
+          <canvas id="gen-canvas" tabindex="0" aria-label="The current map in 3D. Drag or use the arrow keys to turn it."></canvas>
+          <div class="progress" id="progress" aria-hidden="true"><span></span></div>
+          <div class="stage-bar mono">
+            <span id="status" role="status" aria-live="polite">Stored sample. The first run downloads about 54 MB.</span>
+            <span id="backend"></span>
+          </div>
+        </div>
+
+        <form class="panel reveal" id="controls" novalidate>
+          <fieldset class="field">
+            <legend>Terrain</legend>
+            <div class="segments types" id="types"></div>
+          </fieldset>
+          <fieldset class="field">
+            <legend>Properties</legend>
+            <div class="props" id="props"></div>
+          </fieldset>
+          <div class="field row">
+            <label for="seed">Seed</label>
+            <input id="seed" name="seed" type="number" min="0" max="4294967295" step="1" inputmode="numeric" value="209" />
+            <button class="btn small" type="button" id="reroll">New seed</button>
+          </div>
+          <fieldset class="field">
+            <legend>Quality</legend>
+            <div class="segments" id="steps"></div>
+          </fieldset>
+          <button class="btn primary wide" type="submit" id="go">Generate terrain</button>
+        </form>
+      </div>
+
+      <div class="out reveal" id="out">
+        <canvas id="heightmap" class="heightmap" width="64" height="64" role="img" aria-label="Top-down heightmap of the current map"></canvas>
+        <div class="out-copy">
+          <p class="out-title" id="out-title">Islands, seed 209</p>
+          <p class="mono out-meta" id="out-meta">64 x 64 cells, 4,096 m across</p>
+        </div>
+        <div class="downloads" role="group" aria-label="Download the current map">
+          <button class="btn small" type="button" data-export="png">PNG 16-bit</button>
+          <button class="btn small" type="button" data-export="r16">Unity RAW</button>
+          <button class="btn small" type="button" data-export="obj">OBJ</button>
+          <button class="btn small" type="button" data-export="json">Info</button>
+          <button class="btn small" type="button" id="share">Copy link</button>
+        </div>
+      </div>
+      <p class="note">Weights and runtime stay in your browser's cache after the first run. The maps you make never leave your device.</p>
+    </section>
+
+    <section class="how" id="how" aria-labelledby="how-title">
+      <h2 id="how-title" class="reveal">From noise to terrain in 25 steps</h2>
+      <ol class="frames reveal" id="frames"></ol>
+      <div class="how-copy reveal">
+        <p>Every map starts as random noise. At each step Talus predicts the clean terrain under the noise, and the sampler keeps a little more of that prediction. Above is the island from the generator at six of its 25 steps.</p>
+        <p>We trained the 23M-parameter network from scratch on 45,000 maps from our own procedural generator: layered noise, rivers cutting valleys, and loose rock sliding down to its resting angle. That pile of rock at the foot of a slope is called talus.</p>
+        <p>Here, ONNX Runtime runs the network on WebGPU, or on the CPU when WebGPU is missing. The same seed and settings give the same map.</p>
+      </div>
+    </section>
+
+    <section class="numbers" aria-labelledby="numbers-title">
+      <div class="big reveal">
+        <p class="num" id="numbers-title">80.3</p>
+        <p>Talus-3's average over nine scores on held-out test maps. A score of 100 would mean its maps can't be told apart from the procedural terrain it learned from.</p>
+        <a href="https://github.com/osfv/talus/blob/master/docs/TALUS3_SCORECARD.md" target="_blank" rel="noopener">Read the scorecard</a>
+      </div>
+      <dl class="scores reveal">
+        <div><dt>Playability</dt><dd class="value">99.9</dd><dd>Walkable routes as often as real maps.</dd></div>
+        <div><dt>Clean detail</dt><dd class="value">99.4</dd><dd>No excess pits or bumps.</dd></div>
+        <div><dt>Control</dt><dd class="value">92.1</dd><dd>Measured relief, slope and water stay close to what you asked for.</dd></div>
+        <div><dt>Realism</dt><dd class="value">66.2</dd><dd>25 terrain statistics compared with real maps.</dd></div>
+        <div><dt>Spectrum</dt><dd class="value">11.0</dd><dd>Fine detail is off: too smooth on mountains, too grainy on plains. This is the next fix.</dd></div>
+      </dl>
+    </section>
+
+    <section class="use" id="use" aria-labelledby="use-title">
+      <div class="use-copy reveal">
+        <h2 id="use-title">Take it into your engine</h2>
+        <p>Every map comes with a JSON file that gives its size and height range. For hundreds of maps, run Talus locally with the Python tool.</p>
+        <pre class="code mono" tabindex="0"><code>git clone https://github.com/osfv/talus
+cd talus &amp;&amp; pip install -e .
+gh release download v3.0.0 -R osfv/talus -p talus-3.pt -D checkpoints
+nullscape sample --checkpoint talus-3 --archetype ridges \
+    --n 64 --formats png16,r16,obj --unity</code></pre>
+      </div>
+      <dl class="engines reveal">
+        <div><dt>Unity</dt><dd>Terrain, Import Raw: 65 x 65, 16-bit, Windows byte order. Set the terrain to 4,032 m wide and 1,200 m high.</dd></div>
+        <div><dt>Unreal and Godot</dt><dd>Use the 16-bit PNG as a landscape or terrain heightmap and scale its height to 1,200 m.</dd></div>
+        <div><dt>Blender</dt><dd>Import the OBJ. It is in meters with Y up.</dd></div>
+      </dl>
+    </section>
+  </main>
+
+  <footer>
+    <a class="foot-home" href="https://tersa.tech/">Made by Tersa</a>
+    <span class="mono">Talus-3, Apache-2.0</span>
+    <div class="foot-links">
+      <a href="https://github.com/osfv/talus" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://tersa.tech/privacy/">Privacy</a>
+      <a href="https://tersa.tech/imprint/">Imprint</a>
+    </div>
+  </footer>
+</body>
+</html>

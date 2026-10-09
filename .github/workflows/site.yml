@@ -1,0 +1,58 @@
+# Builds talus.tersa.tech from site/ and deploys it to GitHub Pages. The browser model files come from the
+# v3.0.0 release assets (made by scripts/export_web.py), so the repository holds no large binaries.
+name: Site
+
+on:
+  push:
+    branches: [master]
+    paths: ["site/**", ".github/workflows/site.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - name: Install (onnxruntime-node is only for the local parity test)
+        working-directory: site
+        run: npm ci --omit=dev
+      - name: Download the browser model from the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release download v3.0.0 --repo "$GITHUB_REPOSITORY" --dir site/public/model
+          --pattern talus-3.fp16.onnx --pattern talus-3.json --pattern talus-3.prior.bin
+      - name: Test exports
+        working-directory: site
+        run: node --test test/exports.test.mjs
+      - name: Build
+        working-directory: site
+        run: node build.mjs
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

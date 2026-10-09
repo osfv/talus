@@ -1,0 +1,19 @@
+{
+  "name": "talus-site",
+  "private": true,
+  "description": "talus.tersa.tech: Talus terrain generation running in the browser",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "serve": "node serve.mjs",
+    "dev": "node build.mjs && node serve.mjs",
+    "test": "node --test \"test/**/*.test.mjs\""
+  },
+  "dependencies": {
+    "onnxruntime-web": "1.30.0"
+  },
+  "devDependencies": {
+    "onnxruntime-node": "1.30.0"
+  }
+}

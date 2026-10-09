@@ -1,0 +1,58 @@
+[
+ {
+  "archetype": "ridges",
+  "seed": 106,
+  "properties": {},
+  "steps": 25,
+  "guidance": 2,
+  "mean_elevation": 0.41894400119781494,
+  "relief": 0.38743001222610474
+ },
+ {
+  "archetype": "islands",
+  "seed": 209,
+  "properties": {
+   "water_fraction": 0.62
+  },
+  "steps": 25,
+  "guidance": 2,
+  "mean_elevation": 0.1986290067434311,
+  "relief": 0.2808240056037903
+ },
+ {
+  "archetype": "mountains",
+  "seed": 313,
+  "properties": {},
+  "steps": 25,
+  "guidance": 2,
+  "mean_elevation": 0.3844299912452698,
+  "relief": 0.3128510117530823
+ },
+ {
+  "archetype": "hills",
+  "seed": 504,
+  "properties": {},
+  "steps": 25,
+  "guidance": 2,
+  "mean_elevation": 0.32340800762176514,
+  "relief": 0.22065599262714386
+ },
+ {
+  "archetype": "mesas",
+  "seed": 407,
+  "properties": {},
+  "steps": 25,
+  "guidance": 2,
+  "mean_elevation": 0.2967259883880615,
+  "relief": 0.15290799736976624
+ },
+ {
+  "archetype": "plains",
+  "seed": 603,
+  "properties": {},
+  "steps": 25,
+  "guidance": 2,
+  "mean_elevation": 0.31496500968933105,
+  "relief": 0.07040300220251083
+ }
+]

@@ -24,6 +24,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8", "tifffile>=2026.9.15"]
 earth = ["tifffile>=2026.9.15"]  # real-terrain datasets (nullscape.data.earth)
+web = ["onnx>=1.23.1", "onnxruntime>=1.30"]  # scripts/export_web.py: the browser model for talus.tersa.tech
 
 [project.scripts]
 nullscape = "nullscape.cli:main"
