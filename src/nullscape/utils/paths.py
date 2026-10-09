@@ -11,6 +11,7 @@ CHECKPOINT_ALIASES = {
     "talus-1.1": "runs/20260926-181917_v2_exp1_nominsnr_cosine/checkpoints/step_0008000.pt",
     "talus-2": "runs/20260926-192753_talus2_relative/checkpoints/step_0010000.pt",
     "talus-3": "checkpoints/talus-3.pt",
+    "talus-3.1": "checkpoints/talus-3.1.pt",
 }
 RELEASES_URL = "https://github.com/osfv/talus/releases"
 

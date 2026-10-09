@@ -13,15 +13,18 @@ pretrained weights and no external API.
 | **Talus-1.1** | `runs/20260926-181917_v2_exp1_nominsnr_cosine/checkpoints/step_0008000.pt` | same | 70.4 | 8k-step fine-tune of Talus-1 without the Min-SNR cap, cosine LR, [report](V2_EXP1.md) |
 | **Talus-2** | `runs/20260926-192753_talus2_relative/checkpoints/step_0010000.pt` | same | 77.5 | relative heights, 10k-step fine-tune of Talus-1.1, [report](TALUS2.md) |
 | **Talus-3** | release file `talus-3.pt` (sha256 `13b4297b…a6d9`), from `runs/20260927-184009_talus3_control/checkpoints/step_0012000.pt` | same | **80.3** | 12k-step fine-tune of Talus-2 at half the learning rate, [report](TALUS3.md) |
+| **Talus-3.1** | release file `talus-3.1.pt` (sha256 `7d7d7e41…98e0`), from `runs/20261009-193828_talus31_fresh_12k/checkpoints/last.pt` | same | 79.7 | variant for flatter maps: 12k steps on 96k fresh maps from Talus-3, [report](TALUS31.md) |
 
 Scorecards:
 - [`BENCHMARK_SCORECARD.md`](BENCHMARK_SCORECARD.md): Talus-1
 - [`V2_EXP1_SCORECARD.md`](V2_EXP1_SCORECARD.md): Talus-1.1 vs Talus-1
 - [`TALUS2_SCORECARD.md`](TALUS2_SCORECARD.md): Talus-2 vs Talus-1.1
 - [`TALUS3_SCORECARD.md`](TALUS3_SCORECARD.md): Talus-3 vs Talus-2
+- [`TALUS31_SCORECARD.md`](TALUS31_SCORECARD.md): Talus-3.1 vs Talus-3
 
-**Talus-3 is the current best version and the first with public weights** (GitHub release `v3.0.0`,
-Apache-2.0). Only Talus-3 weights are published; the `talus-1`, `talus-1.1` and `talus-2` aliases
+**Talus-3 is the default and the best all-round version** (GitHub release `v3.0.0`, Apache-2.0).
+**Talus-3.1** (release `v3.1.0`) is better on plains, islands and mesas and worse on hills, mountains and
+ridges. Only Talus-3 and Talus-3.1 weights are published; the `talus-1`, `talus-1.1` and `talus-2` aliases
 work on the machine that trained them.
 
 ## What it makes

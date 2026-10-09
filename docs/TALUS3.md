@@ -130,14 +130,12 @@ the second recipe on 96,000 freshly generated maps from the same generator
 | mountains / ridges / plains | 1.163 / 1.417 / **1.359** | 1.217 / 1.460 / 1.446 | **1.120 / 1.412** / 1.392 |
 
 Fresh maps beat the same recipe on old maps in every column, so repeated epochs explain part of the
-regression. They still trail Talus-3 on overall realism and spectrum. The remaining suspect is the restart
-itself: each continuation begins with a fresh optimizer and warms the learning rate back up to 2e-5, four
-times the rate Talus-3 ended on. These are single-seed VAL screens; nothing here was scored on TEST, and
-Talus-3 stays the release.
+regression. The same recipe run for 12,000 steps on fresh maps became **Talus-3.1**, a variant that is better
+on plains, islands and mesas and worse on rugged terrain: [`TALUS31.md`](TALUS31.md). Talus-3 stays the
+default.
 
 ## Next
 
-- **Talus-3.1:** continue on fresh maps without the restart: a low constant learning rate near where
-  Talus-3 ended, for longer than 5,000 steps.
+- **Rugged terrain:** neither longer training nor fresh maps closed the gap on ridges and mountains.
 - **Spectrum:** the finest-band errors in mountains and plains.
 - **Talus-4:** real terrain from Copernicus GLO-30 ([`EARTH_DATA.md`](EARTH_DATA.md)).

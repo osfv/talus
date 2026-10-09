@@ -1,0 +1,492 @@
+{
+  "benchmark": "NULLSCAPE v1 protocol",
+  "experiment": "talus31",
+  "provenance": {
+    "default_sampler": {
+      "steps": 200,
+      "spacing": "uniform",
+      "eta": 0.0,
+      "guidance": 1.5
+    },
+    "checkpoint": {
+      "path": "checkpoints\\talus-3.1.pt",
+      "sha256": "7d7d7e4181c36b16298821f54bc987cd625aad73dae2581b17eebeb52a5f98e0",
+      "step": 12000,
+      "train_config": "talus31_fresh_12k",
+      "diffusion_config": {
+        "timesteps": 1000,
+        "min_snr_gamma": null,
+        "p_drop_property": 0.15,
+        "p_drop_label": 0.15,
+        "p_drop_all": 0.1
+      }
+    },
+    "spec": {
+      "per_archetype": 2,
+      "n_eval": 1000,
+      "n_3d": 3,
+      "seed": 2026,
+      "steps": 50,
+      "spacing": "quadratic",
+      "eta": 0.0,
+      "guidance": 2.0,
+      "batch_size": 128,
+      "split": "test",
+      "guidance_interval": [
+        0.0,
+        1.0
+      ]
+    },
+    "created_at": "2026-10-09T20:43:25"
+  },
+  "checkpoints_test": {
+    "compact": {}
+  },
+  "official": {
+    "checkpoint": 12000,
+    "sampler": {
+      "steps": 50,
+      "spacing": "quadratic",
+      "guidance": 2.0,
+      "eta": 0.0
+    },
+    "compact": {
+      "ratio": {
+        "metric_w1_mean": 1.551368620676277,
+        "rapsd_distance": 8.886065278467857,
+        "height_w1": 1.0172957610065956,
+        "slope_w1_deg": 1.6951891224802496
+      },
+      "model": {
+        "metric_w1_mean": 0.07675653705598347,
+        "rapsd_distance": 0.0912732296361154,
+        "height_w1": 0.008532496329583228,
+        "slope_w1_deg": 0.42423409692499425
+      },
+      "floor": {
+        "metric_w1_mean": 0.04947665953238901,
+        "rapsd_distance": 0.010271501138799504,
+        "height_w1": 0.008387429354982451,
+        "slope_w1_deg": 0.2502576799823949
+      },
+      "trav_pass_gen": 0.911,
+      "trav_pass_ref": 0.917,
+      "diversity_gen": 0.15727997351782863,
+      "diversity_ref": 0.16622501769356535,
+      "artifacts": {
+        "checkerboard_mean_gen": 0.0004726406807567566,
+        "checkerboard_mean_ref": 0.0005345857332836487,
+        "hf_energy_mean_gen": 0.0058438553856675545,
+        "hf_energy_mean_ref": 0.006164188915399277,
+        "sink_density_mean_gen": 8.484197019877854,
+        "sink_density_mean_ref": 8.402998449157211
+      },
+      "peak_density": {
+        "gen": 11.149583766909469,
+        "ref": 11.931061394380853
+      },
+      "sink_density": {
+        "gen": 8.484197019877854,
+        "ref": 8.402998449157211
+      },
+      "adherence_nmae": {
+        "mean_elevation": 0.001816519637769379,
+        "relief": 0.04362822249071368,
+        "mean_slope_deg": 0.0455888885680602,
+        "water_fraction": 0.04196220860811323,
+        "spectral_beta": 0.24838238133684654
+      },
+      "adherence_r": {
+        "mean_elevation": 0.9999963846198933,
+        "relief": 0.9982235239297331,
+        "mean_slope_deg": 0.9985985307197468,
+        "water_fraction": 0.9964797181177727,
+        "spectral_beta": 0.967758091001982
+      },
+      "adherence_nmae_mean": 0.0762756441283006,
+      "per_archetype_ratio": {
+        "plains": 1.126811784164885,
+        "hills": 1.2010675420922645,
+        "mountains": 1.7511229631299876,
+        "ridges": 1.9265328331288603,
+        "islands": 1.1597220212157588,
+        "mesas": 1.3303190838016474
+      },
+      "memorization": {
+        "gen_nn_rmse_median": 0.04244844615459442,
+        "gen_nn_rmse_p05": 0.01033290009945631,
+        "heldout_nn_rmse_median": 0.043159838765859604,
+        "heldout_nn_rmse_p05": 0.010546863079071045,
+        "nn_median_ratio": 0.9835172295570374,
+        "frac_gen_below_heldout_p01": 0.011
+      },
+      "excess_over_floor": {
+        "metric_w1_mean": 0.02727987752359446,
+        "rapsd_distance": 0.08100172849731589,
+        "height_w1": 0.00014506697460077607,
+        "slope_w1_deg": 0.17397641694259935
+      },
+      "rapsd_bias_decades": 0.0906934325768007
+    },
+    "wall_seconds": 205.89294147491455,
+    "artifacts_dir": "benchmarks\\v2\\talus31\\artifacts_official\\step_0012000"
+  },
+  "perf": {
+    "checkpoint": {
+      "path": "checkpoints\\talus-3.1.pt",
+      "step": 12000,
+      "use_ema": true,
+      "release": "Talus-3.1 3.1.0",
+      "sha256": "7d7d7e4181c36b16298821f54bc987cd625aad73dae2581b17eebeb52a5f98e0"
+    },
+    "device": "cuda",
+    "device_name": "NVIDIA GeForce RTX 5060",
+    "torch_version": "2.11.0+cu128",
+    "cuda_version": "12.8",
+    "repeats": 3,
+    "warmup_batches": 1,
+    "rows": [
+      {
+        "steps": 50,
+        "guidance": 2.0,
+        "eta": 0.0,
+        "spacing": "quadratic",
+        "guidance_interval": [
+          0.0,
+          1.0
+        ],
+        "batch": 1,
+        "oom": false,
+        "batch_seconds": [
+          1.3388952999994217,
+          1.3132476999999199,
+          1.3487118000011833
+        ],
+        "latency_seconds_per_batch": 1.3388952999994217,
+        "batch_latency_p95_seconds": 1.347730150001007,
+        "seconds_per_map": 1.3388952999994217,
+        "maps_per_second": 0.7468843904377227,
+        "peak_alloc_mb": 184.54443359375,
+        "peak_reserved_mb": 218.0
+      },
+      {
+        "steps": 50,
+        "guidance": 2.0,
+        "eta": 0.0,
+        "spacing": "quadratic",
+        "guidance_interval": [
+          0.0,
+          1.0
+        ],
+        "batch": 32,
+        "oom": false,
+        "batch_seconds": [
+          5.601589800000511,
+          5.584253900000476,
+          5.587302199999613
+        ],
+        "latency_seconds_per_batch": 5.587302199999613,
+        "batch_latency_p95_seconds": 5.600161040000421,
+        "seconds_per_map": 0.1746031937499879,
+        "maps_per_second": 5.727272099225672,
+        "peak_alloc_mb": 758.724609375,
+        "peak_reserved_mb": 1346.0
+      },
+      {
+        "steps": 50,
+        "guidance": 2.0,
+        "eta": 0.0,
+        "spacing": "quadratic",
+        "guidance_interval": [
+          0.0,
+          1.0
+        ],
+        "batch": 64,
+        "oom": false,
+        "batch_seconds": [
+          11.341109199998755,
+          11.350216500000897,
+          11.334402700000282
+        ],
+        "latency_seconds_per_batch": 11.341109199998755,
+        "batch_latency_p95_seconds": 11.349305770000683,
+        "seconds_per_map": 0.17720483124998054,
+        "maps_per_second": 5.643186999734296,
+        "peak_alloc_mb": 1369.1650390625,
+        "peak_reserved_mb": 2548.0
+      },
+      {
+        "steps": 50,
+        "guidance": 2.0,
+        "eta": 0.0,
+        "spacing": "quadratic",
+        "guidance_interval": [
+          0.0,
+          1.0
+        ],
+        "batch": 128,
+        "oom": false,
+        "batch_seconds": [
+          22.863671899998735,
+          22.854398299999957,
+          22.871480200001315
+        ],
+        "latency_seconds_per_batch": 22.863671899998735,
+        "batch_latency_p95_seconds": 22.870699370001056,
+        "seconds_per_map": 0.17862243671874012,
+        "maps_per_second": 5.598400841292998,
+        "peak_alloc_mb": 2594.0478515625,
+        "peak_reserved_mb": 3592.0
+      }
+    ],
+    "timing_scope": "warm end-to-end sampling, including prior lookup, noise creation, transfers and CPU output; excludes checkpoint load",
+    "isolation": "caller must ensure no competing GPU work; no isolation guarantee is inferred from timings",
+    "mode": "conditional",
+    "gpu_memory_fraction": 0.6,
+    "created_at": "2026-10-09T20:39:54"
+  },
+  "baselines": {
+    "n_per_half": 1000,
+    "split": "test",
+    "results": {
+      "blur": {
+        "compact": {
+          "ratio": {
+            "metric_w1_mean": 10.705548406749777,
+            "rapsd_distance": 334.5007663955635,
+            "height_w1": 1.021464979716182,
+            "slope_w1_deg": 13.699381286463096
+          },
+          "model": {
+            "metric_w1_mean": 0.5296747736389739,
+            "rapsd_distance": 3.435825003295838,
+            "height_w1": 0.008567465356979524,
+            "slope_w1_deg": 3.42837537795819
+          },
+          "floor": {
+            "metric_w1_mean": 0.04947665953238901,
+            "rapsd_distance": 0.010271501138799504,
+            "height_w1": 0.00838742935498245,
+            "slope_w1_deg": 0.2502576799823949
+          },
+          "trav_pass_gen": 0.936,
+          "trav_pass_ref": 0.917,
+          "diversity_gen": 0.1539047357101735,
+          "diversity_ref": 0.16622501769356535,
+          "artifacts": {
+            "checkerboard_mean_gen": 0.00010495579553250042,
+            "checkerboard_mean_ref": 0.0005345857332836487,
+            "hf_energy_mean_gen": 6.9222780048048e-06,
+            "hf_energy_mean_ref": 0.006164188915399277,
+            "sink_density_mean_gen": 2.596681682407647,
+            "sink_density_mean_ref": 8.402998449157211
+          },
+          "peak_density": {
+            "gen": 3.3720083246618104,
+            "ref": 11.931061394380853
+          },
+          "sink_density": {
+            "gen": 2.596681682407647,
+            "ref": 8.402998449157211
+          },
+          "adherence_nmae": {
+            "mean_elevation": 0.0002651994119136013,
+            "relief": 0.14363827226646106,
+            "mean_slope_deg": 0.4681249528757741,
+            "water_fraction": 0.017547281468682834,
+            "spectral_beta": 3.9940151889890503
+          },
+          "adherence_r": {
+            "mean_elevation": 0.9999999264325429,
+            "relief": 0.9963919306798278,
+            "mean_slope_deg": 0.9775779221911858,
+            "water_fraction": 0.9994402002363016,
+            "spectral_beta": 0.9397225666635951
+          },
+          "adherence_nmae_mean": 0.9247181790023763,
+          "per_archetype_ratio": {
+            "plains": 4.021461815574404,
+            "hills": 6.08158915062571,
+            "mountains": 6.251491494275423,
+            "ridges": 8.402548121239661,
+            "islands": 4.64505412144095,
+            "mesas": 5.093898468335999
+          },
+          "memorization": {
+            "gen_nn_rmse_median": 0.03860587626695633,
+            "heldout_nn_rmse_median": 0.0428335927426815,
+            "nn_median_ratio": 0.9012990593910217,
+            "frac_gen_below_heldout_p01": 0.02,
+            "n": 200
+          },
+          "excess_over_floor": {
+            "metric_w1_mean": 0.48019811410658486,
+            "rapsd_distance": 3.4255535021570385,
+            "height_w1": 0.00018003600199707412,
+            "slope_w1_deg": 3.1781176979757952
+          },
+          "rapsd_bias_decades": 3.4358096497823043
+        }
+      },
+      "spectral_noise": {
+        "compact": {
+          "ratio": {
+            "metric_w1_mean": 9.332856868579286,
+            "rapsd_distance": 83.39141492832566,
+            "height_w1": 1.4080380166920259,
+            "slope_w1_deg": 16.26301465289971
+          },
+          "model": {
+            "metric_w1_mean": 0.4617585817605484,
+            "rapsd_distance": 0.8565550134857904,
+            "height_w1": 0.011809819395542005,
+            "slope_w1_deg": 4.069944316570637
+          },
+          "floor": {
+            "metric_w1_mean": 0.04947665953238901,
+            "rapsd_distance": 0.010271501138799504,
+            "height_w1": 0.00838742935498245,
+            "slope_w1_deg": 0.2502576799823949
+          },
+          "trav_pass_gen": 0.926,
+          "trav_pass_ref": 0.917,
+          "diversity_gen": 0.1563182092976067,
+          "diversity_ref": 0.16622501769356535,
+          "artifacts": {
+            "checkerboard_mean_gen": 0.00016857433074388378,
+            "checkerboard_mean_ref": 0.0005345857332836487,
+            "hf_energy_mean_gen": 0.00335914688984027,
+            "hf_energy_mean_ref": 0.006164188915399277,
+            "sink_density_mean_gen": 10.007452197023872,
+            "sink_density_mean_ref": 8.402998449157211
+          },
+          "peak_density": {
+            "gen": 10.946409989594173,
+            "ref": 11.931061394380853
+          },
+          "sink_density": {
+            "gen": 10.007452197023872,
+            "ref": 8.402998449157211
+          },
+          "adherence_nmae": {
+            "mean_elevation": 0.0037941769172725017,
+            "relief": 0.20310989770627552,
+            "mean_slope_deg": 0.6497478599744114,
+            "water_fraction": 0.076004445262984,
+            "spectral_beta": 0.188743669458455
+          },
+          "adherence_r": {
+            "mean_elevation": 0.9999010996545301,
+            "relief": 0.9549670095980538,
+            "mean_slope_deg": 0.7660902216016159,
+            "water_fraction": 0.9906659493666629,
+            "spectral_beta": 0.9897494454926753
+          },
+          "adherence_nmae_mean": 0.22428000986387966,
+          "per_archetype_ratio": {
+            "plains": 5.252993260428611,
+            "hills": 5.157567876703767,
+            "mountains": 5.286052190432828,
+            "ridges": 6.665276907032489,
+            "islands": 6.261045686152123,
+            "mesas": 3.667443139729962
+          },
+          "memorization": {
+            "gen_nn_rmse_median": 0.042122021317481995,
+            "heldout_nn_rmse_median": 0.0428335927426815,
+            "nn_median_ratio": 0.9833875298500061,
+            "frac_gen_below_heldout_p01": 0.03,
+            "n": 200
+          },
+          "excess_over_floor": {
+            "metric_w1_mean": 0.4122819222281594,
+            "rapsd_distance": 0.846283512346991,
+            "height_w1": 0.003422390040559555,
+            "slope_w1_deg": 3.819686636588242
+          },
+          "rapsd_bias_decades": 0.8564934251890077
+        }
+      },
+      "retrieval": {
+        "compact": {
+          "ratio": {
+            "metric_w1_mean": 0.9890510210001892,
+            "rapsd_distance": 1.5710487032928286,
+            "height_w1": 1.0228649469129747,
+            "slope_w1_deg": 1.0657163487223018
+          },
+          "model": {
+            "metric_w1_mean": 0.04893494062717714,
+            "rapsd_distance": 0.01613702854655282,
+            "height_w1": 0.008579207482943314,
+            "slope_w1_deg": 0.2667037009516179
+          },
+          "floor": {
+            "metric_w1_mean": 0.04947665953238901,
+            "rapsd_distance": 0.010271501138799504,
+            "height_w1": 0.00838742935498245,
+            "slope_w1_deg": 0.2502576799823949
+          },
+          "trav_pass_gen": 0.905,
+          "trav_pass_ref": 0.917,
+          "diversity_gen": 0.15785938130486943,
+          "diversity_ref": 0.16622501769356535,
+          "artifacts": {
+            "checkerboard_mean_gen": 0.0005048467999065944,
+            "checkerboard_mean_ref": 0.0005345857332836487,
+            "hf_energy_mean_gen": 0.005967486555047643,
+            "hf_energy_mean_ref": 0.006164188915399277,
+            "sink_density_mean_gen": 8.316809908816703,
+            "sink_density_mean_ref": 8.402998449157211
+          },
+          "peak_density": {
+            "gen": 11.842351716961497,
+            "ref": 11.931061394380853
+          },
+          "sink_density": {
+            "gen": 8.316809908816703,
+            "ref": 8.402998449157211
+          },
+          "adherence_nmae": {
+            "mean_elevation": 0.04484145051307307,
+            "relief": 0.04749184885438107,
+            "mean_slope_deg": 0.04771494203701994,
+            "water_fraction": 0.024826602925455687,
+            "spectral_beta": 0.0534629626514933
+          },
+          "adherence_r": {
+            "mean_elevation": 0.9982347042272227,
+            "relief": 0.9979003183580015,
+            "mean_slope_deg": 0.9978557661706459,
+            "water_fraction": 0.9989381782655206,
+            "spectral_beta": 0.9974543233164976
+          },
+          "adherence_nmae_mean": 0.04366756139628462,
+          "per_archetype_ratio": {
+            "plains": 1.1787408634067666,
+            "hills": 0.9953162514594451,
+            "mountains": 0.9377205059638074,
+            "ridges": 0.9171388202886755,
+            "islands": 0.9181223079516903,
+            "mesas": 1.213500496591101
+          },
+          "memorization": {
+            "gen_nn_rmse_median": 0.0,
+            "heldout_nn_rmse_median": 0.0428335927426815,
+            "nn_median_ratio": 0.0,
+            "frac_gen_below_heldout_p01": 1.0,
+            "n": 200
+          },
+          "excess_over_floor": {
+            "metric_w1_mean": -0.0005417189052118673,
+            "rapsd_distance": 0.005865527407753318,
+            "height_w1": 0.00019177812796086421,
+            "slope_w1_deg": 0.016446020969222985
+          },
+          "rapsd_bias_decades": 0.012445881032209056
+        }
+      }
+    },
+    "definitions": "Non-learned reference generators scored with the same TEST protocol (CPU only).\n\nblur            each A map Gaussian-blurred (sigma 1.5 cells): right layout, missing detail\nspectral_noise  random-phase noise with A's spectral_beta, mean and std: right roughness, no structure\nretrieval       the training map (same archetype) whose conditions are closest to A's: a perfect\n                memorizer (real terrain, good control, zero originality)\n"
+  }
+}
