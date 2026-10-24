@@ -117,6 +117,7 @@ header {
 nav { display: flex; align-items: center; gap: 24px; }
 nav a { color: var(--mute); box-shadow: none; font-size: 14px; white-space: nowrap; }
 nav a:hover { color: var(--bg); }
+nav .ext { display: inline-flex; align-items: center; gap: 8px; }
 nav .tersa { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); }
 nav .tersa img { display: block; width: 20px; height: 20px; }
 nav .tersa:hover img { filter: invert(1); }
@@ -300,6 +301,27 @@ input[type="number"]:hover { border-color: var(--dim); }
 .downloads { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .note { margin: 18px 0 0; color: var(--dim); font-size: 14px; max-width: 70ch; }
 
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.icon { width: 16px; height: 16px; flex: none; fill: currentColor; }
+.btn .icon { margin-right: 8px; }
+
+/* Under the map, shown after the first finished map or download, until dismissed */
+.support {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px 16px;
+  padding: 14px;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+  animation: support-in 480ms steps(4, end);
+}
+.support[hidden] { display: none; }
+.support p { margin: 0; color: var(--ink); font-size: 15px; }
+.support-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.support .close { min-width: 36px; padding: 0; font-size: 18px; font-weight: 400; }
+@keyframes support-in { from { opacity: 0; } to { opacity: 1; } }
+
 /* How it works */
 
 .how h2 { max-width: 28ch; }
@@ -399,7 +421,12 @@ footer {
 
 @media (max-width: 767px) {
   nav { gap: 16px; }
-  nav a:not(.tersa):not([href^="https://github"]) { display: none; }
+  nav a:not(.tersa):not(.ext) { display: none; }
+  nav .ext span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  nav .ext .icon { width: 20px; height: 20px; }
+  .support { grid-template-columns: minmax(0, 1fr) auto; }
+  .support .close { grid-column: 2; grid-row: 1; align-self: start; }
+  .support-links { grid-column: 1 / -1; grid-row: 2; }
   .hero { grid-template-columns: 1fr; min-height: 0; padding: 36px var(--pad) 40px; gap: 28px; }
   .lede { font-size: 17px; max-width: none; }
   section { padding: 56px var(--pad) 64px; }
@@ -413,5 +440,6 @@ footer {
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .support { animation: none; }
   .btn:active { transform: none; }
 }

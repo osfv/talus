@@ -201,9 +201,19 @@ const status = (text) => { $("#status").textContent = text; };
 const progress = (f) => { $("#progress span").style.width = `${Math.round(f * 1000) / 10}%`; };
 status(`Stored sample. The first run downloads about ${Math.round(firstRun / 1e6)} MB.`);
 
+// Asks for a star and a like once someone has a map of their own; a dismissal is remembered.
+const support = $("#support"), SUPPORT_KEY = "talus.support.dismissed";
+const supportDismissed = () => { try { return localStorage.getItem(SUPPORT_KEY) === "1"; } catch { return false; } };
+const offerSupport = () => { if (!supportDismissed()) support.hidden = false; };
+$("#support-close").addEventListener("click", () => {
+  support.hidden = true;
+  try { localStorage.setItem(SUPPORT_KEY, "1"); } catch {}
+});
+
 const stem = () => `talus-3_${current.req.type}_${current.req.seed}`;
 document.querySelectorAll("[data-export]").forEach((btn) => btn.addEventListener("click", async () => {
   if (!current) return;
+  offerSupport();
   const h = current.heights, kind = btn.dataset.export;
   if (kind === "png") X.download(await X.png16(h, N), `${stem()}.png`);
   else if (kind === "r16") X.download(X.r16(h, N).blob, `${stem()}_${X.unitySize(N)}.r16`);
@@ -262,6 +272,7 @@ async function generate() {
     show(result.heights, req, { mean_elevation: result.conditions.mean, relief: result.conditions.relief });
     status(`Done in ${((performance.now() - t0) / 1000).toFixed(1)} s on ${backend === "WebGPU" ? "WebGPU" : "the CPU"}`);
     history.replaceState(null, "", `?${toQuery(req)}`);
+    offerSupport();
   } catch (err) {
     if (err.name === "AbortError") { status("Stopped"); if (current) genView.set(current.heights, 0); }
     else { console.error(err); status(`Something went wrong: ${err.message}`); }
