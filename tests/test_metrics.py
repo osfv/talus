@@ -29,6 +29,12 @@ def test_flat_map_metrics():
     assert m["relief"] == 0.0 and m["mean_slope_deg"] == 0.0 and m["water_fraction"] == 0.0
     assert m["spectral_beta"] == 0.0 and m["checkerboard"] == 0.0
     assert compute_metrics(np.full((64, 64), 0.1), W)["water_fraction"] == 1.0
+    # sub-0.5m micro-chatter on a flat map is ignored by the default prominence threshold
+    noisy = np.full((64, 64), 0.5)
+    noisy[10, 10] += 0.2 / W.max_height_m
+    noisy[20, 20] += 2.0 / W.max_height_m
+    assert compute_metrics(noisy, W)["peak_density"] == pytest.approx(1000.0 / (62 * 62))
+    assert compute_metrics(noisy, W, min_prominence_m=0.0)["peak_density"] == pytest.approx(2000.0 / (62 * 62))
 
 
 @pytest.mark.parametrize("deg", [5.0, 20.0, 40.0])

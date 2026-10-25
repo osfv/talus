@@ -1,0 +1,51 @@
+# Talus-4 on real Copernicus GLO-30 terrain (64x64 at 64 m = 4.1 km extent), tuned for a 24 GB L4 on Colab Pro.
+# Warm-starts the UNet backbone and unconditional token from Talus-3 while learning the 5-class Earth label embedding.
+name: talus4_earth64
+seed: 4
+dataset: earth64
+model:
+  base_channels: 64
+  channel_mults: [1, 2, 3, 4]
+  num_res_blocks: 2
+  attention_resolutions: [16, 8]
+  dropout: 0.1
+diffusion:
+  timesteps: 1000
+  min_snr_gamma: null
+  p_drop_property: 0.15
+  p_drop_label: 0.15
+  p_drop_all: 0.10
+sampling:
+  steps: 50
+  spacing: quadratic
+  guidance: 2.0
+  guidance_interval: [0.0, 1.0]
+  eta: 0.0
+train:
+  init_from: talus-3
+  height_param: relative
+  archetype_loss_weights: {}
+  batch_size: 64
+  lr: 1.0e-4
+  lr_schedule: cosine
+  min_lr_ratio: 0.1
+  warmup_steps: 500
+  max_steps: 20000
+  grad_clip: 1.0
+  ema_decay: 0.9995
+  bf16: true
+  cuda_memory_fraction: 0.90
+  data_on_gpu: true
+  sample_batch_size: 64
+  log_every: 100
+  val_every: 1000
+  sample_every: 2000
+  eval_every: 4000
+  eval_samples: 500
+  eval_steps: 50
+  eval_spacing: quadratic
+  eval_guidance: 2.0
+  eval_guidance_interval: [0.0, 1.0]
+  checkpoint_every: 4000
+  recovery_every: 1000
+  keep_checkpoints: true

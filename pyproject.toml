@@ -36,6 +36,7 @@ where = ["src"]
 nullscape = ["eval/*.html"]
 
 [tool.pytest.ini_options]
+pythonpath = ["src"]
 testpaths = ["tests"]
 addopts = "-q"
 markers = ["gpu: requires a CUDA device", "slow: longer-running tests"]

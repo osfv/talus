@@ -9,31 +9,49 @@ Works on numpy arrays and torch tensors; ``mean``/``relief`` broadcast against t
 
 from __future__ import annotations
 
-from typing import Any
+import math
+from typing import Any, Mapping
 
 REL_SCALE = 2.0
 RELIEF_FLOOR = 0.01
+RELIEF_FLOOR_M = 12.0  # physical floor in metres (0.01 of the 1200 m procedural world)
 X0_RANGE = {"absolute": 1.0, "relative": 8.0}  # clamp for the predicted clean sample during DDIM
 
 
-def spec(kind: str = "absolute") -> dict[str, Any]:
+def spec(kind: str = "absolute", max_height_m: float = 1200.0) -> dict[str, Any]:
     if kind not in X0_RANGE:
         raise ValueError(f"unknown height parameterization {kind!r}")
-    return {"kind": kind, "scale": REL_SCALE, "relief_floor": RELIEF_FLOOR,
-            "mean_key": "mean_elevation", "relief_key": "relief"}
+    if not math.isfinite(max_height_m) or max_height_m <= 0:
+        raise ValueError("max_height_m must be finite and positive")
+    return {"kind": kind, "scale": REL_SCALE, "relief_floor": RELIEF_FLOOR_M / float(max_height_m),
+            "relief_floor_m": RELIEF_FLOOR_M, "mean_key": "mean_elevation", "relief_key": "relief"}
 
 
-def encode(h, mean=None, relief=None, kind: str = "absolute"):
-    if kind == "absolute":
+def _resolve(kind: str | Mapping[str, Any], floor: float | None) -> tuple[str, float]:
+    if isinstance(kind, Mapping):
+        k = str(kind["kind"])
+        f = float(kind.get("relief_floor", RELIEF_FLOOR) if floor is None else floor)
+    else:
+        k = str(kind)
+        f = float(RELIEF_FLOOR if floor is None else floor)
+    if k not in X0_RANGE:
+        raise ValueError(f"unknown height parameterization {k!r}")
+    return k, f
+
+
+def encode(h, mean=None, relief=None, kind: str | Mapping[str, Any] = "absolute", *, floor: float | None = None):
+    k, f = _resolve(kind, floor)
+    if k == "absolute":
         return h * 2 - 1
-    return (h - mean) * REL_SCALE / _floor(relief)
+    return (h - mean) * REL_SCALE / _floor(relief, f)
 
 
-def decode(x, mean=None, relief=None, kind: str = "absolute"):
-    if kind == "absolute":
+def decode(x, mean=None, relief=None, kind: str | Mapping[str, Any] = "absolute", *, floor: float | None = None):
+    k, f = _resolve(kind, floor)
+    if k == "absolute":
         return (x + 1) / 2
-    return mean + x * _floor(relief) / REL_SCALE
+    return mean + x * _floor(relief, f) / REL_SCALE
 
 
-def _floor(r):
-    return r.clip(min=RELIEF_FLOOR) if hasattr(r, "clip") else max(r, RELIEF_FLOOR)
+def _floor(r, floor: float = RELIEF_FLOOR):
+    return r.clip(min=floor) if hasattr(r, "clip") else max(r, floor)

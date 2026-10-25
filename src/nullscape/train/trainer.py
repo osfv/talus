@@ -73,10 +73,12 @@ class TensorBatcher:
     """Random minibatches from an in-memory uint16 split with random dihedral augmentation."""
 
     def __init__(self, heights_u16: np.ndarray, cond: np.ndarray, labels: np.ndarray, device: torch.device,
-                 on_device: bool, seed: int, placement: np.ndarray | None = None):
+                 on_device: bool, seed: int, placement: np.ndarray | None = None,
+                 relief_floor: float = heightparam.RELIEF_FLOOR):
         store_dev = device if on_device else torch.device("cpu")
         # placement: raw (mean elevation, relief) per map for relative heights; None = absolute heights
         self.pl = None if placement is None else torch.from_numpy(placement.astype(np.float32)).to(store_dev)
+        self.relief_floor = float(relief_floor)
         # exact int16 storage (u16 - 32768): half the VRAM of int32, which matters on 8 GB cards where
         # exceeding physical VRAM silently spills to system memory and slows training ~15x on Windows
         self.h = torch.from_numpy((heights_u16.astype(np.int32) - 32768).astype(np.int16)).to(store_dev)
@@ -101,7 +103,7 @@ class TensorBatcher:
         x = self.h[idx].float().add_(32768.0).div_(65535.0).mul_(2).sub_(1).unsqueeze(1)
         if self.pl is not None:
             p = self.pl[idx].view(-1, 2, 1, 1)
-            x = heightparam.encode((x + 1) / 2, p[:, 0:1], p[:, 1:2], "relative")
+            x = heightparam.encode((x + 1) / 2, p[:, 0:1], p[:, 1:2], "relative", floor=self.relief_floor)
         if augment:
             k = torch.randint(0, 8, (batch_size,), device=self.h.device, generator=self.g)
             out = torch.empty_like(x)
@@ -112,6 +114,16 @@ class TensorBatcher:
                     out[m] = torch.rot90(xj, j % 4, dims=[-2, -1])
             x = out
         return x.to(self.device, non_blocking=True), self.c[idx].to(self.device), self.y[idx].to(self.device)
+
+
+def _adapt_state_dict(source: dict[str, torch.Tensor], target: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
+    out = dict(source)
+    key = "cond_emb.label.weight"
+    if key in out and out[key].shape != target[key].shape:
+        w = target[key].detach().clone()
+        w[-1].copy_(out[key][-1].to(w.device, dtype=w.dtype))  # keep the trained unconditional ("unknown") token
+        out[key] = w
+    return out
 
 
 def build_model(train_cfg: dict[str, Any], store: TerrainStore) -> tuple[UNet, GaussianDiffusion]:
@@ -176,7 +188,7 @@ def train(cfg: dict[str, Any], resume: str | None = None, *, dry_run: bool = Fal
 
     store = TerrainStore.open(cfg["dataset"])
     meta = dataset_meta(store)
-    meta["height_param"] = heightparam.spec(tcfg["height_param"])
+    meta["height_param"] = heightparam.spec(tcfg["height_param"], store.world.max_height_m)
     meta["sampling"] = {**DEFAULT_SAMPLING, **cfg.get("sampling", {})}
     loss_weights = tcfg["archetype_loss_weights"]
     if set(loss_weights) - set(store.archetypes):
@@ -200,11 +212,15 @@ def train(cfg: dict[str, Any], resume: str | None = None, *, dry_run: bool = Fal
     step = 0
     if tcfg["init_from"] and not resume:
         ck = load_checkpoint(tcfg["init_from"])
-        if ck["unet_config"] != model.cfg.to_dict():
+        if {**ck["unet_config"], "num_classes": model.cfg.num_classes} != model.cfg.to_dict():
             raise ValueError("init_from checkpoint has a different UNet config")
-        model.load_state_dict(ck["model"] if "model" in ck else ck["ema"]["shadow"])  # releases carry EMA only
-        ema.load_state_dict(ck["ema"])
-        print(f"initialized from {tcfg['init_from']} (step {ck['step']})")
+        target_sd = model.state_dict()
+        raw_sd = ck["model"] if "model" in ck else ck["ema"]["shadow"]  # releases carry EMA only
+        model.load_state_dict(_adapt_state_dict(raw_sd, target_sd))
+        ema.load_state_dict({**ck["ema"], "shadow": _adapt_state_dict(ck["ema"]["shadow"], target_sd)})
+        resized = ck["unet_config"]["num_classes"] != model.cfg.num_classes
+        note = f", resized label embedding {ck['unet_config']['num_classes']} -> {model.cfg.num_classes}" if resized else ""
+        print(f"initialized from {tcfg['init_from']} (step {ck['step']}{note})")
         del ck
     resume_state = None
     inherited_best = None
@@ -243,7 +259,7 @@ def train(cfg: dict[str, Any], resume: str | None = None, *, dry_run: bool = Fal
         cond = store.conditions[idx]
         jm, jr = [list(store.condition_keys).index(k) for k in ("mean_elevation", "relief")]
         x = torch.from_numpy(heightparam.encode(store.heights(idx), cond[:, jm, None, None],
-                                                cond[:, jr, None, None], tcfg["height_param"]).astype(np.float32))[:, None].to(device)
+                                                cond[:, jr, None, None], meta["height_param"]).astype(np.float32))[:, None].to(device)
         c = torch.from_numpy(((cond - store.condition_mean) / store.condition_std).astype(np.float32)).to(device)
         y = torch.as_tensor(store.labels[idx], dtype=torch.long, device=device)
         if device.type == "cuda":
@@ -272,7 +288,7 @@ def train(cfg: dict[str, Any], resume: str | None = None, *, dry_run: bool = Fal
         with inherited_best.open("rb") as source, atomic_file(run.path / "checkpoints" / "best.pt") as target:
             shutil.copyfileobj(source, target)
     kind = tcfg["height_param"]
-    meta["height_param"] = heightparam.spec(kind)
+    meta["height_param"] = heightparam.spec(kind, store.world.max_height_m)
     keys = store.condition_keys
     place_cols = [keys.index(meta["height_param"]["mean_key"]), keys.index(meta["height_param"]["relief_key"])]
     if kind == "relative":
@@ -291,7 +307,8 @@ def train(cfg: dict[str, Any], resume: str | None = None, *, dry_run: bool = Fal
     train_idx = store.split("train")
     batcher = TensorBatcher(np.asarray(store.heights_u16[train_idx]), zc(store.conditions[train_idx]),
                             store.labels[train_idx], device, tcfg["data_on_gpu"] and device.type == "cuda", seed,
-                            placement=store.conditions[train_idx][:, place_cols] if kind == "relative" else None)
+                            placement=store.conditions[train_idx][:, place_cols] if kind == "relative" else None,
+                            relief_floor=meta["height_param"]["relief_floor"])
 
     # fixed validation batch (fixed t and noise) for a low-variance loss curve
     val_idx = store.split("val")
@@ -299,7 +316,7 @@ def train(cfg: dict[str, Any], resume: str | None = None, *, dry_run: bool = Fal
     vgen = torch.Generator().manual_seed(seed + 1)
     vp = store.conditions[vi][:, place_cols].astype(np.float32)
     val_x = torch.from_numpy(heightparam.encode(store.heights(vi), vp[:, 0, None, None], vp[:, 1, None, None],
-                                                kind).astype(np.float32))[:, None].to(device)
+                                                meta["height_param"]).astype(np.float32))[:, None].to(device)
     val_c = torch.from_numpy(zc(store.conditions[vi]).astype(np.float32)).to(device)
     val_y = torch.from_numpy(store.labels[vi]).to(device)
     val_t = torch.randint(0, diffusion.cfg.timesteps, (len(vi),), generator=vgen).to(device)

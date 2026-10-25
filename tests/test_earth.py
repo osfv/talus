@@ -205,3 +205,19 @@ def test_config_validation_rejects_unknown_keys(tmp_path):
     bad = {**normalized, "world": {**normalized["world"], "sea_level": 0.3}}
     with pytest.raises(ValueError, match="derived"):
         earth.validate_config(bad)
+
+
+def test_earth_cli_registered_in_main_parser(tmp_path, capsys):
+    import yaml
+    from nullscape.cli import main
+
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    tile = "Copernicus_DSM_COG_10_N47_00_E019_00_DEM"
+    (cache / "tile_list.txt").write_text(tile + "\n", encoding="utf-8")
+    (cache / f"{tile}.tif").write_bytes(b"cached")
+    cfg_path = tmp_path / "earth.yaml"
+    cfg_path.write_text(yaml.safe_dump(_sample_config(tmp_path, [tile])), encoding="utf-8")
+    main(["earth", "tiles", "--config", str(cfg_path)])
+    out = capsys.readouterr().out
+    assert "1 tiles selected, 0 not cached" in out and tile in out

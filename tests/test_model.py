@@ -324,6 +324,31 @@ def test_heightparam_roundtrip():
     assert torch.allclose(heightparam.decode(heightparam.encode(t, torch.from_numpy(m), torch.from_numpy(r),
                                                                 "relative"), torch.from_numpy(m),
                                              torch.from_numpy(r), "relative"), t, atol=1e-6)
+    # Earth scale (9500 m): 20 m relief is 0.0021 normalized (< 0.01), must not be squashed by a 95 m floor
+    earth_hp = heightparam.spec("relative", max_height_m=9500.0)
+    assert earth_hp["relief_floor"] == pytest.approx(12.0 / 9500.0)
+    flat_earth = 0.06 + (rng.random((2, 16, 16)).astype(np.float32) - 0.5) * (20.0 / 9500.0)
+    me = flat_earth.mean((1, 2))[:, None, None]
+    re = (np.percentile(flat_earth, 98, (1, 2)) - np.percentile(flat_earth, 2, (1, 2)))[:, None, None]
+    xe = heightparam.encode(flat_earth, me, re, earth_hp)
+    assert xe.std() > 0.5  # uses full relative range instead of being squashed by 0.01 (95 m)
+    assert np.allclose(heightparam.decode(xe, me, re, earth_hp), flat_earth, atol=1e-6)
+
+
+def test_adapt_state_dict_resizes_label_embedding_and_keeps_unknown_token():
+    from nullscape.train.trainer import _adapt_state_dict
+
+    src = UNet(TINY)
+    dst = UNet(UNetConfig(**{**TINY.to_dict(), "num_classes": 5}))
+    with torch.no_grad():
+        for p in src.parameters():
+            p.add_(0.25)
+    adapted = _adapt_state_dict(src.state_dict(), dst.state_dict())
+    assert adapted["cond_emb.label.weight"].shape == (6, 4 * TINY.base_channels)
+    assert torch.equal(adapted["cond_emb.label.weight"][-1], src.state_dict()["cond_emb.label.weight"][-1])
+    assert torch.equal(adapted["cond_emb.label.weight"][:-1], dst.state_dict()["cond_emb.label.weight"][:-1])
+    assert torch.equal(adapted["inp.weight"], src.state_dict()["inp.weight"])
+    dst.load_state_dict(adapted)
 
 
 def test_tensor_batcher_relative():

@@ -133,17 +133,22 @@ def terrain_ruggedness_index(h: np.ndarray, world: WorldSpec) -> np.ndarray:
     return np.sqrt(((nb - z[None]) ** 2).sum(axis=0))
 
 
-def local_extrema(h: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+EXTREMA_PROMINENCE_M = 0.5
+
+
+def local_extrema(h: np.ndarray, min_prominence: float = 0.0) -> tuple[np.ndarray, np.ndarray]:
     """Strict local maxima / minima over the 8-neighborhood, interior cells only."""
     h = _as_height(h)
-    maxima = (h[None] > _neighbor_stack(h, -np.inf)).all(axis=0)
-    minima = (h[None] < _neighbor_stack(h, np.inf)).all(axis=0)
+    if not np.isfinite(min_prominence) or min_prominence < 0:
+        raise ValueError("min_prominence must be finite and nonnegative")
+    maxima = (h[None] > _neighbor_stack(h, -np.inf) + min_prominence).all(axis=0)
+    minima = (h[None] < _neighbor_stack(h, np.inf) - min_prominence).all(axis=0)
     interior = np.zeros_like(maxima)
     interior[1:-1, 1:-1] = True
     return maxima & interior, minima & interior
 
 
-def compute_metrics(h: np.ndarray, world: WorldSpec) -> dict[str, float]:
+def compute_metrics(h: np.ndarray, world: WorldSpec, *, min_prominence_m: float = EXTREMA_PROMINENCE_M) -> dict[str, float]:
     h = _as_height(h)
     if h.shape != (world.resolution, world.resolution):
         raise ValueError(f"heightmap shape {h.shape} does not match world resolution {world.resolution}")
@@ -161,7 +166,7 @@ def compute_metrics(h: np.ndarray, world: WorldSpec) -> dict[str, float]:
     slope = slope_degrees(h, world)
     z = h * world.max_height_m
     lap = _neighbor_stack(z, None)[[1, 3, 4, 6]].sum(axis=0) - 4.0 * z
-    maxima, minima = local_extrema(h)
+    maxima, minima = local_extrema(z, min_prominence=min_prominence_m)
     interior_cells = max((h.shape[0] - 2) * (h.shape[1] - 2), 1)
     interior_land = land.copy()
     interior_land[[0, -1], :] = False

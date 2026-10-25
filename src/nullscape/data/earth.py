@@ -516,9 +516,7 @@ def build_earth_dataset(cfg: dict, workers: int = 2, out_root: str | Path | None
     return root
 
 
-def main(argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(prog="python -m nullscape.data.earth", description=__doc__.split("\n")[0])
-    sub = parser.add_subparsers(dest="command", required=True)
+def _add_earth_subcommands(sub) -> None:
     for name in ("tiles", "download", "build"):
         p = sub.add_parser(name)
         p.add_argument("--config", required=True)
@@ -529,10 +527,19 @@ def main(argv: list[str] | None = None) -> None:
             p.add_argument("--overwrite", action="store_true")
             p.add_argument("--no-download", action="store_true", help="use only tiles already in the cache")
             p.add_argument("--out-root", default=None)
-    args = parser.parse_args(argv)
+        p.set_defaults(earth_command=name, func=_run_earth)
+
+
+def add_earth_command(sub) -> None:
+    p = sub.add_parser("earth", help="build real-terrain datasets from Copernicus GLO-30 DEM tiles")
+    _add_earth_subcommands(p.add_subparsers(dest="earth_command", required=True))
+
+
+def _run_earth(args: argparse.Namespace) -> None:
+    cmd = getattr(args, "earth_command", None) or args.command
     cfg = validate_config(load_config(args.config, args.set))
     cache = Path(cfg["source"]["cache"])
-    if args.command == "build":
+    if cmd == "build":
         root = build_earth_dataset(cfg, workers=args.workers, out_root=args.out_root, overwrite=args.overwrite,
                                    download=not args.no_download, max_gb=args.max_gb)
         manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
@@ -542,7 +549,7 @@ def main(argv: list[str] | None = None) -> None:
         return
     names = select_tiles(cfg["source"], load_tile_list(cache), cfg["seed"])
     missing = [n for n in names if not (cache / f"{n}.tif").is_file()]
-    if args.command == "tiles":
+    if cmd == "tiles":
         print(f"{len(names)} tiles selected, {len(missing)} not cached "
               f"(about {len(missing) * AVG_TILE_MB / 1024:.1f} GB to download) -> {cache}")
         for name in names[:20]:
@@ -552,6 +559,12 @@ def main(argv: list[str] | None = None) -> None:
         return
     download_tiles(names, cache, max_gb=args.max_gb)
     print(f"{len(names)} tiles in {cache}")
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(prog="python -m nullscape.data.earth", description=__doc__.split("\n")[0])
+    _add_earth_subcommands(parser.add_subparsers(dest="command", required=True))
+    _run_earth(parser.parse_args(argv))
 
 
 if __name__ == "__main__":

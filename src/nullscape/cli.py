@@ -93,6 +93,10 @@ def build_parser() -> argparse.ArgumentParser:
     e.add_argument("--unity", action="store_true", help="resample to the next 2^n+1 size")
     e.set_defaults(func=_cmd_export)
 
+    from nullscape.data.earth import add_earth_command
+
+    add_earth_command(sub)
+
     try:
         from nullscape.cli_model import add_model_commands
 

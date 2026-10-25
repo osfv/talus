@@ -62,7 +62,7 @@ class TerrainSampler:
         self.archetypes: list[str] = list(self.meta["archetypes"])
         self.cond_mean = np.asarray(self.meta["condition_stats"]["mean"], dtype=np.float32)
         self.cond_std = np.asarray(self.meta["condition_stats"]["std"], dtype=np.float32)
-        self.height_param = dict(self.meta.get("height_param") or heightparam.spec("absolute"))
+        self.height_param = dict(self.meta.get("height_param") or heightparam.spec("absolute", self.world.max_height_m))
         bank = self.meta.get("prior_bank")
         self._bank = None if bank is None else (np.asarray(bank["conditions"], dtype=np.float32),
                                                 np.asarray(bank["labels"], dtype=np.int64))
@@ -221,7 +221,7 @@ class TerrainSampler:
             reference = np.broadcast_to(reference, (n, r, r))
             preserve_mask = np.broadcast_to(preserve_mask.astype(bool), (n, r, r))
             m, rel = placement if placement is not None else (None, None)
-            ref_x = heightparam.encode(reference, m, rel, kind).astype(np.float32)
+            ref_x = heightparam.encode(reference, m, rel, self.height_param).astype(np.float32)
         use_bf16 = self.device.type == "cuda"
         was_training = self.model.training
         self.model.eval()
@@ -242,7 +242,7 @@ class TerrainSampler:
             )
             x = x[:, 0].float().cpu().numpy()
             m, rel = (placement[0][sl], placement[1][sl]) if placement else (None, None)
-            decoded = np.clip(heightparam.decode(x, m, rel, kind), 0.0, 1.0)
+            decoded = np.clip(heightparam.decode(x, m, rel, self.height_param), 0.0, 1.0)
             out.append(np.where(preserve_mask[sl], reference[sl], decoded) if ref_x is not None else decoded)
         self.model.train(was_training)
         return np.concatenate(out).astype(np.float32)

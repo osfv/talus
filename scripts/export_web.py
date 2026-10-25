@@ -108,7 +108,9 @@ def check_forward(sampler: TerrainSampler, files: dict[str, Path]) -> dict[str, 
 def reference_fixtures(sampler: TerrainSampler, out: Path) -> list[dict]:
     """Full samples from the PyTorch sampler with injected noise, for the JavaScript parity test."""
     r, k = sampler.world.resolution, len(sampler.condition_keys)
-    cases = [("islands", {"water_fraction": 0.6}, 50, 2.0), ("ridges", {}, 25, 2.0), (None, {}, 25, 1.0)]
+    a0 = "islands" if "islands" in sampler.archetypes else sampler.archetypes[0]
+    a1 = "ridges" if "ridges" in sampler.archetypes else sampler.archetypes[min(1, len(sampler.archetypes) - 1)]
+    cases = [(a0, {"water_fraction": 0.6}, 50, 2.0), (a1, {}, 25, 2.0), (None, {}, 25, 1.0)]
     rng = np.random.default_rng(7)
     sampler.model.cpu().eval()
     written = []
@@ -123,7 +125,7 @@ def reference_fixtures(sampler: TerrainSampler, out: Path) -> list[dict]:
             lambda _: torch.from_numpy(noise), steps=steps, guidance=guidance, eta=0.0, spacing="quadratic",
             clip_range=heightparam.X0_RANGE["relative"])[:, 0].numpy()
         jm, jr = (sampler.condition_keys.index(sampler.height_param[key]) for key in ("mean_key", "relief_key"))
-        heights = np.clip(heightparam.decode(x, raw[:, jm, None, None], raw[:, jr, None, None], "relative"), 0, 1)
+        heights = np.clip(heightparam.decode(x, raw[:, jm, None, None], raw[:, jr, None, None], sampler.height_param), 0, 1)
         stem = f"case{i}"
         noise.tofile(out / f"{stem}.noise.bin")
         heights.astype(np.float32).tofile(out / f"{stem}.heights.bin")
