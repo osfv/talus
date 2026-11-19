@@ -20,7 +20,7 @@ tool keep that name (`nullscape`).
 
 ## Quick start
 
-You need Python 3.11+ and PyTorch 2.7+. Pick the PyTorch build for your machine at
+You need Python 3.12+ and PyTorch 2.7+. Pick the PyTorch build for your machine at
 [pytorch.org](https://pytorch.org/get-started/locally/); RTX 50-series cards need a CUDA 12.8 build.
 
 ```bash
