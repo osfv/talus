@@ -22,3 +22,46 @@ jobs:
         run: python -m pip install -e ".[dev]" --extra-index-url https://download.pytorch.org/whl/cpu
       - name: Test
         run: python -m pytest -m "not gpu and not slow"
+
+  parity:
+    runs-on: ubuntu-latest
+    env:
+      CHECKPOINT_SHA256: 13b4297bd57b2305cfc30cdf934d22fb21bb241703b0565eacd7a76062b6a6d9
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install export dependencies
+        run: python -m pip install -e ".[web]" --extra-index-url https://download.pytorch.org/whl/cpu
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - name: Install Node dependencies
+        working-directory: site
+        run: npm ci --include=dev
+      - name: Cache checkpoint
+        id: checkpoint
+        uses: actions/cache@v5.1.0
+        with:
+          path: checkpoints/talus-3.pt
+          key: talus-3-${{ env.CHECKPOINT_SHA256 }}
+      - name: Download checkpoint
+        if: steps.checkpoint.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p checkpoints
+          curl -fL https://github.com/osfv/talus/releases/download/v3.0.0/talus-3.pt -o checkpoints/talus-3.pt
+      - name: Verify checkpoint
+        run: echo "$CHECKPOINT_SHA256  checkpoints/talus-3.pt" | sha256sum --check --strict
+      - name: Export models and reference fixtures
+        env:
+          OMP_NUM_THREADS: 2
+          MKL_NUM_THREADS: 2
+        run: python scripts/export_web.py --checkpoint talus-3 --out site/public/model
+      - name: Test sampler parity
+        working-directory: site
+        run: node --test test/sampler.test.mjs
